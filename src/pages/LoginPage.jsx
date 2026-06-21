@@ -1,16 +1,104 @@
 import React from 'react';
+import { useState} from 'react';
+import { Link } from 'react-router-dom'; 
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+
 export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    // firebase login logic goes here in day 5-7
+    console.log('Login attempt:', email, password);
+  }
+
+  function handleGoogleLogIn() {
+    // firebase google login logic goes in herein day 5-7
+    console.log('Google sign-in clicked');
+  }
+  
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
+    <div className="bg-slate50 min-h-screen flex flex-col">
       <Navbar />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 64 }}>🚧</div>
-        <h2 style={{ fontFamily: 'Nunito', color: 'var(--navy)' }}>LoginPage</h2>
-        <p style={{ color: '#888', fontFamily: 'Nunito Sans' }}>Coming in the next build phase.</p>
+
+      <div ClassName="flex-1 flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 p-8">
+          <h1 className="text-2xl font-bold text-slate-900 text-center">
+            Welcome back
+            </h1>
+            <p className="text-sm text-slate-500 text-center mt-1 mb-6">
+              Sign in to continue reading
+            </p>
+
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div >
+              <label className="block-text-sm font-medium text-slate-700 mb-1">
+                Email
+                </label>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="you@example.com"
+              />
+            </div>
+
+
+            <div>
+              <label className="block-text-sm font-medium text-slate-700 mb-1">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                placeholder="Enter your password"
+              />
+            </div>
+
+
+            <button
+              type="submit"
+              className="w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-lg transition-colors"
+            >
+              Sign in
+            </button>
+          </form>
+
+          {/*--DIVIDER--*/}
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400">OR</span>
+            <div className="flex-1 h-px bg-slate-200" />
+          </div>
+
+          {/*--GOOGLE SIGN-IN PLACEHOLDER--*/}
+          <button
+            onClick={handleGoogleLogIn}
+            className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-2.5 rounded-lg transition-colors"
+          >
+            <span className="text-lg">G</span>
+            Sign in with Google
+            </button>
+
+            <p className="text-sm text-slate-500 text-center mt-6">
+              Don't have an account?{' '}
+              <Link to="/register" className="text-teal-600 font-medium hover-text-teal-700">
+                Register here
+              </Link>
+            </p>
+          </div>
+        </div>
+
+        <footer />
       </div>
-      <Footer />
-    </div>
+    
   );
 }
+
