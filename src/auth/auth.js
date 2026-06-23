@@ -16,9 +16,9 @@ export const auth = {
 // when the real Cloudflare API is ready, replace the inside of these
 // three functions only. everything else in the app stays the same.
 
-export function registerUser(email, password) {
+export function registerUser(name, email, password, role, orgName ="") {
   // fake a successful login
-  const fakeUser = { name: "Test User", email };
+  const fakeUser = { name: "Test User", email, role, orgName };
   localStorage.setItem(STORAGE_KEY, JSON.stringify(fakeUser));
   return { success: true, user: fakeUser };
 }
