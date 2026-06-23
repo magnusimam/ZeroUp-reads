@@ -1,36 +1,61 @@
 import React from 'react';
-import { useState} from 'react';
-import { Link } from 'react-router-dom'; 
+import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { loginUser } from '../auth/auth';
+import { Link, useNavigate } from 'react-router-dom';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
+  
+  
   function handleSubmit(e) {
     e.preventDefault();
-    // firebase login logic goes here in day 5-7
-    console.log('Login attempt:', email, password);
-  }
+    setError("")
+    
+    //Basic validation
+    if(!email || !password){
+      setError("Please fill in all fields.");
+      return;
+    }
 
+    const result = loginUser(email, password);
+
+    if (result.success)  {
+      navigate("/library");
+    } else {
+      setError("Login failed.  please try again");
+    }
+  }
+    
   function handleGoogleLogIn() {
-    // firebase google login logic goes in herein day 5-7
-    console.log('Google sign-in clicked');
+    // Google sign in - coming when cloudflare API is ready
+    console.log('Google sign-in coming soon');
   }
   
   return (
     <div className="bg-slate50 min-h-screen flex flex-col">
       <Navbar />
 
-      <div ClassName="flex-1 flex items-center justify-center px-6 py-12">
+      <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm bg-white rounded-xl border border-slate-200 p-8">
           <h1 className="text-2xl font-bold text-slate-900 text-center">
             Welcome back
-            </h1>
-            <p className="text-sm text-slate-500 text-center mt-1 mb-6">
-              Sign in to continue reading
-            </p>
+          </h1>
+          <p className="text-sm text-slate-500 text-center mt-1 mb-6">
+            Sign in to continue reading
+          </p>
+
+          {/* Error message */}
+          {error && (
+            <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+              {error}
+            </div>
+          )}
 
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -85,19 +110,19 @@ export default function LoginPage() {
           >
             <span className="text-lg">G</span>
             Sign in with Google
-            </button>
+          </button>
 
-            <p className="text-sm text-slate-500 text-center mt-6">
-              Don't have an account?{' '}
-              <Link to="/register" className="text-teal-600 font-medium hover-text-teal-700">
-                Register here
-              </Link>
-            </p>
-          </div>
+          <p className="text-sm text-slate-500 text-center mt-6">
+            Don't have an account?{' '}
+            <Link to="/register" className="text-teal-600 font-medium hover:text-teal-700">
+              Register here
+            </Link>
+          </p>
         </div>
-
-        <footer />
       </div>
+
+      <Footer />
+    </div>
     
   );
 }
