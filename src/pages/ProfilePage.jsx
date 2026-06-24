@@ -15,8 +15,6 @@ const stats = [
   { label: "Currently Reading", value:0 },
 ];
 
-export default function ProfilePage() {
-  const initial = user.name.charAt(0).toUpperCase();
 
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col">
