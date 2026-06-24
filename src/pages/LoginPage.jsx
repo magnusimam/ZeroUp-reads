@@ -2,14 +2,16 @@ import React from 'react';
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { loginUser } from '../auth/auth';
+import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
+import { loginUser } from '../utils/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth(); //
 
   
   
@@ -26,6 +28,7 @@ export default function LoginPage() {
     const result = loginUser(email, password);
 
     if (result.success)  {
+      login({ name: email.split("@")[0], email, role:"reader"});
       navigate("/library");
     } else {
       setError("Login failed.  please try again");
@@ -60,9 +63,9 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div >
-              <label className="block-text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                 Email
-                </label>
+              </label>
               <input
                 type="email"
                 id="email"

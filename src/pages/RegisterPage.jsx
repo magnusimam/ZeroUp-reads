@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { registerUser } from '../auth/auth';
+import { useAuth } from "../context/AuthContext";
+import { registerUser } from '../utils/auth';
 
 const roles = [
   { id: 'Teacher', message: 'Great! We will suggest classroom-friendly books for you.' },
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   const [orgName, setOrgName] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const selectedRole = roles.find((r) => r.id === role);
 
@@ -61,9 +63,10 @@ export default function RegisterPage() {
     const result = registerUser(name, email, password, role, orgName);
 
     if (result.success) {
+      login(result.user);
       navigate('/library');
     } else {
-      setError('Registration failed. Please try again.');
+      setError(result.message || 'Registration failed. Please try again.');
     }
   }
 
