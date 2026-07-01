@@ -1,3 +1,22 @@
+//Bookmarks helper functions - stored in localstorage for now
+export function getBookmarks() {
+  const saved = localStorage.getItem('zeroup_bookmarks');
+  return saved ? JSON.parse(saved) : [];
+}
+
+export function toggleBookmark(bookId) {
+  const current = getBookmarks();
+  const exists = current.includes(bookId);
+  const updated = exists
+    ? current.filter((id) => id !== bookId)
+    : [...current, bookId];
+  localStorage.setItem('zeroup_bookmarks', JSON.stringify(updated));
+  return updated;
+}
+export function isBookmarked(bookId) {
+  return getBookmarks().includes(bookId);
+}
+
 export const MOCK_BOOKS = [
   {
     id: '1', title: 'Anansi the Spider', author: 'Kwame Mensah',

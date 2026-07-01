@@ -193,7 +193,7 @@ onClick={onClose}
   </div>
 
   {/*close button */}
-  <div className='P-4 border-t border-slate-100'>
+  <div className='p-4 border-t border-slate-100'>
     <button
     onClick={onClose}
     className='w-full bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 rounded-xl transition-colors'
@@ -253,7 +253,7 @@ export default function LibraryPage() {
         <div className='max-w-4xl mx-auto'>
         <h1 className='text-3xl font-bold'>All Stories</h1>
         <p className='text-slate-400 mt-1 text-sm'>
-          {MOCK_BOOKS.length} stories .across {LANGUAGES.length - 1} languages
+          {MOCK_BOOKS.length} stories across {LANGUAGES.length - 1} languages
         </p>
       
 
@@ -367,6 +367,7 @@ export default function LibraryPage() {
            language={language}
            setLanguage={setLanguage}
            level={level}
+           setLevel={setLevel}
            sort={sort}
            setSort={setSort}
            onClose={() => setShowFilter(false)}

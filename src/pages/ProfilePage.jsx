@@ -2,7 +2,8 @@ import React, { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { MOCK_BOOKS, getBookmarks } from '../utils/mockData';
 
 export default function ProfilePage() {
   const { user, logout} = useAuth();
@@ -19,11 +20,13 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const initial = user.name.charAt(0).toUpperCase();
+  
+  const bookmarkedBooks = MOCK_BOOKS.filter(b => getBookmarks().includes(b.id));
 
 
 const stats = [
   { label: "Books completed", value: 0},
-  { label: "Bookmarks", value:0},
+  { label: "Bookmarks", value: bookmarkedBooks.length },
   { label: "Currently Reading", value:0 },
 ];
 
@@ -82,10 +85,24 @@ const stats = [
         {/*-- BOOKMARKS SECTION--*/}
         <div className="mt-6">
           <h2 className="text-lg font-bold text-slate-900 mb-3">My Bookmarks</h2>
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400">
-          No bookmarks yet - books you save will show up here.  
+          {bookmarkedBooks.length === 0 ? (
+           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400">
+              No bookmarks yet - books you save will show up here.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {bookmarkedBooks.map((book) => (
+                <Link
+                 key={book.id}
+                 to={`/read/${book.id}`}
+                   className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
+                  <p className="font-medium text-sm text-slate-900 truncate">{book.title}</p>
+                  <p className="text-xs text-slate-500 mt-1">{book.author}</p>
+                </Link>
+              ))}
+            </div>
+          )}
           </div>
-        </div>
 
         {/*--- continue reading---*/}
         <div className='mt-6'>
