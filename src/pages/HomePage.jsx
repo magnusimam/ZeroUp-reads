@@ -1,4 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { Swiper, SwiperSlide } from  'swiper/react';
+import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -7,38 +12,82 @@ import { useAuth } from '../context/AuthContext';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { MOCK_BOOKS } from '../utils/mockData';
 
-/* ── FLOATING BACKGROUND SHAPES ─────────────────────────── */
+
+/* ── TREE BACKGROUND ANIMATION ─────────────────────────── */
 function FloatingShapes() {
-  const shapes = [
-    { size: 120, top: '10%',  left: '5%',  delay: '0s',   duration: '7s'  },
-    { size: 60,  top: '25%',  left: '80%', delay: '1s',   duration: '9s'  },
-    { size: 90,  top: '60%',  left: '12%', delay: '2s',   duration: '6s'  },
-    { size: 40,  top: '70%',  left: '70%', delay: '0.5s', duration: '8s'  },
-    { size: 70,  top: '15%',  left: '55%', delay: '3s',   duration: '10s' },
-    { size: 50,  top: '80%',  left: '40%', delay: '1.5s', duration: '7s'  },
-    { size: 30,  top: '45%',  left: '90%', delay: '2.5s', duration: '9s'  },
-    { size: 80,  top: '35%',  left: '25%', delay: '4s',   duration: '8s'  },
+  const branches = [
+    { rotate: '-18deg', top: '24%', delay: '0s', emoji: '📖' },
+    { rotate: '0deg', top: '20%', delay: '0.2s', emoji: '🌿' },
+    { rotate: '18deg', top: '24%', delay: '0.4s', emoji: '✨' },
   ];
+
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-      {shapes.map((s, i) => (
-        <div key={i} style={{
-          position: 'absolute', top: s.top, left: s.left,
-          width: s.size, height: s.size, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.10)',
-          animation: `floatSlow ${s.duration} ease-in-out infinite`,
-          animationDelay: s.delay,
+      <style>{`
+        @keyframes treeSway {
+          0%, 100% { transform: rotate(0deg); }
+          50% { transform: rotate(4deg); }
+        }
+        @keyframes leafGlow {
+          0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(255,255,255,0); }
+          50% { transform: scale(1.08); box-shadow: 0 8px 20px rgba(255,255,255,0.2); }
+        }
+      `}</style>
+
+      <div style={{
+        position: 'absolute', left: '50%', top: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: 320, height: 360,
+      }}>
+        <div style={{
+          position: 'absolute', left: '50%', bottom: '8%',
+          width: 18, height: '58%',
+          borderRadius: 999,
+          background: 'linear-gradient(180deg, #7b4f22 0%, #4a2d12 100%)',
+          transform: 'translateX(-50%)',
+          boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
         }} />
-      ))}
-      {/* Star sparkles */}
-      {['20%','45%','75%','88%','33%'].map((left, i) => (
-        <div key={`star-${i}`} style={{
-          position: 'absolute', left, top: `${15 + i * 14}%`,
-          fontSize: 16, opacity: 0.12,
-          animation: `float ${6 + i}s ease-in-out infinite`,
-          animationDelay: `${i * 0.7}s`,
-        }}>✦</div>
-      ))}
+
+        <div style={{
+          position: 'absolute', left: '50%', top: '18%',
+          width: 180, height: 140,
+          transform: 'translateX(-50%)',
+          animation: 'treeSway 5s ease-in-out infinite',
+        }}>
+          {branches.map((branch, index) => (
+            <div key={index} style={{
+              position: 'absolute', left: '50%', top: branch.top,
+              width: 150, height: 3,
+              background: 'linear-gradient(90deg, #5f3b16 0%, #8f5b25 100%)',
+              transformOrigin: '0% 50%',
+              transform: `translate(-50%, 0) rotate(${branch.rotate})`,
+              animation: `treeSway 4.5s ease-in-out infinite`,
+              animationDelay: branch.delay,
+            }}>
+              <div style={{
+                position: 'absolute', right: '-6px', top: '-18px',
+                width: 46, height: 46, borderRadius: '50%',
+                background: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22,
+                boxShadow: '0 8px 16px rgba(245,158,11,0.25)',
+                animation: 'leafGlow 3s ease-in-out infinite',
+                animationDelay: branch.delay,
+              }}>
+                {branch.emoji}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{
+          position: 'absolute', left: '50%', top: '10%',
+          width: 70, height: 70, borderRadius: '50%',
+          background: 'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)',
+          transform: 'translateX(-50%)',
+          boxShadow: '0 10px 24px rgba(20,184,166,0.25)',
+        }} />
+      </div>
     </div>
   );
 }
@@ -47,27 +96,32 @@ function FloatingShapes() {
 function StatItem({ value, label, delay }) {
   const [ref, visible] = useScrollReveal();
   const [count, setCount] = useState(0);
-  const numeric = parseInt(value.replace(/[^0-9]/g, ''));
-  const suffix = value.replace(/[0-9]/g, '');
+  const numeric = parseInt(value.toString().replace(/[^0-9]/g, ''), 10);
+  const suffix = value.toString().replace(/[0-9]/g, '');
+  const hasNumericValue = !Number.isNaN(numeric);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || !hasNumericValue) return;
     const duration = 1500;
     const steps = 60;
     const increment = numeric / steps;
     let current = 0;
     const timer = setInterval(() => {
       current += increment;
-      if (current >= numeric) { setCount(numeric); clearInterval(timer); }
-      else setCount(Math.floor(current));
+      if (current >= numeric) {
+        setCount(numeric);
+        clearInterval(timer);
+      } else {
+        setCount(Math.floor(current));
+      }
     }, duration / steps);
     return () => clearInterval(timer);
-  }, [visible, numeric]);
+  }, [visible, numeric, hasNumericValue]);
 
   return (
     <div ref={ref} style={{ textAlign: 'center', flex: 1, padding: '0 16px' }}>
       <div style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 28, color: 'var(--navy)' }}>
-        {visible ? `${count}${suffix}` : value}
+        {hasNumericValue && visible ? `${count}${suffix}` : value}
       </div>
       <div style={{ fontSize: 14, color: 'white', marginTop: 2, fontFamily: 'Nunito Sans' }}>{label}</div>
     </div>
@@ -334,6 +388,356 @@ function ContinueReadingBanner({ user }) {
 /* ════════════════════════════════════════════════════════════
    HOME PAGE
 ═══════════════════════════════════════════════════════════ */
+ const bannerSlides = [
+  {
+    id: 1, 
+    tag: "Launch Announcement",
+    headline: "ZeroUp Reads is HERE",
+    subtext: "African language books for every child - free, online, and growing every week.",
+    cta:"Start Reading",
+    ctaLink:"/library",
+    image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=1200&q=80",
+  },
+   {
+    id: 2, 
+    tag: "📚 New This Month",
+    headline: "6 New Books Added in Yoruba, Igbo and Swahili",
+    subtext: "Fresh stories for beginner, intermediate, and advanced readers- go explore!",
+    cta:"Browse the Library",
+    ctaLink:"/library",
+    image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=1200&q=80",
+  },
+   {
+    id: 3, 
+    tag: "Our Mission",
+    headline: "ZeroUp Reads is HERE",
+    subtext: "Every Child Deserves a Book in their Language.",
+    cta:"We are closing Africa's literacy gap - one mother-tongue story at a time",
+    ctaLink:"/about",
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80",
+  },
+   {
+    id: 4, 
+    tag: "AI Translation",
+    headline: "Any Book. Any African Language, Instantly",
+    subtext: "Our Ai translation tool can convert any book into Hausa, Yoruba, Igbo, and Swahili and more.",
+    cta:"See How it Works",
+    ctaLink:"/register",
+    image: "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=1200&q=80",
+  },
+];
+
+function AnnouncementSlider() {
+  return (
+    <div className="w-full relative">
+      <Swiper
+      modules={[Autoplay, Pagination, Navigation]}
+      autoplay={{ delay: 5000, disableOnInteraction: false }}
+      pagination={{ clickable: true }}
+      navigation={true}
+      loop={true}
+      className="w-full"
+      >
+        {bannerSlides.map((slide) => (
+          <SwiperSlide key={slide.id}>
+            <div className="relative w-full h-72 md:h-96 overflow-hidden">
+              {/* BACKGROUND IMAGE */}
+              <img
+               src={slide.image} 
+               alt={slide.headline}
+               className="absolute inset-0  w-full h-full object-cover" />
+               {/*Dark overlay so text is readable*/}
+               <div className="absolute inset-0 bg-black/55" />
+
+               {/* Content */}
+                <div className='relative z-10 h-full flex items-center px-8 md:px-16'>
+                  <div className='max-w-2xl'>
+                    {/* TAG */}
+                    <span className="inline-block bg-amber-500 text-slate-900 text-xs font-bold px-3 py-1 rounded-full mb-4">
+                      {slide.tag}
+                    </span>
+
+                    {/* HEADLINE */}
+                    <h2 className="text-2xl md:text-4xl font-bold text-white leading-tight mb-3">
+                      {slide.headline}
+                    </h2>
+
+
+                    {/* SUBTEXT */}
+                    <p className="text-slate-200 text-sm md:text-base mb-6 max-w-lg">
+                      {slide.subtext}
+                    </p>
+
+
+                    {/* CTA BUTTON */}
+                    <Link
+                      to={slide.ctaLink}
+                      className="inline-block px-6 py-2.5 bg-teal-500 hover:bg-teal-400 text-white font-semibold rounded-lg transition-colors text-sm"       
+                    >
+                      {slide.cta} 
+                    </Link>
+                  </div>
+                </div>
+            </div>
+          </SwiperSlide>
+        ))}
+      </Swiper>
+
+      {/* Custom dot styles */}
+      <style>{`
+        .swiper-button-next,
+        .swiper-button-prev {
+          color: #ffffff !important;
+          background: rgba(0,0,0,0.3);
+          width: 36px !important;
+          height: 36px !important;
+          border-radius: 50%;
+          padding: 8px;
+        }
+        .swiper-button-next:after,
+        .swiper-button-prev:after {
+          font-size: 14px !important;
+          font-weight: bold;
+        }
+        .swiper-pagination-bullet-active {
+          background: #f59e0b !important;
+        }
+        .swiper-pagination-bullet {
+          background: #ffffff;
+          opacity: 0.7;
+        }
+      `}</style>
+    </div>
+  )
+}
+
+/* ── LEAF CARD (sits at the tip of a tree branch) ────────── */
+function ActionCard({ action }) {
+  return (
+    <div style={{
+      background: 'white',
+      borderRadius: 24,
+      padding: '32px 22px 26px',
+      boxShadow: '0 10px 28px rgba(0,0,0,0.09)',
+      border: `2px solid ${action.bg}`,
+      width: 250,
+      textAlign: 'center',
+      transition: 'transform 200ms ease, box-shadow 200ms ease',
+      cursor: 'pointer',
+    }}
+      onMouseEnter={e => {
+        e.currentTarget.style.transform = 'translateY(-6px) scale(1.02)';
+        e.currentTarget.style.boxShadow = `0 16px 36px ${action.bg}`;
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+        e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,0,0,0.09)';
+      }}
+    >
+      <div style={{
+        width: 68, height: 68, borderRadius: '50%',
+        background: action.bg, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: 30, margin: '0 auto 16px',
+        boxShadow: `0 8px 18px ${action.bg}`,
+      }}>
+        {action.emoji}
+      </div>
+      <h3 style={{ fontFamily: 'Nunito', fontWeight: 900, fontSize: 20, color: action.color, marginBottom: 10, margin: '0 0 10px' }}>
+        {action.title}
+      </h3>
+      <p style={{ fontFamily: 'Nunito Sans', fontSize: 14, color: '#64748B', lineHeight: 1.6, marginBottom: 18, margin: '0 0 18px' }}>
+        {action.description}
+      </p>
+      <Link
+        to={action.link}
+        style={{
+          display: 'inline-block',
+          background: action.color,
+          color: 'white',
+          fontFamily: 'Nunito',
+          fontWeight: 700,
+          fontSize: 13,
+          padding: '9px 20px',
+          borderRadius: 99,
+          textDecoration: 'none',
+          transition: 'opacity 200ms ease',
+        }}
+        onMouseEnter={e => e.currentTarget.style.opacity = '0.85'}
+        onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+      >
+        {action.cta}
+      </Link>
+    </div>
+  );
+}
+
+/* ── ACTION TREE (trunk + 3 branches, each ending in a card-leaf) ── */
+function ActionTree({ actions }) {
+  const [ref, visible] = useScrollReveal(0.1);
+  const [leftAction, centerAction, rightAction] = actions;
+
+  return (
+    <div ref={ref} style={{
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'translateY(0)' : 'translateY(30px)',
+      transition: 'all 600ms ease',
+    }}>
+      <style>{`
+        @keyframes wholeTreeSway {
+          0%, 100% { transform: rotate(-1.5deg); }
+          50% { transform: rotate(1.5deg); }
+        }
+        .action-tree-scene {
+          position: relative;
+          height: 620px;
+          max-width: 1040px;
+          margin: 0 auto;
+          transform-origin: 50% 100%;
+          animation: wholeTreeSway 6s ease-in-out infinite;
+        }
+        .action-tree-card {
+          position: absolute;
+        }
+        .action-tree-card--left { left: 4%; top: 46%; }
+        .action-tree-card--right { right: 4%; top: 46%; }
+        .action-tree-card--center { left: 50%; top: 0; transform: translateX(-50%); }
+
+        @media (max-width: 767px) {
+          .action-tree-scene {
+            height: auto;
+            animation: none;
+            transform: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+          }
+          .action-tree-scene svg { display: none; }
+          .action-tree-card,
+          .action-tree-card--left,
+          .action-tree-card--right,
+          .action-tree-card--center {
+            position: static;
+            transform: none;
+          }
+        }
+      `}</style>
+
+      <div className="action-tree-scene">
+        <svg
+          viewBox="0 0 1000 620"
+          preserveAspectRatio="none"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 0 }}
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="trunkGrad" gradientUnits="userSpaceOnUse" x1="500" y1="0" x2="500" y2="620">
+              <stop offset="0%" stopColor="#8f5b25" />
+              <stop offset="100%" stopColor="#4a2d12" />
+            </linearGradient>
+          </defs>
+          {/* trunk */}
+          <path d="M500,620 C500,500 500,420 500,300" stroke="url(#trunkGrad)" strokeWidth="26" strokeLinecap="round" fill="none" />
+          {/* center branch — straight up */}
+          <path d="M500,300 C500,220 500,150 500,95" stroke="url(#trunkGrad)" strokeWidth="14" strokeLinecap="round" fill="none" />
+          {/* left branch */}
+          <path d="M500,300 C380,290 260,330 205,368" stroke="url(#trunkGrad)" strokeWidth="14" strokeLinecap="round" fill="none" />
+          {/* right branch */}
+          <path d="M500,300 C620,290 740,330 795,368" stroke="url(#trunkGrad)" strokeWidth="14" strokeLinecap="round" fill="none" />
+        </svg>
+
+        <div className="action-tree-card action-tree-card--left"><ActionCard action={leftAction} /></div>
+        <div className="action-tree-card action-tree-card--center"><ActionCard action={centerAction} /></div>
+        <div className="action-tree-card action-tree-card--right"><ActionCard action={rightAction} /></div>
+      </div>
+    </div>
+  );
+}
+
+function WhatYouCanDo() {
+  const actions = [
+    {
+      id: 1,
+      emoji:'📚',
+      title: 'Read',
+      description: 'Explore hundreds of Africans-language books - stories, science, history and more. free for every child.',
+      cta: 'Start Reading',
+      link: '/library',
+      color: '#0d9488',
+      bg: '#CCFBF1',
+    },
+    {
+      id: 2,
+      emoji: '📚',
+      title: 'Translate',
+      description: 'Any book can be translated into Hausa, Yoruba, Igbo, Swahili, Zulu and more - instantly with AI.',
+      cta: 'See How',
+      link: '/library',
+      color: '#D97706',
+      bg: '#FEF3C7',
+    },
+    {
+      id: 3,
+      emoji:'📚',
+      title:'Support',
+      description:'Help us preserve endangered African languages and build book security for every child on the continent.',
+      cta: 'Get involved',
+      link: '/about',
+      color: '#7c3AED',
+      bg: '#EDE9FE',
+    },
+  ];
+
+  return (
+    <section style={{
+      padding:'80px 24px',
+      background: 'var(--cream, #FFFBF5)',
+      textAlign:'center',
+    }}>
+      {/* Section heading */}
+
+      <div style={{ maxWidth: 600, margin: ' 0 auto 56px'}}>
+        <span style={{
+          display: 'inline-block',
+          background: '#CCFBF1',
+          color: '#0D9488',
+          fontSize:12,
+          fontWeight:700,
+          letterSpacing: 2,
+          padding:'6px 16px',
+          borderRadius:99,
+          marginBottom: 16,
+          fontFamily:'Nunito',
+          textTransform:'uppercase',
+        }}>
+          What you can do
+        </span>
+        <h2 style={{
+          fontFamily: 'Nunito',
+          fontWeight: 900,
+          fontSize: 'clamp(24px, 4vw,36px)',
+          color: 'var(--navy, #0F172A)',
+          lineHeight:1.3,
+          marginBottom: 16,
+        }}>
+          More Than Just Reading
+        </h2>
+        <p style={{
+          fontFamily: 'Nunito Sans',
+          fontSize: 16,
+          color: '#64748B',
+          lineHeight: 1.7,
+        }}>
+          Zeroup Reads is a full ecosystem for African-language literacy -
+          read, translate, and help preserve language for the next generation.
+        </p>
+      </div>
+
+      <ActionTree actions={actions} />
+    </section>
+  );
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const [heroLoaded, setHeroLoaded] = useState(false);
@@ -346,11 +750,16 @@ export default function HomePage() {
 
   /* ── HERO SECTION ──────────────────────────────────────── */
   const languages = [
-    { flag: '🇬🇧', name: 'English' },
-    { flag: '🇰🇪', name: 'Swahili' },
-    { flag: '🇳🇬', name: 'Yoruba'  },
-    { flag: '🇿🇦', name: 'Zulu'    },
-    { flag: '🇫🇷', name: 'French'  },
+    { flag: 'https://flagcdn.com/w40/gb.png', name: 'English' },
+    { flag: 'https://flagcdn.com/w40/ke.png', name: 'Swahili' },
+    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Yoruba' },
+    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Igbo' },
+    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Pidgin' },
+    { flag: 'https://flagcdn.com/w40/za.png', name: 'Zulu' },
+    { flag: 'https://flagcdn.com/w40/fr.png', name: 'French' },
+    { flag: 'https://flagcdn.com/w40/sn.png', name: 'Hausa' },
+
+    
   ];
 
   return (
@@ -358,6 +767,11 @@ export default function HomePage() {
       {/* Navbar — transparent over hero */}
       <Navbar transparent />
 
+      {/* ANNOUNCEMENT SLIDER */}
+      <AnnouncementSlider />
+
+
+  
       {/* ── SECTION 2: HERO ────────────────────────────────── */}
       <section style={{
         background: 'var(--gradient-hero)',
@@ -422,13 +836,25 @@ export default function HomePage() {
             }}>
               {languages.map((lang, i) => (
                 <div key={lang.name} style={{
-                  textAlign: 'center',
-                  opacity: heroLoaded ? 1 : 0,
-                  transition: `opacity 300ms ease ${300 + i * 100}ms`,
+                  display:'flex',
+                  flexDirection: 'column',
+                  alignItems:'center',
+                  gap:4,
                 }}>
-                  <div style={{ fontSize: 28, lineHeight: 1 }}>{lang.flag}</div>
-                  <div style={{ color: 'white', fontSize: 12, marginTop: 4, fontFamily: 'Nunito Sans', fontWeight: 600 }}>{lang.name}</div>
-                </div>
+                  <img
+                  src={lang.flag}
+                  alt={lang.name}
+                  style={{
+                    width: 32,
+                    height: 22,
+                    borderRadius: 3,
+                    objectFit: 'cover'
+                  }}
+                  />
+                  <span style={{ fontSize: 11, color: 'white'}}>
+                    {lang.name}
+                  </span>
+                  </div>
               ))}
             </div>
 
@@ -565,6 +991,9 @@ export default function HomePage() {
           clipPath: 'ellipse(55% 100% at 50% 100%)',
         }} />
       </section>
+
+      {/* wHAT YOU CAN DO - ANIMATED CARDS */}
+      <WhatYouCanDo />
 
       {/* ── SECTION 3: STATS BAR ───────────────────────────── */}
       <section style={{

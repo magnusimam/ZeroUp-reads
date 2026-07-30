@@ -333,31 +333,31 @@ export default function LibraryPage() {
               <p className='text-slate-600 font-semibold text-lg'>No stories found</p>
               <p className='text-slate-400 text-sm mt-1'>Try different keywords or filters</p>
               <button
-              onClick={clearAll}
-              className='mt-4 text-teal-600 font-medium text-sm hover:underline'
+                onClick={clearAll}
+                className='mt-4 text-teal-600 font-medium text-sm hover:underline'
               >
                 Clear all filters
               </button>
-              </div>
+            </div>
           ) : (
             <>
-            <div className='grid grid-cols-2 sm:grid-cols-3 gap-4'>
-              {visibleBooks.map(book => (
-                <BookCard key={book.id} book={book} />
-              ))}
-            </div>
-              
+              <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4'>
+                {visibleBooks.map(book => (
+                  <BookCard key={book.id} book={book} />
+                ))}
+              </div>
+
               {hasMore && (
                 <div className='text-center mt-8'>
                   <button
-                  onClick={() => setVisibleCount(v => v + BATCH_SIZE)}
-                  className='px-8 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-medium text-sm hover:border-teal-500 hover:text-teal-600 transition-colors'
+                    onClick={() => setVisibleCount(v => v + BATCH_SIZE)}
+                    className='px-8 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 font-medium text-sm hover:border-teal-500 hover:text-teal-600 transition-colors'
                   >
-                    Load more ({filtered.length -visibleCount} remaining)
+                    Load more ({Math.max(0, filtered.length - visibleCount)} remaining)
                   </button>
                 </div>
               )}
-              </>
+            </>
           )}
           </div>
 

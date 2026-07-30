@@ -131,8 +131,8 @@ export default function Navbar({ transparent = false }) {
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
         height: 72,
-        background: isTransparent ? 'transparent' : 'white',
-        boxShadow: isTransparent ? 'none' : '0 2px 16px rgba(31,61,110,0.08)',
+        background: 'white',
+        boxShadow: '0 2px 16px rgba(31,61,110,0.08)',
         transition: 'background-color 300ms ease, box-shadow 300ms ease',
         animation: mounted ? 'slideDown 400ms ease' : 'none',
       }}>
@@ -141,16 +141,19 @@ export default function Navbar({ transparent = false }) {
           {/* Logo */}
           <Link to="/" style={{ textDecoration: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Logo box */}
               <div style={{
-                width: 40, height: 40, borderRadius: 10,
-                background: isTransparent ? 'white' : 'var(--navy)',
+                width: 42, height: 42, borderRadius: 10,
+                background: 'var(--navy)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                 transition: 'background 300ms ease',
               }}>
-                <span style={{ color: isTransparent ? 'var(--navy)' : 'var(--amber)', fontFamily: 'Nunito', fontWeight: 900, fontSize: 18 }}>ZR</span>
+                <span style={{ color: 'var(--amber)', fontFamily: 'Nunito', fontWeight: 900, fontSize: 16, letterSpacing:'-0.5px'}}>ZR</span>
               </div>
+              {/* Brand name */}
               <span style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: isTransparent ? 'white' : 'var(--navy)', transition: 'color 300ms ease' }}>
-                ZeroUp <span style={{ color: 'var(--amber)' }}>Reads</span>
+                ZeroUp <span style={{ color: isTransparent }}>Reads</span>
               </span>
             </div>
           </Link>
