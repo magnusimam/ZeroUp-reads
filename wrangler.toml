@@ -1,0 +1,7 @@
+# Cloudflare Pages project config (frontend). The Cloudflare Workers backend
+# (translation API, etc. — see docs/ENGINEERING_BLUEPRINT.md) is a separate
+# Worker with its own wrangler.toml once it exists; this one is just the
+# static-site build this repo produces.
+name = "zeroup-reads"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "build"

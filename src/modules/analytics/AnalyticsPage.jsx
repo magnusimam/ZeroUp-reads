@@ -1,9 +1,10 @@
 import React from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../auth/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { MOCK_STATS } from '../utils/mockData';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import * as statsService from './statsService';
+import { computeTotal, computePieGradient } from './pieChart';
 
 export default function AnalyticsPage() {
   const { user } = useAuth();
@@ -14,8 +15,8 @@ export default function AnalyticsPage() {
     return null;
   }
 
-  const maxLangReads = Math.max(...MOCK_STATS.byLanguage.map((l) => l.reads));
-  const totalLevels = MOCK_STATS.byLevel.reduce((sum, l) => sum + l.value, 0);
+  const stats = statsService.getStats();
+  const maxLangReads = Math.max(...stats.byLanguage.map((l) => l.reads));
 
   const levelColors = {
     Beginner: 'bg-teal-500',
@@ -29,15 +30,8 @@ export default function AnalyticsPage() {
     Advanced: '#a855f7',
   };
 
-  const pieSegments = MOCK_STATS.byLevel.reduce((acc, level) => {
-    const start = acc.previous;
-    const end = start + (level.value / totalLevels) * 100;
-    acc.segments.push(`${levelColorHex[level.level]} ${start}% ${end}%`);
-    acc.previous = end;
-    return acc;
-  }, { segments: [], previous: 0 });
-
-  const pieGradient = `conic-gradient(${pieSegments.segments.join(', ')})`;
+  const totalLevels = computeTotal(stats.byLevel);
+  const pieGradient = computePieGradient(stats.byLevel, levelColorHex);
 
   return (
     <div className='bg-slate-50 min-h-screen flex flex-col'>
@@ -51,19 +45,19 @@ export default function AnalyticsPage() {
 
         <div className='grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8'>
           <div className='bg-white rounded-2xl border border-slate-200 p-5'>
-            <p className='text-3xl font-bold text-slate-900'>{MOCK_STATS.totalUsers.toLocaleString()}</p>
+            <p className='text-3xl font-bold text-slate-900'>{stats.totalUsers.toLocaleString()}</p>
             <p className='text-xs text-slate-500 mt-1'>Total Users</p>
           </div>
           <div className='bg-white rounded-2xl border border-slate-200 p-5'>
-            <p className='text-3xl font-bold text-slate-900'>{MOCK_STATS.totalBooks}</p>
+            <p className='text-3xl font-bold text-slate-900'>{stats.totalBooks}</p>
             <p className='text-xs text-slate-500 mt-1'>Total Books</p>
           </div>
           <div className='bg-white rounded-2xl border border-slate-200 p-5'>
-            <p className='text-3xl font-bold text-teal-600'>{MOCK_STATS.booksReadThisWeek}</p>
+            <p className='text-3xl font-bold text-teal-600'>{stats.booksReadThisWeek}</p>
             <p className='text-xs text-slate-500 mt-1'>Read This Week</p>
           </div>
           <div className='bg-white rounded-2xl border border-slate-200 p-5'>
-            <p className='text-3xl font-bold text-amber-600'>{MOCK_STATS.completionsThisWeek}</p>
+            <p className='text-3xl font-bold text-amber-600'>{stats.completionsThisWeek}</p>
             <p className='text-xs text-slate-500 mt-1'>Completed This Week</p>
           </div>
         </div>
@@ -72,7 +66,7 @@ export default function AnalyticsPage() {
           <div className='bg-white rounded-2xl border border-slate-200 p-6'>
             <h2 className='font-bold text-slate-900 mb-5'>Reads by Language</h2>
             <div className='space-y-4'>
-              {MOCK_STATS.byLanguage.map((lang) => (
+              {stats.byLanguage.map((lang) => (
                 <div key={lang.language}>
                   <div className='flex justify-between text-sm mb-1'>
                     <span className='font-medium text-slate-700'>{lang.language}</span>
@@ -98,7 +92,7 @@ export default function AnalyticsPage() {
               />
 
               <div className='space-y-2'>
-                {MOCK_STATS.byLevel.map((level) => (
+                {stats.byLevel.map((level) => (
                   <div key={level.level} className='flex items-center gap-2'>
                     <span className={`w-3 h-3 rounded-full ${levelColors[level.level]}`} />
                     <span className='text-sm text-slate-700'>{level.level}</span>
@@ -117,7 +111,7 @@ export default function AnalyticsPage() {
             <h2 className='font-bold text-slate-900'>Most Read Books</h2>
           </div>
           <div className='divide-y divide-slate-100'>
-            {MOCK_STATS.topBooks.map((book, i) => (
+            {stats.topBooks.map((book, i) => (
               <div key={book.id} className='flex items-center gap-4 py-4 px-6'>
                 <span className='text-lg font-bold text-slate-300 w-6'>{i + 1}</span>
                 <div className='flex-1 min-w-0'>

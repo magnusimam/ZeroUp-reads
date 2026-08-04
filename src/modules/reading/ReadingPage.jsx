@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { MOCK_BOOKS, isBookmarked, toggleBookmark } from '../utils/mockData';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import { isBookmarked, toggleBookmark } from './bookmarksService';
+import * as booksService from '../books/booksService';
+import * as eventBus from '../../utils/eventBus';
+import { useToast } from '../../context/ToastContext';
 
 export default function ReadingPage() {
   const { bookId } = useParams();
+  const toast = useToast();
 
-  const book = MOCK_BOOKS.find((b) => b.id === bookId);
+  const book = booksService.getBook(bookId);
 
   const [pageIndex, setPageIndex] = useState(0);
   const [fontSize, setFontSize] = useState(18);
@@ -45,8 +49,8 @@ export default function ReadingPage() {
     if (!isLastPage) {
       setPageIndex(pageIndex + 1);
     } else {
-      // Reached the end - mark as completed(stub for now)
-      alert( 'You finished the book!');
+      eventBus.emit('book.completed', { id: book.id, title: book.title });
+      toast?.addToast(`You finished "${book.title}"!`, 'success');
     }
   }
 

@@ -9,11 +9,15 @@
   --sky-blue:   #2D6BE4;
   --green:      #3DBE8A;
   --coral:      #FF6B6B;
-  --gold:       #F5A623;
+  --gold:       #D4AF37;
   --cream:      #FFF8ED;
   --charcoal:   #2D2D2D;
   --light-gray: #F7F7F7;
   --white:      #FFFFFF;
+  --midnight:       #0B1526;
+  --midnight-light: #12213F;
+  --ink:            #0F2044;
+  --deep-navy:      #0F1629;
 
   --gradient-hero:        linear-gradient(135deg, #1F3D6E 0%, #2D6BE4 50%, #E8A020 100%);
   --gradient-reading:     linear-gradient(135deg, #FFF8ED 0%, #FFF3D6 50%, #FFE8A0 100%);
@@ -24,6 +28,8 @@
 
 /* ── BASE ────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
 
 body {
   font-family: 'Nunito Sans', sans-serif;
@@ -127,6 +133,11 @@ h4 { font-size: 22px; font-weight: 600; }
   50%       { opacity: 1;   transform: scale(1.05); }
 }
 
+@keyframes buttonGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(212,175,55,0.25); }
+  50%       { box-shadow: 0 0 20px rgba(212,175,55,0.55); }
+}
+
 /* ── UTILITY CLASSES ──────────────────────────────────────── */
 .animate-slide-down   { animation: slideDown 400ms ease forwards; }
 .animate-slide-up     { animation: slideUp 500ms ease forwards; }
@@ -176,6 +187,27 @@ h4 { font-size: 22px; font-weight: 600; }
 .book-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 12px 40px rgba(31,61,110,0.18);
+}
+
+/* Book Card — luxury dark variant (used on LibraryPage) */
+.book-card-luxury {
+  background: linear-gradient(180deg, var(--midnight-light) 0%, var(--midnight) 100%);
+  border: 1px solid rgba(212,175,55,0.30);
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+  transition: transform 300ms ease, box-shadow 300ms ease, border-color 300ms ease;
+  cursor: pointer;
+  overflow: hidden;
+}
+.book-card-luxury:hover {
+  transform: translateY(-6px) scale(1.03);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.4), 0 16px 40px rgba(0,0,0,0.55), 0 0 24px rgba(212,175,55,0.25);
+}
+
+/* Gold glow pulse — applied to primary CTAs on hover */
+.btn-glow-gold:hover {
+  animation: buttonGlow 1.4s ease-in-out infinite;
 }
 
 /* Language badge colours */

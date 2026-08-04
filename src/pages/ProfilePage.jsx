@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../modules/auth/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { MOCK_BOOKS, getBookmarks } from '../utils/mockData';
+import { getBookmarks } from '../modules/reading/bookmarksService';
+import * as booksService from '../modules/books/booksService';
+import * as userService from '../services/userService';
 
 export default function ProfilePage() {
   const { user, logout} = useAuth();
@@ -20,15 +22,17 @@ export default function ProfilePage() {
   if (!user) return null;
 
   const initial = user.name.charAt(0).toUpperCase();
-  
-  const bookmarkedBooks = MOCK_BOOKS.filter(b => getBookmarks().includes(b.id));
 
+  const books = booksService.getBooks();
+  const progress = userService.getProgress();
+  const bookmarkedBooks = books.filter(b => getBookmarks().includes(b.id));
+  const completedBooks = books.filter(b => progress.completedBookIds.includes(b.id));
 
-const stats = [
-  { label: "Books completed", value: 0},
-  { label: "Bookmarks", value: bookmarkedBooks.length },
-  { label: "Currently Reading", value:0 },
-];
+  const stats = [
+    { label: "Books completed", value: progress.booksCompleted },
+    { label: "Bookmarks", value: bookmarkedBooks.length },
+    { label: "Pages read", value: progress.pagesRead },
+  ];
 
 
   return (
@@ -104,14 +108,28 @@ const stats = [
           )}
           </div>
 
-        {/*--- continue reading---*/}
+        {/*--- completed books ---*/}
         <div className='mt-6'>
           <h2 className='text-lg font-bold text-slate-900 mb-3'>
-            Continue Reading
+            Completed Books
           </h2>
-          <div className='bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400'>
-            No reading history yet - start a book and it will appear here.
-          </div>
+          {completedBooks.length === 0 ? (
+            <div className='bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400'>
+              No reading history yet - finish a book and it will appear here.
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {completedBooks.map((book) => (
+                <Link
+                 key={book.id}
+                 to={`/read/${book.id}`}
+                   className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
+                  <p className="font-medium text-sm text-slate-900 truncate">{book.title}</p>
+                  <p className="text-xs text-slate-500 mt-1">{book.author}</p>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
 

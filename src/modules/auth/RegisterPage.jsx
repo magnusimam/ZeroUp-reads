@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { useAuth } from "../context/AuthContext";
-import { registerUser } from '../utils/auth';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import { useAuth } from "./AuthContext";
+import * as authService from './authService';
 
 const roles = [
   { id: 'Teacher', message: 'Great! We will suggest classroom-friendly books for you.' },
@@ -60,7 +60,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const result = registerUser(name, email, password, role, orgName);
+    const result = authService.register(name, email, password, role, orgName);
 
     if (result.success) {
       login(result.user);

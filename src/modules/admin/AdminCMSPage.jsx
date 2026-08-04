@@ -1,37 +1,37 @@
 import React from 'react';
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { useAuth } from '../context/AuthContext';
-import { MOCK_BOOKS } from '../utils/mockData';
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import { useAuth } from '../auth/AuthContext';
+import { BOOK_CATEGORIES, BOOK_LANGUAGES } from '../../utils/mockData';
+import useBookUpload from './useBookUpload';
+import { isFeatureEnabled } from '../../config/featureFlags';
 
-const LANGUAGES = ["English", "Swahili", "Yoruba", "Zulu", "French", "Hause", "igbo","Pidgin"];
 const LEVELS =["Beginner", "Intermediate", "Advance"];
-const CATEGORIES = [" Storybook", "Science", "History", "Mathematics", "Technology", "Health", "Arts", "Nature"];
+// Shared with mockData.js so a book uploaded here always matches a browsable
+// category/language elsewhere (the Library page's category chips, etc.).
+const CATEGORIES = BOOK_CATEGORIES;
+const LANGUAGES = BOOK_LANGUAGES;
 
 export default function AdminCMSPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [books, setBooks] = useState(MOCK_BOOKS);
-  const [showForm, setShowForm] = useState(false);
-  const [successMSG, setSuccessMSG] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [translateModal, setTranslateModal] = useState("");
-  const [translateLang, setTranslateLang] = useState("");
-  const [translating, setTranslating] = useState(false);
-
-  const [form, setForm] = useState({
-    title:"",
-    author:"",
-    language:"English",
-    level:"Beginner",
-    category:"Storybook",
-    content:"",
-  });
-
-  const[ formError, setFormError] = useState("")
+  const {
+    books,
+    showForm, setShowForm,
+    successMSG,
+    deleteConfirm, setDeleteConfirm,
+    translateModal, setTranslateModal,
+    translateLang, setTranslateLang,
+    translating,
+    form,
+    formError,
+    handleFormChange,
+    handleUpload,
+    handleDelete,
+    handleTranslate,
+  } = useBookUpload();
 
   //REDIRECT IF NOT ADMIN
   if (!user || user.role !== "admin"){
@@ -39,63 +39,7 @@ export default function AdminCMSPage() {
     return null;
   }
 
-  function handleFormChange(e) {
-    setForm({...form,  [e.target.name]: e.target.value});
-  }
-
-  function handleUpLoad(e) {
-    e.preventDefault();
-    setFormError("");
-
-    if (!form.title || !form.author || !form.content) {
-      setFormError("Please fill in title, author, and content.");
-      return;
-    }
-
-    const newBook = {
-      id: String(books.length + 1),
-      title: form.title,
-      author: form.author,
-      language: form.language,
-      level: form.level,
-      category: form.category,
-      totalPages: Math.ceil(form.content.split(" ").length / 300),
-      content: [form.content]
-    };
-    setBooks([newBook, ...books]);
-    setForm({ title: "", author: "", language:"English", level: "Beginner", category:"Storybook", content:""});
-    setShowForm(false);
-    setSuccessMSG("Book uploaded successfully!");
-    setTimeout(() => setSuccessMSG(""), 3000);
-  }
-
-  function handleDelete(id) {
-    setBooks(books.filter(b => b.id !== id));
-    setDeleteConfirm(null);
-    setSuccessMSG("Book deleted successfully!");
-    setTimeout(() => setSuccessMSG(""), 3000);
-  }
-
-  function handleTranslate() {
-    if (!translateLang) return;
-    setTranslating(true);
-  // stub - real Cloudflare Api goes here later
-  setTimeout(() => {
-    const original = books.find(b => b.id === translateModal);
-    const translated = {
-      ...original,
-      id: String(books.length + 1),
-      language: translateLang,
-      title: `${original.title} (${translateLang})`,
-    };
-    setBooks([...books, translated]);
-    setTranslating(false);
-    setTranslateModal(null);
-    setTranslateLang("");
-    setSuccessMSG(`Book translated to ${translateLang} and added to library! `);
-    setTimeout(() => setSuccessMSG(""), 4000);
-  }, 2000);
-  }
+  const translationEnabled = isFeatureEnabled('bookTranslation');
 
 return (
   <div className='bg-slate-50 min-h-screen flex flex-col'>
@@ -136,7 +80,7 @@ return (
             {formError}
             </div>
         )}
-        <form onSubmit={handleUpLoad} className='space-y-4'>
+        <form onSubmit={handleUpload} className='space-y-4'>
           <div className='grid sm:grid-cols-2 gap-4'>
             <div>
              <label className='block text-sm font-medium text-slate-700 mb-1'>
@@ -270,12 +214,14 @@ return (
               >
                 Delete
               </button>
-              <button
-              onClick={() => setTranslateModal(book.id)}
-              className='flex-1 py-1.5 rounded-lg border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50'
-              >
-                Translate
-              </button>
+              {translationEnabled && (
+                <button
+                onClick={() => setTranslateModal(book.id)}
+                className='flex-1 py-1.5 rounded-lg border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50'
+                >
+                  Translate
+                </button>
+              )}
               </div>
               </div>
         ))}
@@ -314,7 +260,7 @@ return (
 
                 <td className='px-4 py-4'>
                   <span className='text-xs bg-teal-100 text-teal-700 px-2 py-1 rounded-full font-medium'>
-                    {book.category || 'Storybook'}
+                    {book.category || BOOK_CATEGORIES[0]}
                   </span>
                 </td>
                 <td className='px-4 py-4'>
@@ -325,12 +271,14 @@ return (
                     >
                       Delete
                     </button>
-                    <button
-                    onClick={() => setTranslateModal(book.id)}
-                    className='px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors'
-                    >
-                      Translate
-                    </button>
+                    {translationEnabled && (
+                      <button
+                      onClick={() => setTranslateModal(book.id)}
+                      className='px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50 transition-colors'
+                      >
+                        Translate
+                      </button>
+                    )}
                   </div>
                 </td>
                  </tr>
@@ -369,7 +317,7 @@ return (
   )}
 
   {/* TRANSLATE MODAL */}
-  {translateModal && (
+  {translationEnabled && translateModal && (
     <div className='fixed inset-0 z-50 flex items-center justify-center px-6'>
       <div className='absolute inset-0 bg-black/40' onClick={() => !translating && setTranslateModal(null)} />
       <div className='relative bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl'>

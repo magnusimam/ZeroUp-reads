@@ -9,14 +9,25 @@ module.exports = {
         "sky-blue": "#2D6BE4",
         green: "#3DBE8A",
         coral: "#FF6B6B",
-        gold: "#F5A623",
-        cream: "#FFF8ED",
+        gold: "#D4AF37",
+        cream: "#FFFBF0",
         charcoal: "#2D2D2D",
+        // Warm dark accent for headings/labels that used to render as gold
+        // text on a dark background — gold-on-cream fails contrast (~2:1),
+        // so readable heading/label text uses this instead. Gold itself stays
+        // reserved for buttons, borders, badges, and other accent fills.
+        cocoa: "#6B4423",
         "light-gray": "#F7F7F7",
+        midnight: "#0B1526",
+        "midnight-light": "#12213F",
+        ink: "#0F2044",
+        "deep-navy": "#0F1629",
       },
       fontFamily: {
         nunito: ["Nunito", "sans-serif"],
         "nunito-sans": ["Nunito Sans", "sans-serif"],
+        cinzel: ["Cinzel", "serif"],
+        playfair: ["Playfair Display", "serif"],
       },
       borderRadius: {
         card: "16px",

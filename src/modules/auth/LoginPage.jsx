@@ -1,10 +1,10 @@
 import React from 'react';
 import { useState } from 'react';
-import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
-import { useAuth } from "../context/AuthContext";
+import Navbar from '../../components/Navbar';
+import Footer from '../../components/Footer';
+import { useAuth } from "./AuthContext";
 import { Link, useNavigate } from 'react-router-dom';
-import { loginUser } from '../utils/auth';
+import * as authService from './authService';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,13 +25,13 @@ export default function LoginPage() {
       return;
     }
 
-    const result = loginUser(email, password);
+    const result = authService.login(email, password);
 
     if (result.success)  {
-      login({ name: email.split("@")[0], email, role:"reader"});
+      login(result.user);
       navigate("/library");
     } else {
-      setError("Login failed.  please try again");
+      setError(result.message || "Login failed.  please try again");
     }
   }
     
