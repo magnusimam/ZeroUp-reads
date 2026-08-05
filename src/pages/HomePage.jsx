@@ -5,14 +5,12 @@ import Footer from '../components/Footer';
 import { useAuth } from '../modules/auth/AuthContext';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import * as booksService from '../modules/books/booksService';
-import FloatingShapes from '../components/home/FloatingShapes';
 import StatItem from '../components/home/StatItem';
 import BookCarousel from '../components/home/BookCarousel';
 import LanguageCard from '../components/home/LanguageCard';
 import FeatureCard from '../components/home/FeatureCard';
 import HowStep from '../components/home/HowStep';
 import ContinueReadingBanner from '../components/home/ContinueReadingBanner';
-import AnnouncementSlider from '../components/home/AnnouncementSlider';
 import WhatYouCanDo from '../components/home/WhatYouCanDo';
 
 export default function HomePage() {
@@ -20,255 +18,147 @@ export default function HomePage() {
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [howRef, howVisible] = useScrollReveal(0.1);
   const [books] = useState(() => booksService.getBooks());
+  const [activeSlide, setActiveSlide] = useState(0);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroLoaded(true), 50);
     return () => clearTimeout(t);
   }, []);
 
-  /* ── HERO SECTION ──────────────────────────────────────── */
-  const languages = [
-    { flag: 'https://flagcdn.com/w40/gb.png', name: 'English' },
-    { flag: 'https://flagcdn.com/w40/ke.png', name: 'Swahili' },
-    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Yoruba' },
-    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Igbo' },
-    { flag: 'https://flagcdn.com/w40/ng.png', name: 'Pidgin' },
-    { flag: 'https://flagcdn.com/w40/za.png', name: 'Zulu' },
-    { flag: 'https://flagcdn.com/w40/fr.png', name: 'French' },
-    { flag: 'https://flagcdn.com/w40/sn.png', name: 'Hausa' },
-
-    
+  const heroStats = [
+    { icon: '💬', value: '500+',       label: 'Languages' },
+    { icon: '📚', value: 'Thousands',  label: 'of Stories' },
+    { icon: '🌍', value: 'Across',     label: 'Africa' },
+    { icon: '🤖', value: 'AI',         label: 'Powered' },
+    { icon: '🎁', value: 'Free',       label: "Children's Books" },
   ];
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
-      {/* Navbar — transparent over hero */}
-      <Navbar transparent />
+      <div className="hero2-viewport">
+      {/* Navbar */}
+      <Navbar />
 
-      {/* ANNOUNCEMENT SLIDER */}
-      <AnnouncementSlider />
-
-
-  
       {/* ── SECTION 2: HERO ────────────────────────────────── */}
-      <section style={{
-        background: 'var(--gradient-hero)',
-        minHeight: '90vh',
-        position: 'relative',
-        display: 'flex', alignItems: 'center',
-        overflow: 'hidden',
-      }}>
-        <FloatingShapes />
-
-        <div className="container" style={{
-          position: 'relative', zIndex: 2,
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 64, alignItems: 'center',
-          padding: '80px 64px',
+      <section className="hero2-section" style={{ background: 'var(--hero-cream)', padding: 0 }}>
+        <div className="hero2-stage" style={{
+          position: 'relative',
+          aspectRatio: '21 / 9',
+          backgroundImage: 'url(/images/hero-slide-1.png)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'left 55%',
+          backgroundRepeat: 'no-repeat',
+          backgroundColor: 'var(--hero-cream)',
+          overflow: 'hidden',
         }}>
-          {/* Left column */}
-          <div>
-            {/* Eyebrow badge */}
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: 'var(--amber)', color: 'var(--navy)',
-              fontFamily: 'Nunito', fontWeight: 700, fontSize: 14,
-              borderRadius: 99, padding: '6px 14px', marginBottom: 24,
+          {/* Legibility scrim — guarantees contrast for the text regardless of what's behind it in the illustration */}
+          <div aria-hidden="true" style={{
+            position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+            background: 'linear-gradient(100deg, rgba(255,251,240,0.92) 0%, rgba(255,251,240,0.82) 28%, rgba(255,251,240,0.35) 48%, rgba(255,251,240,0) 62%)',
+          }} />
+          <div className="container hero2-row" style={{
+            position: 'relative', zIndex: 2,
+            display: 'flex', alignItems: 'flex-start',
+            height: '100%',
+            paddingTop: 'clamp(28px, 9vh, 88px)',
+          }}>
+            <div className="hero2-text" style={{
+              maxWidth: 480,
               opacity: heroLoaded ? 1 : 0,
-              transform: heroLoaded ? 'none' : 'translateY(10px)',
-              transition: 'all 400ms ease',
-            }}>📚 Free for all children</div>
-
-            {/* H1 */}
-            <h1 style={{
-              fontFamily: 'Nunito', fontWeight: 900, color: 'white',
-              fontSize: 'clamp(36px, 4vw, 52px)',
-              lineHeight: 1.15, margin: '0 0 20px',
-              opacity: heroLoaded ? 1 : 0,
-              transform: heroLoaded ? 'none' : 'translateY(20px)',
-              transition: 'all 500ms ease 100ms',
+              transform: heroLoaded ? 'none' : 'translateY(16px)',
+              transition: 'all 500ms ease',
             }}>
-              Read stories in{' '}
-              <span style={{ color: 'var(--amber)' }}>your</span>{' '}
-              language
-            </h1>
+              <h1 style={{
+                fontFamily: 'Nunito', fontWeight: 900, color: 'var(--hero-ink)',
+                fontSize: 'clamp(28px, 3.6vw, 42px)', lineHeight: 1.22, margin: '0 0 18px',
+              }}>
+                Every Child Deserves a Story in Their Own Language.
+              </h1>
+              <p style={{
+                fontFamily: 'Nunito Sans', fontSize: 17, color: 'var(--hero-gray)',
+                lineHeight: 1.6, margin: '0 0 28px', maxWidth: 420,
+              }}>
+                Discover beautiful books written in African languages and made for every young reader.
+              </p>
+              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
+                <Link to="/library" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'var(--hero-green)', color: 'white',
+                  fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
+                  borderRadius: 999, padding: '0 26px', height: 48,
+                  textDecoration: 'none', border: '2px solid var(--hero-green)',
+                  transition: 'transform 200ms ease',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >📖 Start Reading</Link>
 
-            {/* Subheading */}
-            <p style={{
-              color: 'rgba(255,255,255,0.9)', fontSize: 20, fontWeight: 400,
-              maxWidth: 480, margin: '0 0 28px', lineHeight: 1.65,
-              fontFamily: 'Nunito Sans',
-              opacity: heroLoaded ? 1 : 0,
-              transform: heroLoaded ? 'none' : 'translateY(20px)',
-              transition: 'all 500ms ease 200ms',
-            }}>
-              Explore hundreds of African-language books. Read anywhere — even without internet.
-            </p>
-
-            {/* Language flags row */}
-            <div style={{
-              display: 'flex', gap: 20, marginBottom: 36, flexWrap: 'wrap',
-              opacity: heroLoaded ? 1 : 0,
-              transition: 'opacity 400ms ease 300ms',
-            }}>
-              {languages.map((lang, i) => (
-                <div key={lang.name} style={{
-                  display:'flex',
-                  flexDirection: 'column',
-                  alignItems:'center',
-                  gap:4,
-                }}>
-                  <img
-                  src={lang.flag}
-                  alt={lang.name}
-                  style={{
-                    width: 32,
-                    height: 22,
-                    borderRadius: 3,
-                    objectFit: 'cover'
-                  }}
-                  />
-                  <span style={{ fontSize: 11, color: 'white'}}>
-                    {lang.name}
-                  </span>
-                  </div>
-              ))}
-            </div>
-
-            {/* CTA buttons */}
-            <div style={{
-              display: 'flex', gap: 16, flexWrap: 'wrap',
-              opacity: heroLoaded ? 1 : 0,
-              transform: heroLoaded ? 'none' : 'translateY(20px)',
-              transition: 'all 500ms ease 500ms',
-            }}>
-              <Link to="/library" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'white', color: 'var(--navy)',
-                fontFamily: 'Nunito', fontWeight: 700, fontSize: 18,
-                borderRadius: 12, padding: '0 28px', height: 52,
-                textDecoration: 'none', border: '2px solid white',
-                transition: 'all 200ms ease',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--amber)'; e.currentTarget.style.transform = 'scale(1.03)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.transform = 'scale(1)'; }}
-              >Start Reading →</Link>
-
-              <Link to="/register" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 8,
-                background: 'transparent', color: 'white',
-                fontFamily: 'Nunito', fontWeight: 700, fontSize: 18,
-                borderRadius: 12, padding: '0 28px', height: 52,
-                textDecoration: 'none', border: '2px solid white',
-                transition: 'all 200ms ease',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = 'var(--navy)'; e.currentTarget.style.transform = 'scale(1.03)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'white'; e.currentTarget.style.transform = 'scale(1)'; }}
-              >Create Free Account</Link>
+                <Link to="/library" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 8,
+                  background: 'white', color: 'var(--hero-orange)',
+                  fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
+                  borderRadius: 999, padding: '0 24px', height: 48,
+                  textDecoration: 'none', border: '2px solid var(--hero-orange)',
+                  transition: 'transform 200ms ease',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >🔍 Explore Library</Link>
+              </div>
             </div>
           </div>
 
-          {/* Right column — hero illustration */}
-          <div style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: heroLoaded ? 1 : 0,
-            transition: 'opacity 600ms ease 200ms',
-          }}>
-            <div style={{ animation: 'float 4s ease-in-out infinite', textAlign: 'center' }}>
-              {/* Illustrated child reading — SVG */}
-              <svg viewBox="0 0 320 320" width="340" height="340" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                {/* Glow circle */}
-                <circle cx="160" cy="180" r="130" fill="rgba(255,255,255,0.07)" />
-                <circle cx="160" cy="180" r="100" fill="rgba(255,255,255,0.06)" />
+          {/* Slider arrows */}
+          <button
+            aria-label="Previous slide"
+            onClick={() => setActiveSlide(s => (s + 2) % 3)}
+            className="hero2-arrow hero2-arrow-left"
+          >‹</button>
+          <button
+            aria-label="Next slide"
+            onClick={() => setActiveSlide(s => (s + 1) % 3)}
+            className="hero2-arrow hero2-arrow-right"
+          >›</button>
 
-                {/* Floating stars */}
-                <text x="60"  y="80"  fontSize="22" fill="var(--amber)" opacity="0.9">✦</text>
-                <text x="240" y="100" fontSize="16" fill="white"         opacity="0.7">✦</text>
-                <text x="50"  y="200" fontSize="14" fill="var(--amber)" opacity="0.6">★</text>
-                <text x="260" y="240" fontSize="18" fill="white"         opacity="0.5">✦</text>
-                <text x="150" y="50"  fontSize="12" fill="var(--amber)" opacity="0.8">✦</text>
-
-                {/* Body */}
-                <ellipse cx="160" cy="270" rx="70" ry="18" fill="rgba(0,0,0,0.15)" />
-
-                {/* Legs (cross-legged) */}
-                <ellipse cx="130" cy="248" rx="38" ry="18" fill="#8B5C3A" transform="rotate(-15 130 248)" />
-                <ellipse cx="192" cy="248" rx="38" ry="18" fill="#7A4E31" transform="rotate(15 192 248)" />
-
-                {/* Torso */}
-                <rect x="128" y="165" width="64" height="72" rx="20" fill="#E8A020" />
-
-                {/* Arms */}
-                <rect x="100" y="175" width="38" height="22" rx="11" fill="#8B5C3A" transform="rotate(15 100 175)" />
-                <rect x="184" y="175" width="38" height="22" rx="11" fill="#7A4E31" transform="rotate(-15 184 175)" />
-
-                {/* Glowing book */}
-                <rect x="112" y="200" width="96" height="68" rx="10" fill="white" opacity="0.95" />
-                <rect x="112" y="200" width="96" height="68" rx="10" fill="none" stroke="var(--amber)" strokeWidth="2.5" />
-                {/* Book glow */}
-                <rect x="112" y="200" width="96" height="68" rx="10" fill="var(--amber)" opacity="0.12" />
-                {/* Book pages */}
-                <line x1="160" y1="200" x2="160" y2="268" stroke="#E0E0E0" strokeWidth="1.5" />
-                {/* Text lines */}
-                <rect x="120" y="215" width="32" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="120" y="225" width="28" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="120" y="235" width="32" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="120" y="245" width="24" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="168" y="215" width="32" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="168" y="225" width="28" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="168" y="235" width="32" height="4" rx="2" fill="#D0D0D0" />
-                <rect x="168" y="245" width="24" height="4" rx="2" fill="#D0D0D0" />
-
-                {/* Head */}
-                <circle cx="160" cy="148" r="38" fill="#8B5C3A" />
-                {/* Hair */}
-                <ellipse cx="160" cy="118" rx="38" ry="18" fill="#3D2010" />
-                <circle cx="135" cy="125" r="12" fill="#3D2010" />
-                <circle cx="185" cy="125" r="12" fill="#3D2010" />
-                {/* Hair puffs */}
-                <circle cx="143" cy="112" r="10" fill="#3D2010" />
-                <circle cx="160" cy="108" r="10" fill="#3D2010" />
-                <circle cx="177" cy="112" r="10" fill="#3D2010" />
-
-                {/* Face */}
-                {/* Eyes — happy/reading */}
-                <ellipse cx="149" cy="148" rx="6" ry="7" fill="#2D1A08" />
-                <ellipse cx="171" cy="148" rx="6" ry="7" fill="#2D1A08" />
-                {/* Eye shine */}
-                <circle cx="151" cy="145" r="2" fill="white" />
-                <circle cx="173" cy="145" r="2" fill="white" />
-                {/* Smile */}
-                <path d="M 148 162 Q 160 172 172 162" stroke="#2D1A08" strokeWidth="2.5" fill="none" strokeLinecap="round" />
-                {/* Cheek blush */}
-                <ellipse cx="140" cy="161" rx="8" ry="5" fill="rgba(255,120,80,0.3)" />
-                <ellipse cx="180" cy="161" rx="8" ry="5" fill="rgba(255,120,80,0.3)" />
-
-                {/* Floating letters around child */}
-                <text x="72"  y="155" fontSize="20" fill="var(--amber)" opacity="0.8" transform="rotate(-15 72 155)">A</text>
-                <text x="234" y="155" fontSize="20" fill="white"         opacity="0.7" transform="rotate(10 234 155)">b</text>
-                <text x="88"  y="120" fontSize="16" fill="white"         opacity="0.6" transform="rotate(-8 88 120)">C</text>
-                <text x="220" y="118" fontSize="16" fill="var(--amber)" opacity="0.7" transform="rotate(12 220 118)">d</text>
-              </svg>
-            </div>
+          {/* Slide dots */}
+          <div className="hero2-dots">
+            {[0, 1, 2].map(i => (
+              <span
+                key={i}
+                className={i === activeSlide ? 'active' : ''}
+                onClick={() => setActiveSlide(i)}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Scroll arrow */}
-        <div style={{
-          position: 'absolute', bottom: 28, left: '50%', transform: 'translateX(-50%)',
-          color: 'var(--amber)', fontSize: 24,
-          animation: 'bounceDown 1.2s ease-in-out infinite',
-          zIndex: 2,
-        }}>↓</div>
-
-        {/* Hero → white curve transition */}
-        <div style={{
-          position: 'absolute', bottom: -1, left: 0, right: 0,
-          height: 60, background: 'var(--amber)', /* Amber matches stat bar */
-          clipPath: 'ellipse(55% 100% at 50% 100%)',
-        }} />
+        {/* Floating stat bar — overlaps the hero's bottom edge */}
+        <div className="container hero2-statbar-wrap" style={{ position: 'relative' }}>
+          <div className="hero2-statbar" style={{
+            background: 'white', borderRadius: 24,
+            boxShadow: '0 16px 48px rgba(58,26,16,0.15)',
+            margin: '-16px auto 0', position: 'relative', zIndex: 3,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-around',
+            padding: '22px 32px', flexWrap: 'wrap', gap: 16, maxWidth: 1080,
+            opacity: heroLoaded ? 1 : 0,
+            transition: 'opacity 500ms ease 200ms',
+          }}>
+            {heroStats.map((stat, i) => (
+              <React.Fragment key={stat.label}>
+                {i > 0 && <div className="hidden-mobile" style={{ width: 1, height: 36, background: '#EEE7DA' }} />}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 28, lineHeight: 1 }} aria-hidden="true">{stat.icon}</span>
+                  <div>
+                    <div style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 17, color: 'var(--hero-ink)' }}>{stat.value}</div>
+                    <div style={{ fontFamily: 'Nunito Sans', fontSize: 13, color: 'var(--hero-gray)' }}>{stat.label}</div>
+                  </div>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
       </section>
+      </div>
 
       {/* wHAT YOU CAN DO - ANIMATED CARDS */}
       <WhatYouCanDo />
@@ -420,11 +310,53 @@ export default function HomePage() {
       {/* ── SECTION 9: FOOTER ────────────────────────────────── */}
       <Footer />
 
-      {/* Mobile responsive overrides */}
+      {/* Hero slider chrome + responsive overrides */}
       <style>{`
+        .hero2-row { padding-left: clamp(76px, 9%, 130px); padding-right: 24px; }
+        .hero2-arrow {
+          position: absolute; top: 50%; transform: translateY(-50%);
+          width: 44px; height: 44px; border-radius: 50%;
+          background: rgba(255,255,255,0.92); border: none; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          font-size: 20px; color: var(--hero-ink);
+          box-shadow: 0 6px 20px rgba(58,26,16,0.18);
+          z-index: 4; transition: transform 200ms ease;
+        }
+        .hero2-arrow:hover { transform: translateY(-50%) scale(1.08); }
+        .hero2-arrow-left { left: clamp(16px, 4%, 48px); }
+        .hero2-arrow-right { right: clamp(16px, 4%, 48px); }
+        .hero2-dots {
+          position: absolute; bottom: 56px; left: 50%; transform: translateX(-50%);
+          display: flex; gap: 8px; z-index: 4;
+        }
+        .hero2-dots span {
+          width: 9px; height: 9px; border-radius: 50%;
+          background: rgba(255,255,255,0.6); cursor: pointer;
+          transition: all 200ms ease;
+        }
+        .hero2-dots span.active { background: white; transform: scale(1.2); }
+
+        /* Laptop+: fit header + hero + stat bar entirely within the viewport, no scroll */
+        @media (min-width: 1024px) {
+          .hero2-viewport { height: 100vh; display: flex; flex-direction: column; }
+          .hero2-section { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+          .hero2-stage {
+            flex: 1 1 auto !important; min-height: 0 !important;
+            aspect-ratio: unset !important;
+            background-size: cover !important;
+            background-position: left 55% !important;
+          }
+          .hero2-statbar-wrap { flex: 0 0 auto; }
+        }
+
         @media (max-width: 767px) {
-          .hero-grid { grid-template-columns: 1fr !important; text-align: center; }
-          .hero-right { display: none !important; }
+          .hero2-row { padding: 32px 24px; }
+          .hero2-text { max-width: 100% !important; text-align: center; }
+          .hero2-text > div { justify-content: center; }
+          .hero2-arrow { width: 36px; height: 36px; font-size: 16px; }
+          .hero2-dots { bottom: 60px; }
+          .hero2-statbar { justify-content: center !important; padding: 18px !important; }
+          .preview-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>
