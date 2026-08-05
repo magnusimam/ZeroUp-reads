@@ -24,6 +24,14 @@
   --gradient-achievement: linear-gradient(135deg, #3DBE8A 0%, #2D6BE4 100%);
   --gradient-adventure:   linear-gradient(135deg, #E8A020 0%, #FF6B6B 100%);
   --gradient-admin:       linear-gradient(135deg, #1F3D6E 0%, #0D2240 100%);
+
+  /* Header/hero palette — matches the ZeroUp Reads storybook hero design */
+  --hero-cream:  #FFFBF0;
+  --hero-green:  #2F7A26;
+  --hero-orange: #E5533D;
+  --hero-ink:    #3A1A10;
+  --hero-gray:   #6F6154;
+  --hero-border: #E8DFC8;
 }
 
 /* ── BASE ────────────────────────────────────────────────── */
