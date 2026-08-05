@@ -1,24 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../modules/auth/AuthContext';
-
-// ZR Logo icon SVG
-function ZRLogo() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }} >
-      <div style={{
-        width: 40, height: 40, borderRadius: 10,
-        background: 'var(--navy)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        flexShrink: 0,
-      }}>
-        <span style={{ color: 'var(--amber)', fontFamily: 'Nunito', fontWeight: 900, fontSize: 18, letterSpacing: '-1px' }}>ZR</span>
-      </div>
-      <span style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', letterSpacing: '-0.3px' }}>
-        ZeroUp <span style={{ color: 'var(--amber)' }}>Reads</span>
-      </span>
-    </div>
-  );
-}
+import { PRIMARY_NAV_LINKS, EXPLORE_MEGA_MENU } from '../config/navigation';
+import ExploreMegaMenu from './ExploreMegaMenu';
 
 function AvatarDropdown({ user, logout }) {
   const [open, setOpen] = useState(false);
@@ -121,10 +105,7 @@ export default function Navbar({ transparent = false }) {
 
   const isTransparent = transparent && !scrolled;
 
-  const navLinks = [
-    { to: '/library', label: 'Library' },
-    { to: '/about',   label: 'About'   },
-  ];
+  const navLinks = PRIMARY_NAV_LINKS;
 
   return (
     <>
@@ -161,16 +142,20 @@ export default function Navbar({ transparent = false }) {
           {/* Centre links — desktop */}
           <div style={{ display: 'flex', gap: 32, alignItems: 'center' }} className="hidden-mobile">
             {navLinks.map(link => (
-              <Link key={link.to} to={link.to} style={{
-                fontFamily: 'Nunito', fontWeight: 600, fontSize: 18,
-                color: isTransparent ? 'white' : 'var(--charcoal)',
-                textDecoration: 'none', padding: '4px 0',
-                borderBottom: '2px solid transparent',
-                transition: 'color 200ms ease, border-color 200ms ease',
-              }}
-                onMouseEnter={e => { e.currentTarget.style.color = 'var(--amber)'; e.currentTarget.style.borderBottomColor = 'var(--amber)'; }}
-                onMouseLeave={e => { e.currentTarget.style.color = isTransparent ? 'white' : 'var(--charcoal)'; e.currentTarget.style.borderBottomColor = 'transparent'; }}
-              >{link.label}</Link>
+              link.mega ? (
+                <ExploreMegaMenu key={link.key} light={isTransparent} />
+              ) : (
+                <Link key={link.key} to={link.to} style={{
+                  fontFamily: 'Nunito', fontWeight: 600, fontSize: 18,
+                  color: isTransparent ? 'white' : 'var(--charcoal)',
+                  textDecoration: 'none', padding: '4px 0',
+                  borderBottom: '2px solid transparent',
+                  transition: 'color 200ms ease, border-color 200ms ease',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--amber)'; e.currentTarget.style.borderBottomColor = 'var(--amber)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.color = isTransparent ? 'white' : 'var(--charcoal)'; e.currentTarget.style.borderBottomColor = 'transparent'; }}
+                >{link.label}</Link>
+              )
             ))}
           </div>
 
@@ -242,13 +227,26 @@ export default function Navbar({ transparent = false }) {
           animation: 'fadeIn 200ms ease',
         }}>
           {navLinks.map(link => (
-            <Link key={link.to} to={link.to} style={{
-              fontFamily: 'Nunito', fontWeight: 700, fontSize: 28, color: 'white',
-              textDecoration: 'none', padding: 8,
-            }}
-              onMouseEnter={e => e.currentTarget.style.color = 'var(--amber)'}
-              onMouseLeave={e => e.currentTarget.style.color = 'white'}
-            >{link.label}</Link>
+            <React.Fragment key={link.key}>
+              <Link to={link.to} style={{
+                fontFamily: 'Nunito', fontWeight: 700, fontSize: 28, color: 'white',
+                textDecoration: 'none', padding: 8,
+              }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--amber)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'white'}
+              >{link.label}</Link>
+              {link.mega && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', maxWidth: 320, margin: '-8px 0 8px' }}>
+                  {EXPLORE_MEGA_MENU.map((item) => (
+                    <Link key={item.label} to={item.to} style={{
+                      fontFamily: 'Nunito Sans', fontWeight: 700, fontSize: 13, color: 'rgba(255,255,255,0.75)',
+                      textDecoration: 'none', background: 'rgba(255,255,255,0.1)', borderRadius: 99,
+                      padding: '6px 12px',
+                    }}>{item.icon} {item.label}</Link>
+                  ))}
+                </div>
+              )}
+            </React.Fragment>
           ))}
           <div style={{ height: 1, width: 60, background: 'rgba(255,255,255,0.2)' }} />
           {user ? (

@@ -1,17 +1,16 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
 import { useAuth } from '../auth/AuthContext';
-import { BOOK_CATEGORIES, BOOK_LANGUAGES } from '../../utils/mockData';
+import { BOOK_CATEGORIES, BOOK_LANGUAGES, BOOK_LEVELS } from '../../utils/mockData';
 import useBookUpload from './useBookUpload';
 import { isFeatureEnabled } from '../../config/featureFlags';
 
-const LEVELS =["Beginner", "Intermediate", "Advance"];
 // Shared with mockData.js so a book uploaded here always matches a browsable
-// category/language elsewhere (the Library page's category chips, etc.).
+// category/language/level elsewhere (the Library page's chips and filters, etc.).
 const CATEGORIES = BOOK_CATEGORIES;
 const LANGUAGES = BOOK_LANGUAGES;
+const LEVELS = BOOK_LEVELS;
 
 export default function AdminCMSPage() {
   const { user } = useAuth();

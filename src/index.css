@@ -138,6 +138,95 @@ h4 { font-size: 22px; font-weight: 600; }
   50%       { box-shadow: 0 0 20px rgba(212,175,55,0.55); }
 }
 
+/* ── AMBIENT / DECORATIVE MOTION ───────────────────────────
+   Shared by AmbientDecor.jsx and any homepage section that wants a bit of
+   "magic dust" — kept as generic named keyframes (not tied to one section)
+   so future sections can reuse them instead of inventing new ones. */
+@keyframes chipGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+  50%       { box-shadow: 0 0 16px rgba(255,255,255,0.55); }
+}
+
+@keyframes leafDrift {
+  0%   { transform: translate(0, 0) rotate(0deg); }
+  50%  { transform: translate(10px, -18px) rotate(12deg); }
+  100% { transform: translate(0, 0) rotate(0deg); }
+}
+
+@keyframes birdFly {
+  0%   { transform: translate(0, 0) scaleX(1); }
+  48%  { transform: translate(18px, -14px) scaleX(1); }
+  50%  { transform: translate(20px, -14px) scaleX(-1); }
+  98%  { transform: translate(0, 0) scaleX(-1); }
+  100% { transform: translate(0, 0) scaleX(1); }
+}
+
+@keyframes paperPlaneFly {
+  0%   { transform: translate(0, 0) rotate(-6deg); }
+  50%  { transform: translate(24px, -22px) rotate(4deg); }
+  100% { transform: translate(0, 0) rotate(-6deg); }
+}
+
+@keyframes twinkleStar {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%       { opacity: 1;   transform: scale(1.15); }
+}
+
+@keyframes cloudDrift {
+  0%   { transform: translateX(0); }
+  50%  { transform: translateX(22px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes fireflyGlow {
+  0%, 100% { opacity: 0.25; filter: blur(0.5px); }
+  50%       { opacity: 1;   filter: blur(0px); }
+}
+
+@keyframes butterflyFlutter {
+  0%, 100% { transform: translateY(0) rotate(-4deg); }
+  50%       { transform: translateY(-14px) rotate(4deg); }
+}
+
+@keyframes sunRayPulse {
+  0%, 100% { opacity: 0.15; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes pageFlip {
+  0%   { transform: rotateY(0deg); }
+  100% { transform: rotateY(-25deg); }
+}
+
+.ambient-decor-item { pointer-events: none; will-change: transform, opacity; }
+
+/* Generic "card lifts on hover" treatment for homepage cards that don't
+   already have their own JS hover handlers (highlight cards, CTA blocks). */
+.home-card-lift {
+  transition: transform 250ms ease, box-shadow 250ms ease;
+}
+.home-card-lift:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 36px rgba(31,61,110,0.16);
+}
+
+/* Book-shelf card — gives BookCard's default (non-luxury, non-portrait)
+   cover a 3D spine + gold edge so homepage book strips read as "books on a
+   shelf" rather than flat rectangles. */
+.shelf-book {
+  perspective: 800px;
+}
+.shelf-book .shelf-book-cover {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 300ms ease, box-shadow 300ms ease;
+  box-shadow: -6px 4px 14px rgba(31,61,110,0.22), inset 3px 0 0 rgba(212,175,55,0.7);
+}
+.shelf-book:hover .shelf-book-cover {
+  transform: rotateY(-8deg) translateY(-4px);
+  box-shadow: -10px 8px 22px rgba(31,61,110,0.3), inset 3px 0 0 rgba(212,175,55,0.9);
+}
+
 /* ── UTILITY CLASSES ──────────────────────────────────────── */
 .animate-slide-down   { animation: slideDown 400ms ease forwards; }
 .animate-slide-up     { animation: slideUp 500ms ease forwards; }

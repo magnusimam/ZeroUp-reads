@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { SORT_OPTIONS, sortBooks } from './libraryConfig';
-
-const LEVEL_ORDER = ['Beginner', 'Intermediate', 'Advanced'];
+import { BOOK_LEVELS } from '../../utils/mockData';
 
 // Search + category + language + level + sort logic extracted out of LibraryPage's
 // JSX so the page component stays presentational (Separation of Concerns).
@@ -17,7 +16,7 @@ export default function useLibraryFilters(books) {
     [books]
   );
   const levelOptions = useMemo(
-    () => LEVEL_ORDER.filter(l => books.some(b => b.level === l)),
+    () => BOOK_LEVELS.filter(l => books.some(b => b.level === l)),
     [books]
   );
 

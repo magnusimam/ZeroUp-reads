@@ -42,6 +42,22 @@ export default function LibraryPage() {
     }
   }, [typeFilter]);
 
+  // Hands off the homepage's "Find a story" card (search/language/level/topic
+  // selects, popular-language chips, reading-level cards) into these same
+  // filters instead of that card re-implementing its own filter logic —
+  // one filter implementation, entered from two places.
+  useEffect(() => {
+    const qSearch = searchParams.get('search');
+    const qLanguage = searchParams.get('language');
+    const qLevel = searchParams.get('level');
+    const qCategory = searchParams.get('category');
+    if (qSearch) setSearch(qSearch);
+    if (qLanguage) setLanguage(qLanguage);
+    if (qLevel) setLevel(qLevel);
+    if (qCategory) toggleCategory(qCategory);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const storyBooks = filtered.filter(b => !b.isEducational);
   const educationalBooks = filtered.filter(b => b.isEducational);
 

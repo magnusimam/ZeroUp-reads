@@ -47,7 +47,7 @@ function StarRating({ rating }) {
   );
 }
 
-export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'Read Now' }) {
+export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'Read Now', shelf = false }) {
   const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(book.bookmarked || false);
 
@@ -141,7 +141,7 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
 
   return (
     <div
-      className={isLuxury ? 'book-card-luxury' : 'book-card'}
+      className={`${isLuxury ? 'book-card-luxury' : 'book-card'} ${shelf ? 'shelf-book' : ''}`}
       onClick={() => navigate(`/read/${book.id}`)}
       style={{ position: 'relative', userSelect: 'none' }}
       role="button"
@@ -150,7 +150,7 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
       aria-label={`Read ${book.title}`}
     >
       {/* Cover */}
-      <div style={{ position: 'relative' }}>
+      <div className={shelf ? 'shelf-book-cover' : ''} style={{ position: 'relative' }}>
         {book.coverUrl ? (
           <img
             src={book.coverUrl} alt={book.title}

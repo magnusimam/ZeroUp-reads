@@ -2,12 +2,10 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 
 /* ── CONTINUE READING BANNER ─────────────────────────────── */
+// `books` is the caller's real in-progress list (HomePage merges each book
+// with its persisted currentPage/totalPages) — this component just renders it.
 export default function ContinueReadingBanner({ user, books }) {
   const navigate = useNavigate();
-  const inProgress = [
-    { ...books[0], currentPage: 5, totalPages: 12 },
-    { ...books[1], currentPage: 3, totalPages: 10 },
-  ];
 
   return (
     <section style={{
@@ -23,7 +21,7 @@ export default function ContinueReadingBanner({ user, books }) {
           <p style={{ margin: 0, color: 'var(--navy)', fontSize: 16, opacity: 0.8, fontFamily: 'Nunito Sans' }}>Ready to keep reading?</p>
         </div>
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-          {inProgress.map(book => (
+          {books.map(book => (
             <button key={book.id} onClick={() => navigate(`/read/${book.id}`)} style={{
               background: 'rgba(31,61,110,0.12)', border: '2px solid rgba(31,61,110,0.2)',
               borderRadius: 12, padding: '10px 16px',

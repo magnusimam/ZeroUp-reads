@@ -97,6 +97,99 @@ const THEMES = {
       </>
     ),
   },
+  AI: {
+    // violet-to-ink, echoes Technology's circuit motif with a neural-net twist
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #7C3AED 0%, #3E1E7A 45%, #140A2E 100%)',
+    glow: 'rgba(212,175,55,0.30)',
+    icon: (
+      <>
+        <circle cx="50" cy="30" r="7" />
+        <circle cx="26" cy="60" r="7" />
+        <circle cx="74" cy="60" r="7" />
+        <circle cx="50" cy="82" r="7" />
+        <line x1="50" y1="30" x2="26" y2="60" />
+        <line x1="50" y1="30" x2="74" y2="60" />
+        <line x1="26" y1="60" x2="50" y2="82" />
+        <line x1="74" y1="60" x2="50" y2="82" />
+        <line x1="26" y1="60" x2="74" y2="60" />
+      </>
+    ),
+  },
+  Space: {
+    // midnight-to-violet with a ringed planet
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #1E2A6E 0%, #101542 45%, #05061A 100%)',
+    glow: 'rgba(212,175,55,0.32)',
+    icon: (
+      <>
+        <circle cx="50" cy="50" r="22" />
+        <ellipse cx="50" cy="50" rx="42" ry="10" transform="rotate(-18 50 50)" />
+      </>
+    ),
+  },
+  Agriculture: {
+    // olive-to-earth with a sprouting leaf
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #4E7A2F 0%, #2C4A18 45%, #101E08 100%)',
+    glow: 'rgba(212,175,55,0.28)',
+    icon: (
+      <path d="M50 90 V40 C50 25 62 15 78 15 C78 32 66 40 50 40 C50 25 38 15 22 15 C22 32 34 40 50 40" />
+    ),
+  },
+  Finance: {
+    // deep gold-to-navy with a coin motif
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #B8862E 0%, #5C4114 45%, #1C1204 100%)',
+    glow: 'rgba(212,175,55,0.38)',
+    icon: (
+      <>
+        <circle cx="50" cy="50" r="34" />
+        <path d="M50 32 V68 M40 40 C40 34 44 32 50 32 C58 32 62 36 62 41 C62 46 58 48 50 50 C42 52 38 54 38 59 C38 64 42 68 50 68 C56 68 60 66 60 60" />
+      </>
+    ),
+  },
+  Culture: {
+    // terracotta-to-earth, distinct pattern motif from Language & Culture
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #C0863A 0%, #7A4D1F 45%, #2A1A0A 100%)',
+    glow: 'rgba(212,175,55,0.30)',
+    icon: (
+      <>
+        <path d="M20 75 L35 30 L50 75 Z" />
+        <path d="M50 75 L65 30 L80 75 Z" />
+        <line x1="15" y1="80" x2="85" y2="80" />
+      </>
+    ),
+  },
+  Adventure: {
+    // sunset coral-to-navy with a compass motif
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #E0653A 0%, #7A2E1F 45%, #240D06 100%)',
+    glow: 'rgba(212,175,55,0.32)',
+    icon: (
+      <>
+        <circle cx="50" cy="50" r="36" />
+        <path d="M50 24 L58 50 L50 76 L42 50 Z" />
+      </>
+    ),
+  },
+  Animals: {
+    // warm brown-to-forest with a paw motif
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #8A5A2F 0%, #4C3318 45%, #1A1108 100%)',
+    glow: 'rgba(212,175,55,0.28)',
+    icon: (
+      <>
+        <circle cx="50" cy="58" r="18" />
+        <circle cx="30" cy="38" r="9" />
+        <circle cx="70" cy="38" r="9" />
+        <circle cx="42" cy="26" r="7" />
+        <circle cx="58" cy="26" r="7" />
+      </>
+    ),
+  },
+  Environment: {
+    // teal-to-forest with a leaf/droplet motif
+    gradient: 'radial-gradient(120% 100% at 50% 0%, #2F8A6E 0%, #185C48 45%, #082A20 100%)',
+    glow: 'rgba(212,175,55,0.28)',
+    icon: (
+      <path d="M50 15 C70 35 78 52 78 65 C78 79 65 88 50 88 C35 88 22 79 22 65 C22 52 30 35 50 15 Z" />
+    ),
+  },
 };
 
 const DEFAULT_THEME = {

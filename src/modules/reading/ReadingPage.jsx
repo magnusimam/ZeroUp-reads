@@ -4,6 +4,7 @@ import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import { isBookmarked, toggleBookmark } from './bookmarksService';
 import * as booksService from '../books/booksService';
+import * as userService from '../../services/userService';
 import * as eventBus from '../../utils/eventBus';
 import { useToast } from '../../context/ToastContext';
 
@@ -20,6 +21,12 @@ export default function ReadingPage() {
   useEffect(() => {
     if (book) setBookmarked(isBookmarked(book.id));
   }, [book]);
+
+  // Real per-book progress (Continue Reading on the homepage reads this
+  // instead of two hardcoded books being shown as "in progress" for everyone).
+  useEffect(() => {
+    if (book) userService.recordProgress(book.id, pageIndex + 1, book.content.length);
+  }, [book, pageIndex]);
 
   //if book doesn't exist
   if (!book) {

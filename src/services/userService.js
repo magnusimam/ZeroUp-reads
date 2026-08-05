@@ -25,6 +25,19 @@ export function getProgress() {
   return readProgress();
 }
 
+// Persists real per-book page position so "Continue Reading" reflects what a
+// reader actually opened, instead of the homepage fabricating two books as
+// "in progress" for every logged-in user regardless of their real history.
+export function recordProgress(bookId, currentPage, totalPages) {
+  const progress = readProgress();
+  if (progress.completedBookIds.includes(bookId)) return progress;
+
+  return writeProgress({
+    ...progress,
+    inProgress: { ...(progress.inProgress || {}), [bookId]: { currentPage, totalPages } },
+  });
+}
+
 // Real subscriber (Principle 5 — Event-Driven Architecture): finishing a book
 // in ReadingPage now actually updates the reader's persisted progress instead
 // of that logic living inline in the page, and instead of MOCK_USER staying
@@ -34,10 +47,12 @@ eventBus.on('book.completed', ({ id }) => {
   if (progress.completedBookIds.includes(id)) return;
 
   const book = booksService.getBook(id);
+  const { [id]: _finished, ...stillInProgress } = progress.inProgress || {};
   writeProgress({
     ...progress,
     booksCompleted: progress.booksCompleted + 1,
     pagesRead: progress.pagesRead + (book?.totalPages || 0),
     completedBookIds: [...progress.completedBookIds, id],
+    inProgress: stillInProgress,
   });
 });

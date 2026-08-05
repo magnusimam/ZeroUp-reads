@@ -1,7 +1,13 @@
 // Canonical category taxonomy — kept in sync with AdminCMSPage.jsx's CATEGORIES
 // select options so a book uploaded in admin always matches a category browsable here.
+// AI/Space/Agriculture/Finance/Culture/Adventure/Animals/Environment were added
+// for the homepage's "Book Categories" showcase (docs/ZEROUP_READS_CONCEPT.md's
+// target content domains go well beyond storybooks) — appended rather than
+// replacing the original list so no existing book's `category` value becomes
+// unrecognized by the Library filter or Admin dropdown.
 export const BOOK_CATEGORIES = [
-  'Storybooks', 'Science', 'Technology', 'History', 'Mathematics', 'Health', 'Arts', 'Language & Culture',
+  'Storybooks', 'Science', 'Technology', 'AI', 'Health', 'Space', 'Agriculture', 'Finance',
+  'History', 'Culture', 'Adventure', 'Animals', 'Environment', 'Mathematics', 'Arts', 'Language & Culture',
 ];
 
 // Canonical book-language taxonomy — kept in sync with AdminCMSPage.jsx's
@@ -9,9 +15,18 @@ export const BOOK_CATEGORIES = [
 // from the same list. Distinct from any site-UI-locale selector (e.g.
 // LibraryHeader's display-language dropdown) — this is about what language a
 // book's *content* is written in, not what language the site chrome renders in.
+// Kanuri/Tiv/Efik added for the homepage's "Popular Languages" chips — they're
+// part of docs/ZEROUP_READS_CONCEPT.md §4.4's Nigerian-language rollout, added
+// here (not as a one-off list in the homepage component) so a chip can never
+// point at a language no book taxonomy actually recognizes.
 export const BOOK_LANGUAGES = [
-  'English', 'Swahili', 'Yoruba', 'Zulu', 'French', 'Hausa', 'Igbo', 'Pidgin',
+  'English', 'Swahili', 'Yoruba', 'Zulu', 'French', 'Hausa', 'Igbo', 'Pidgin', 'Kanuri', 'Tiv', 'Efik',
 ];
+
+// Canonical reading-level taxonomy — kept in sync with AdminCMSPage.jsx's
+// LEVELS select options and LibraryPage's level filter so a book uploaded in
+// admin always uses a level the library's filter chips actually recognize.
+export const BOOK_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 // `attributes` is an extensible metadata bag (Schema-Driven Design) for future
 // fields — audio narration, certification — that shouldn't force a core-shape
@@ -143,6 +158,134 @@ export const MOCK_BOOKS = [
       "The other animals teased him: \"Pick a colour and keep it!\" But the chameleon just smiled his slow smile.",
       "One day a hungry hawk circled low, and the chameleon turned the exact grey of the stone he sat on.",
       "\"Maybe,\" said the chameleon afterward, \"not choosing is exactly what saved me.\"",
+    ],
+  },
+  {
+    id: '9', title: 'The Solar System in Hausa', author: 'Ibrahim Sani',
+    language: 'Hausa', level: 'Beginner',
+    totalPages: 11,
+    category: 'Space', ageGroup: 'Children', rating: 4.8, reads: 4200,
+    description: "A bright, simple tour of the sun and the eight planets that circle it, told in Hausa.",
+    isEducational: true,
+    attributes: { theme: 'Space & Astronomy' },
+    content: [
+      "Rana babbar tauraruwa ce a tsakiyar sararin samaniya. Duniya da sauran taurari suna kewaye da ita.",
+      "Duniyarmu ita ce ta uku daga rana. Ita ce kawai duniyar da muka san tana da rai a kanta.",
+      "Bayan Duniya akwai Mars, ja-ja kuma mai duwatsu. Sannan akwai Jupita, babba fiye da su duka.",
+      "Kowace duniya tana tafiya a hanyarta, ba tare da karo da wata ba. Wannan ake kira kewaya rana.",
+      "Idan ka duba sama da dare, za ka iya ganin wasu daga cikin waɗannan taurari suna haske a nesa.",
+    ],
+  },
+  {
+    id: '10', title: 'Understanding Money in Yoruba', author: 'Folake Ogunleye',
+    language: 'Yoruba', level: 'Beginner',
+    totalPages: 10,
+    category: 'Finance', ageGroup: 'Children', rating: 4.7, reads: 3650,
+    description: "A gentle first lesson on saving, spending and sharing money, told in Yoruba.",
+    isEducational: true,
+    attributes: { theme: 'Money & Saving' },
+    content: [
+      "Owó jẹ́ ohun tí a máa ń lò láti ra ohun tí a nílò, bíi oúnjẹ, aṣọ àti ìwé.",
+      "Nígbà tí a bá rí owó, a lè yàn láti lo díẹ̀, kí a sì fi díẹ̀ pamọ́ sínú àpótí ìfowópamọ́.",
+      "Fífi owó pamọ́ ń ràn wá lọ́wọ́ láti ra ohun tí ó tóbi jù ní ọjọ́ iwájú.",
+      "A tún lè fi díẹ̀ nínú owó wa ṣe àwọn ẹlòmíràn tí ó nílò rẹ̀ ju wa lọ.",
+      "Ọmọdé tí ó kọ́ bí a ṣe ń fi owó ṣe nǹkan dáradára máa ń dàgbà di àgbàlagbà tí ó gbọ́n nípa owó.",
+    ],
+  },
+  {
+    id: '11', title: 'My First Science Book', author: 'Dr. Ngozi Eze',
+    language: 'English', level: 'Beginner',
+    totalPages: 12,
+    category: 'Science', ageGroup: 'Children', rating: 4.9, reads: 3980,
+    description: "Simple experiments and big questions about water, air, light and living things.",
+    isEducational: true,
+    attributes: { theme: 'General Science' },
+    content: [
+      "Science is just a fancy word for asking questions and looking closely for answers.",
+      "Why is the sky blue? Why do plants need sunlight? Why does ice melt in your hand? Scientists ask questions like these every day.",
+      "You can be a scientist too. All you need is your eyes, your curiosity, and a notebook to write down what you see.",
+      "Try this: put a spoon in a glass of water and look at it from the side. Does it look bent? That's science!",
+      "Every big discovery started with someone small enough to say, \"I wonder why...\"",
+    ],
+  },
+  {
+    id: '12', title: 'The Human Body in Igbo', author: 'Chidinma Okafor',
+    language: 'Igbo', level: 'Beginner',
+    totalPages: 13,
+    category: 'Health', ageGroup: 'Children', rating: 4.6, reads: 2210,
+    description: "A friendly introduction to the heart, lungs, bones and senses, told in Igbo.",
+    isEducational: true,
+    attributes: { theme: 'Human Body' },
+    content: [
+      "Ahụ́ mmadụ dị ka ụlọ dị egwu nke nwere ọtụtụ ụmụ akụkụ na-arụ ọrụ ọnụ.",
+      "Obi anyị na-arụ ọrụ ehihie na abalị iji zipụ ọbara gaa akụkụ ahụ niile.",
+      "Ọgịrịga anyị na-enye anyị ike iguzo ọtọ, gbaa ọsọ, na-egwu egwu.",
+      "Anya, ntị, imi na ire bụ ihe anyị ji amata ihe dị n'ụwa gburugburu anyị.",
+      "Ile anya n'ahụ́ gị bụ ụzọ mma isi malite ịghọta otú ị dị ndụ.",
+    ],
+  },
+  {
+    id: '13', title: 'Animals Around Us', author: 'Grace Achieng',
+    language: 'English', level: 'Beginner',
+    totalPages: 10,
+    category: 'Animals', ageGroup: 'Children', rating: 4.7, reads: 1890,
+    description: "Meet the birds, insects and small creatures that share your backyard and street.",
+    isEducational: true,
+    attributes: { theme: 'Wildlife & Nature' },
+    content: [
+      "You don't need to travel far to meet an animal. Look under a leaf, up in a tree, or along a wall at dusk.",
+      "A weaver bird builds its nest by tying grass into tight knots — no hands, just a clever beak.",
+      "Ants that look like they're wandering are usually following an invisible trail of scent left by their sisters.",
+      "A gecko's feet are covered in thousands of tiny hairs that let it walk straight up glass.",
+      "Every animal you meet is solving the same problem you are: finding food, staying safe, and getting home before dark.",
+    ],
+  },
+  {
+    id: '14', title: 'The Clever Tortoise', author: 'Kwame Mensah',
+    language: 'English', level: 'Beginner',
+    totalPages: 9,
+    category: 'Culture', ageGroup: 'Children', rating: 4.8, reads: 2560,
+    description: "An old West African folktale about a slow tortoise who out-thinks every animal in the forest.",
+    isEducational: false,
+    attributes: { theme: 'Folktales & Legends' },
+    content: [
+      "Long ago, when animals still talked, Tortoise was the slowest runner in the whole forest — and everyone knew it.",
+      "One dry season, the animals agreed that whoever reached the top of the mountain first would be crowned the wisest.",
+      "Tortoise didn't race. Instead, he asked each fast animal for a small favour along the way, and they laughed and agreed.",
+      "By the time Hare and Leopard reached the top, exhausted from running, Tortoise was already there, sipping water.",
+      "\"Speed gets you there first,\" said Tortoise. \"Thinking gets you there at all.\"",
+    ],
+  },
+  {
+    id: '15', title: 'Growing Food', author: 'Amina Osei',
+    language: 'English', level: 'Beginner',
+    totalPages: 10,
+    category: 'Agriculture', ageGroup: 'Children', rating: 4.6, reads: 1420,
+    description: "From a single seed to a full harvest — how the food on your plate actually grows.",
+    isEducational: true,
+    attributes: { theme: 'Farming & Food' },
+    content: [
+      "Every meal starts as a seed — a tiny package with everything a plant needs to begin.",
+      "A seed needs three things to wake up: water, warmth, and a little patience.",
+      "Some plants, like yam and cassava, grow their food underground, hidden from the sun.",
+      "Farmers watch the sky as closely as the soil — the right rain at the right time can make or ruin a harvest.",
+      "The next time you eat a fruit or vegetable, think of the whole journey it took just to reach your plate.",
+    ],
+  },
+  {
+    id: '16', title: 'How Computers Work', author: 'Tunde Bakare',
+    language: 'English', level: 'Intermediate',
+    totalPages: 14,
+    category: 'Technology', ageGroup: 'Young Adult', rating: 4.7, reads: 1980,
+    description: "What's really happening inside the box when you tap, click or type.",
+    isEducational: true,
+    attributes: { theme: 'Computers & AI' },
+    content: [
+      "A computer doesn't actually understand words or pictures — it only understands two things: on and off.",
+      "Every letter you type, every colour on your screen, is really just a very long pattern of 1s and 0s underneath.",
+      "The processor is like the computer's brain — it does millions of tiny calculations every single second.",
+      "When you save a file, the computer is writing that pattern of on/off switches somewhere it can find again later.",
+      "Artificial intelligence is just a computer that has been shown so many examples, it starts recognizing patterns on its own.",
     ],
   },
 ];
