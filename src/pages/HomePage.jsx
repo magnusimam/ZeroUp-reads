@@ -196,6 +196,56 @@ export default function HomePage() {
       {/* wHAT YOU CAN DO - ANIMATED CARDS */}
       <WhatYouCanDo />
 
+      {/* ── SECTION 2B: MISSION STATEMENT ───────────────────── */}
+      <section style={{ background: 'var(--navy)', padding: '100px 0' }}>
+        <div className="container">
+          <div className="preview-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 64, alignItems: 'center',
+          }}>
+            {/* Left — dashboard image */}
+            <div style={{
+              borderRadius: 24, overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}>
+              <img
+                src="/images/dashboard-preview.png"
+                alt="ZeroUp Reads dashboard — Continue Your Journey and Explore by Category"
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
+
+            {/* Right — mission statement */}
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--amber)', color: 'var(--navy)',
+                fontFamily: 'Nunito', fontWeight: 700, fontSize: 13,
+                borderRadius: 99, padding: '5px 14px', marginBottom: 24,
+              }}>🌍 Our Mission</div>
+
+              <h2 style={{
+                fontFamily: 'Nunito', fontWeight: 900, color: 'white',
+                fontSize: 'clamp(26px, 3.4vw, 38px)', lineHeight: 1.25,
+                margin: '0 0 20px',
+              }}>
+                Every child deserves to read in a language that feels like{' '}
+                <span style={{ color: 'var(--amber)' }}>home</span>.
+              </h2>
+
+              <p style={{
+                color: 'rgba(255,255,255,0.85)', fontSize: 18, lineHeight: 1.7,
+                fontFamily: 'Nunito Sans', margin: 0,
+              }}>
+                Across Sub-Saharan Africa, 225 million adults can't read — and millions of children are taught to read in a language they don't speak at home. Nigeria alone has over 500 indigenous languages, yet almost none are represented in the books children grow up with. ZeroUp Reads exists to close that gap, one story at a time — so no child is denied knowledge because of the language they were born speaking.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── SECTION 3: STATS BAR ───────────────────────────── */}
       <section style={{
         background: 'var(--amber)',
