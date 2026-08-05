@@ -16,6 +16,8 @@ import LibraryFooter from './components/LibraryFooter';
 export default function LibraryPage() {
   const [searchParams] = useSearchParams();
   const typeFilter = searchParams.get('type'); // 'story' | 'educational' | null
+  const queryParam = searchParams.get('q');
+  const langParam = searchParams.get('lang');
 
   // Re-reads on every mount, so an admin upload/delete is reflected the next
   // time a reader lands on this page — same booksService AdminCMSPage writes to.
@@ -41,6 +43,13 @@ export default function LibraryPage() {
       document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [typeFilter]);
+
+  // Hydrates the search/language filters from the homepage hero's discover
+  // bar (?q=&lang=) so a query typed there actually narrows this page's results.
+  useEffect(() => {
+    if (queryParam) setSearch(queryParam);
+    if (langParam) setLanguage(langParam);
+  }, [queryParam, langParam, setSearch, setLanguage]);
 
   const storyBooks = filtered.filter(b => !b.isEducational);
   const educationalBooks = filtered.filter(b => b.isEducational);

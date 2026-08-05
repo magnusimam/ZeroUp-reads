@@ -25,6 +25,33 @@ export default function HomePage() {
     return () => clearTimeout(t);
   }, []);
 
+  const heroSlides = [
+    {
+      image: '/images/hero-slide-1.png',
+      headline: <>Every Child Deserves a Story in Their Own Language.</>,
+      subtext: 'Discover beautiful books written in African languages and made for every young reader.',
+      buttons: [
+        { label: '📖 Start Reading', to: '/library', variant: 'primary' },
+        { label: '🔍 Explore Library', to: '/library', variant: 'secondary' },
+      ],
+    },
+    {
+      image: '/images/hero-slide-2.png',
+      headline: <>What will you <span style={{ color: 'var(--hero-orange)' }}>invent</span> tomorrow, in your own language?</>,
+      subtext: 'Explore amazing stories about technology, AI, robots and the future we can build together.',
+      buttons: [
+        { label: 'Discover AI & Tech Stories →', to: '/library', variant: 'primary' },
+      ],
+    },
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveSlide(s => (s + 1) % heroSlides.length);
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [heroSlides.length]);
+
   const heroStats = [
     { icon: '💬', value: '500+',       label: 'Languages' },
     { icon: '📚', value: 'Thousands',  label: 'of Stories' },
@@ -44,13 +71,21 @@ export default function HomePage() {
         <div className="hero2-stage" style={{
           position: 'relative',
           aspectRatio: '21 / 9',
-          backgroundImage: 'url(/images/hero-slide-1.png)',
-          backgroundSize: 'cover',
-          backgroundPosition: 'left 55%',
-          backgroundRepeat: 'no-repeat',
           backgroundColor: 'var(--hero-cream)',
           overflow: 'hidden',
         }}>
+          {/* Slide backgrounds — crossfade between slides */}
+          {heroSlides.map((slide, i) => (
+            <div key={slide.image} aria-hidden={i !== activeSlide} style={{
+              position: 'absolute', inset: 0, zIndex: 0,
+              backgroundImage: `url(${slide.image})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'left 55%',
+              backgroundRepeat: 'no-repeat',
+              opacity: i === activeSlide ? 1 : 0,
+              transition: 'opacity 800ms ease',
+            }} />
+          ))}
           {/* Legibility scrim — guarantees contrast for the text regardless of what's behind it in the illustration */}
           <div aria-hidden="true" style={{
             position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
@@ -62,48 +97,46 @@ export default function HomePage() {
             height: '100%',
             paddingTop: 'clamp(28px, 9vh, 88px)',
           }}>
-            <div className="hero2-text" style={{
+            <div key={activeSlide} className="hero2-text" style={{
               maxWidth: 480,
               opacity: heroLoaded ? 1 : 0,
               transform: heroLoaded ? 'none' : 'translateY(16px)',
               transition: 'all 500ms ease',
+              animation: 'fadeIn 400ms ease',
             }}>
               <h1 style={{
                 fontFamily: 'Nunito', fontWeight: 900, color: 'var(--hero-ink)',
                 fontSize: 'clamp(28px, 3.6vw, 42px)', lineHeight: 1.22, margin: '0 0 18px',
               }}>
-                Every Child Deserves a Story in Their Own Language.
+                {heroSlides[activeSlide].headline}
               </h1>
               <p style={{
                 fontFamily: 'Nunito Sans', fontSize: 17, color: 'var(--hero-gray)',
                 lineHeight: 1.6, margin: '0 0 28px', maxWidth: 420,
               }}>
-                Discover beautiful books written in African languages and made for every young reader.
+                {heroSlides[activeSlide].subtext}
               </p>
               <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <Link to="/library" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'var(--hero-green)', color: 'white',
-                  fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
-                  borderRadius: 999, padding: '0 26px', height: 48,
-                  textDecoration: 'none', border: '2px solid var(--hero-green)',
-                  transition: 'transform 200ms ease',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                >📖 Start Reading</Link>
-
-                <Link to="/library" style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 8,
-                  background: 'white', color: 'var(--hero-orange)',
-                  fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
-                  borderRadius: 999, padding: '0 24px', height: 48,
-                  textDecoration: 'none', border: '2px solid var(--hero-orange)',
-                  transition: 'transform 200ms ease',
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
-                >🔍 Explore Library</Link>
+                {heroSlides[activeSlide].buttons.map(btn => (
+                  <Link key={btn.label} to={btn.to} style={btn.variant === 'primary' ? {
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'var(--hero-green)', color: 'white',
+                    fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
+                    borderRadius: 999, padding: '0 26px', height: 48,
+                    textDecoration: 'none', border: '2px solid var(--hero-green)',
+                    transition: 'transform 200ms ease',
+                  } : {
+                    display: 'inline-flex', alignItems: 'center', gap: 8,
+                    background: 'white', color: 'var(--hero-orange)',
+                    fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
+                    borderRadius: 999, padding: '0 24px', height: 48,
+                    textDecoration: 'none', border: '2px solid var(--hero-orange)',
+                    transition: 'transform 200ms ease',
+                  }}
+                    onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+                  >{btn.label}</Link>
+                ))}
               </div>
             </div>
           </div>
@@ -111,20 +144,20 @@ export default function HomePage() {
           {/* Slider arrows */}
           <button
             aria-label="Previous slide"
-            onClick={() => setActiveSlide(s => (s + 2) % 3)}
+            onClick={() => setActiveSlide(s => (s + heroSlides.length - 1) % heroSlides.length)}
             className="hero2-arrow hero2-arrow-left"
           >‹</button>
           <button
             aria-label="Next slide"
-            onClick={() => setActiveSlide(s => (s + 1) % 3)}
+            onClick={() => setActiveSlide(s => (s + 1) % heroSlides.length)}
             className="hero2-arrow hero2-arrow-right"
           >›</button>
 
           {/* Slide dots */}
           <div className="hero2-dots">
-            {[0, 1, 2].map(i => (
+            {heroSlides.map((slide, i) => (
               <span
-                key={i}
+                key={slide.image}
                 className={i === activeSlide ? 'active' : ''}
                 onClick={() => setActiveSlide(i)}
               />
@@ -162,6 +195,56 @@ export default function HomePage() {
 
       {/* wHAT YOU CAN DO - ANIMATED CARDS */}
       <WhatYouCanDo />
+
+      {/* ── SECTION 2B: MISSION STATEMENT ───────────────────── */}
+      <section style={{ background: 'var(--navy)', padding: '100px 0' }}>
+        <div className="container">
+          <div className="preview-grid" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: 64, alignItems: 'center',
+          }}>
+            {/* Left — dashboard image */}
+            <div style={{
+              borderRadius: 24, overflow: 'hidden',
+              boxShadow: '0 24px 64px rgba(0,0,0,0.35)',
+              border: '1px solid rgba(255,255,255,0.12)',
+            }}>
+              <img
+                src="/images/dashboard-preview.png"
+                alt="ZeroUp Reads dashboard — Continue Your Journey and Explore by Category"
+                style={{ display: 'block', width: '100%', height: 'auto' }}
+              />
+            </div>
+
+            {/* Right — mission statement */}
+            <div>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                background: 'var(--amber)', color: 'var(--navy)',
+                fontFamily: 'Nunito', fontWeight: 700, fontSize: 13,
+                borderRadius: 99, padding: '5px 14px', marginBottom: 24,
+              }}>🌍 Our Mission</div>
+
+              <h2 style={{
+                fontFamily: 'Nunito', fontWeight: 900, color: 'white',
+                fontSize: 'clamp(26px, 3.4vw, 38px)', lineHeight: 1.25,
+                margin: '0 0 20px',
+              }}>
+                Every child deserves to read in a language that feels like{' '}
+                <span style={{ color: 'var(--amber)' }}>home</span>.
+              </h2>
+
+              <p style={{
+                color: 'rgba(255,255,255,0.85)', fontSize: 18, lineHeight: 1.7,
+                fontFamily: 'Nunito Sans', margin: 0,
+              }}>
+                Across Sub-Saharan Africa, 225 million adults can't read — and millions of children are taught to read in a language they don't speak at home. Nigeria alone has over 500 indigenous languages, yet almost none are represented in the books children grow up with. ZeroUp Reads exists to close that gap, one story at a time — so no child is denied knowledge because of the language they were born speaking.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── SECTION 3: STATS BAR ───────────────────────────── */}
       <section style={{
@@ -343,8 +426,6 @@ export default function HomePage() {
           .hero2-stage {
             flex: 1 1 auto !important; min-height: 0 !important;
             aspect-ratio: unset !important;
-            background-size: cover !important;
-            background-position: left 55% !important;
           }
           .hero2-statbar-wrap { flex: 0 0 auto; }
         }
