@@ -4,7 +4,9 @@ import Navbar from '../../components/Navbar';
 import { useAuth } from '../auth/AuthContext';
 import { BOOK_CATEGORIES, BOOK_LANGUAGES, BOOK_LEVELS } from '../../utils/mockData';
 import useBookUpload from './useBookUpload';
+import useTranslationRequests from './useTranslationRequests';
 import { isFeatureEnabled } from '../../config/featureFlags';
+import * as booksService from '../books/booksService';
 
 // Shared with mockData.js so a book uploaded here always matches a browsable
 // category/language/level elsewhere (the Library page's chips and filters, etc.).
@@ -17,7 +19,7 @@ export default function AdminCMSPage() {
   const navigate = useNavigate();
 
   const {
-    books,
+    books, setBooks,
     showForm, setShowForm,
     successMSG,
     deleteConfirm, setDeleteConfirm,
@@ -31,6 +33,18 @@ export default function AdminCMSPage() {
     handleDelete,
     handleTranslate,
   } = useBookUpload();
+
+  const {
+    pendingRequests,
+    requestMSG,
+    approve: approveTranslationRequest,
+    reject: rejectTranslationRequest,
+  } = useTranslationRequests();
+
+  function handleApproveRequest(requestId) {
+    approveTranslationRequest(requestId);
+    setBooks(booksService.getBooks());
+  }
 
   //REDIRECT IF NOT ADMIN
   if (!user || user.role !== "admin"){
@@ -170,6 +184,60 @@ return (
           </button>
         </form>
         </div>
+    )}
+
+    {/* TRANSLATION REQUESTS (reader-submitted, awaiting approval) */}
+    {translationEnabled && (
+      <div className='bg-white rounded-2xl border border-slate-200 overflow-hidden mb-8'>
+        <div className='px-6 py-4 border-b border-slate-100'>
+          <h2 className='font-bold text-slate-900'>
+            Translation Requests
+            <span className='ml-2 text-sm font-normal text-slate-400'>
+              ({pendingRequests.length} pending)
+            </span>
+          </h2>
+          <p className='text-xs text-slate-500 mt-1'>
+            Readers can request a book be translated from the Library page. Nothing publishes until you approve it here.
+          </p>
+        </div>
+
+        {requestMSG && (
+          <div className='mx-6 mt-4 px-4 py-3 bg-teal-50 border border-teal-200 text-teal-700 text-sm rounded-xl font-medium'>
+            {requestMSG}
+          </div>
+        )}
+
+        {pendingRequests.length === 0 ? (
+          <p className='px-6 py-6 text-sm text-slate-400'>No pending translation requests right now.</p>
+        ) : (
+          <div className='divide-y divide-slate-100'>
+            {pendingRequests.map((request) => (
+              <div key={request.id} className='flex items-center justify-between gap-4 px-6 py-4'>
+                <div className='min-w-0'>
+                  <p className='font-medium text-sm text-slate-900 truncate'>{request.bookTitle}</p>
+                  <p className='text-xs text-slate-500 mt-0.5'>
+                    Requested translation into <span className='font-semibold text-teal-600'>{request.language}</span>
+                  </p>
+                </div>
+                <div className='flex gap-2 shrink-0'>
+                  <button
+                    onClick={() => rejectTranslationRequest(request.id)}
+                    className='px-3 py-1.5 rounded-lg border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors'
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={() => handleApproveRequest(request.id)}
+                    className='px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition-colors'
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     )}
 
     {/* BOOK TABLE */}

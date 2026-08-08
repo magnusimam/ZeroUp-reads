@@ -1,11 +1,10 @@
 import React from 'react';
 
-// Reusable "magic dust" layer for the plain-CSS half of the homepage (the
-// hero's own FloatingDecor.tsx already covers the Tailwind/framer-motion
-// half) — a pool of small emoji decorations, each with its own drift/twinkle
-// animation from index.css, absolutely positioned over whichever section
-// renders this. Kept data-driven (one POOL, sliced per call) so every section
-// that wants "delightful motion" doesn't hand-roll its own scattered spans.
+// Reusable "magic dust" layer for the homepage — a pool of small emoji
+// decorations, each with its own drift/twinkle animation from index.css,
+// absolutely positioned over whichever section renders this. Kept
+// data-driven (one POOL, sliced per call) so every section that wants
+// "delightful motion" doesn't hand-roll its own scattered spans.
 const POOL = [
   { emoji: '🍃', top: '8%', left: '4%', size: 22, anim: 'leafDrift 5.5s ease-in-out infinite' },
   { emoji: '🦋', top: '72%', left: '3%', size: 24, anim: 'butterflyFlutter 4.2s ease-in-out infinite' },

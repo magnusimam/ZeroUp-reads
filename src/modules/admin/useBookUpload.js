@@ -76,7 +76,7 @@ export default function useBookUpload() {
   }
 
   return {
-    books,
+    books, setBooks,
     showForm, setShowForm,
     successMSG,
     deleteConfirm, setDeleteConfirm,

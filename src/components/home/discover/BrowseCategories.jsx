@@ -11,7 +11,11 @@ export default function BrowseCategories() {
       <h2 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', margin: '0 0 14px' }}>
         Browse by category
       </h2>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+      {/* Mobile: clipped to 2 rows (max-height + overflow hidden) instead of
+          wrapping to a tall stack of lines; the "View all" chip is pinned to
+          the front on mobile (CSS order) so it always stays reachable even
+          though most category chips get clipped below the fold. */}
+      <div className="browse-cats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {HOMEPAGE_CATEGORIES.map(({ name, color, icon }) => (
           <Link
             key={name}
@@ -30,7 +34,28 @@ export default function BrowseCategories() {
             {name}
           </Link>
         ))}
+        <Link
+          to="/library"
+          className="chip-pin-first"
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            background: 'white', color: 'var(--navy)', border: '1px solid #E7DFD0',
+            borderRadius: 99, padding: '7px 16px 7px 10px',
+            fontFamily: 'Nunito', fontWeight: 700, fontSize: 14,
+            textDecoration: 'none',
+          }}
+        >
+          <span aria-hidden="true" style={{ fontSize: 16 }}>🗂️</span>
+          View all
+        </Link>
       </div>
+
+      <style>{`
+        @media (max-width: 640px) {
+          .browse-cats-row { max-height: 88px; overflow: hidden; }
+          .browse-cats-row .chip-pin-first { order: -1; }
+        }
+      `}</style>
     </div>
   );
 }

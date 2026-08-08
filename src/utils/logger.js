@@ -28,6 +28,9 @@ const TRACKED_EVENTS = [
   'book.uploaded',
   'book.deleted',
   'translation.completed',
+  'translation.requested',
+  'translation.request.approved',
+  'translation.request.rejected',
   'book.completed',
   'book.bookmarked',
 ];

@@ -4,7 +4,7 @@ import BookCard from '../../books/BookCard';
 import { STORY_THEMES, STORY_BOOKS_COUNT } from '../libraryConfig';
 import useSectionFilter from '../useSectionFilter';
 
-export default function StoryBooksSection({ books, viewAll = false }) {
+export default function StoryBooksSection({ books, viewAll = false, onTranslateRequest }) {
   const navigate = useNavigate();
   const {
     selected: theme, open: themeOpen, setOpen: setThemeOpen, select: selectTheme, filtered: themed,
@@ -16,15 +16,15 @@ export default function StoryBooksSection({ books, viewAll = false }) {
     <section id="story-books" className="max-w-content mx-auto w-full px-4 sm:px-6 py-12">
       <div className="flex items-center justify-between flex-wrap gap-4 mb-8">
         <div className="flex items-center gap-3">
-          <span className="w-1 h-7 rounded-full bg-gold" aria-hidden="true" />
-          <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-cocoa">Story Books</h2>
+          <span className="w-2 h-8 rounded-full bg-gradient-to-b from-coral to-amber" aria-hidden="true" />
+          <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-cocoa">📚 Story Books</h2>
         </div>
 
         <div className="flex gap-3">
           <div className="relative">
             <button
               onClick={() => setThemeOpen(o => !o)}
-              className="px-4 py-2 rounded-full border border-gold/30 text-charcoal/70 text-sm font-nunito font-semibold hover:border-gold hover:text-cocoa transition-colors"
+              className="px-4 py-2 rounded-full border-2 border-coral/30 bg-white text-charcoal/70 text-sm font-nunito font-bold hover:border-coral hover:text-cocoa transition-colors"
             >
               {theme || 'Select Theme'} <span aria-hidden="true">{themeOpen ? '▲' : '▼'}</span>
             </button>
@@ -58,7 +58,7 @@ export default function StoryBooksSection({ books, viewAll = false }) {
 
           <button
             onClick={() => navigate('/library?type=story')}
-            className="px-4 py-2 rounded-full bg-gold/10 text-cocoa text-sm font-nunito font-bold hover:bg-gold/20 transition-colors"
+            className="px-4 py-2 rounded-full bg-coral text-white text-sm font-nunito font-bold hover:scale-105 transition-transform shadow-card"
           >
             View All →
           </button>
@@ -67,12 +67,14 @@ export default function StoryBooksSection({ books, viewAll = false }) {
 
       {visible.length === 0 ? (
         <p className="text-charcoal/40 font-nunito-sans text-sm text-center py-10">
-          No stories match your search yet — try another title or category.
+          No stories match your search yet — try another title or category! 🔎
         </p>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 sm:gap-6">
           {visible.map(book => (
-            <BookCard key={book.id} book={book} variant="portrait" />
+            <div key={book.id} className="transition-transform hover:-translate-y-1.5">
+              <BookCard book={book} variant="portrait" onTranslateRequest={onTranslateRequest} />
+            </div>
           ))}
         </div>
       )}

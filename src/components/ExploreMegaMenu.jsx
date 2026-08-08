@@ -3,10 +3,10 @@ import { Link } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { EXPLORE_MEGA_MENU } from '../config/navigation';
 
-// Plain-style (inline styles + CSS vars) counterpart to the homepage hero's
-// Tailwind mega menu — same EXPLORE_MEGA_MENU data, rendered to match
-// Navbar.jsx's non-Tailwind convention so both navbars change together.
-export default function ExploreMegaMenu({ light = false }) {
+// Plain-style (inline styles + CSS vars) "Explore" nav item with a hover/tap
+// dropdown of library shortcuts — sits alongside Navbar.jsx's other plain
+// links, styled off the same --hero-* palette so it reads as one of them.
+export default function ExploreMegaMenu({ icon }) {
   const [open, setOpen] = useState(false);
 
   return (
@@ -21,13 +21,17 @@ export default function ExploreMegaMenu({ light = false }) {
         aria-haspopup="true"
         aria-expanded={open}
         style={{
-          display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: 'none',
-          cursor: 'pointer', padding: '4px 0',
-          fontFamily: 'Nunito', fontWeight: 600, fontSize: 18,
-          color: light ? 'white' : 'var(--charcoal)',
+          display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none',
+          cursor: 'pointer', padding: '6px 0',
+          fontFamily: 'Nunito', fontWeight: 600, fontSize: 16,
+          color: 'var(--hero-ink)',
           borderBottom: '2px solid transparent',
+          transition: 'color 200ms ease',
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--hero-green)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--hero-ink)'; }}
       >
+        {icon && <span aria-hidden="true">{icon}</span>}
         Explore
         <ChevronDown size={15} strokeWidth={2.5} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 200ms ease' }} />
       </button>
@@ -38,9 +42,9 @@ export default function ExploreMegaMenu({ light = false }) {
           style={{
             position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)',
             marginTop: 14, width: 480, maxWidth: '90vw',
-            background: 'white', borderRadius: 20, boxShadow: '0 20px 48px rgba(31,61,110,0.22)',
+            background: 'white', borderRadius: 20, boxShadow: '0 20px 48px rgba(58,26,16,0.22)',
             padding: 18, zIndex: 200, animation: 'popIn 180ms ease',
-            border: '1px solid #F0E9D8',
+            border: '1px solid var(--hero-border)',
           }}
         >
           <div style={{
@@ -56,19 +60,19 @@ export default function ExploreMegaMenu({ light = false }) {
                   padding: '10px 12px', borderRadius: 14, textDecoration: 'none',
                   transition: 'background 150ms ease, transform 150ms ease',
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--cream)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--hero-cream)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'none'; e.currentTarget.style.transform = 'translateY(0)'; }}
               >
                 <span aria-hidden="true" style={{
                   fontSize: 22, width: 40, height: 40, borderRadius: 12,
-                  background: 'var(--cream)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--hero-cream)', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
                 }}>{item.icon}</span>
                 <span>
-                  <span style={{ display: 'block', fontFamily: 'Nunito', fontWeight: 800, fontSize: 14.5, color: 'var(--navy)' }}>
+                  <span style={{ display: 'block', fontFamily: 'Nunito', fontWeight: 800, fontSize: 14.5, color: 'var(--hero-ink)' }}>
                     {item.label}
                   </span>
-                  <span style={{ display: 'block', fontFamily: 'Nunito Sans', fontSize: 12.5, color: '#888', marginTop: 1 }}>
+                  <span style={{ display: 'block', fontFamily: 'Nunito Sans', fontSize: 12.5, color: 'var(--hero-gray)', marginTop: 1 }}>
                     {item.description}
                   </span>
                 </span>

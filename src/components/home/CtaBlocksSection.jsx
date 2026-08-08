@@ -5,10 +5,22 @@ import { CTA_BLOCKS } from './ctaBlocksConfig';
 
 const ICONS = { languages: Languages, bookOpen: BookOpen, heart: Heart };
 
+// Scatter positions for each block's decorative accent glyphs — small and
+// spread out (screenshot-matched) rather than one oversized cluster stacked
+// in a single corner.
+const ACCENT_SPOTS = [
+  { top: '12%', left: '82%', size: 20 },
+  { top: '68%', left: '6%', size: 16 },
+  { top: '78%', left: '90%', size: 22 },
+];
+
 export default function CtaBlocksSection() {
   return (
-    <section>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}>
+    <section className="max-w-content mx-auto w-full px-4 sm:px-6 py-6">
+      <div
+        className="rounded-3xl overflow-hidden shadow-card"
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))' }}
+      >
         {CTA_BLOCKS.map((block, blockIdx) => {
           const Icon = ICONS[block.icon];
           return (
@@ -20,21 +32,23 @@ export default function CtaBlocksSection() {
                 padding: '48px 40px', display: 'flex', flexDirection: 'column', gap: 14,
               }}
             >
-              {/* Large illustration accent — floats gently, sits behind the copy */}
-              <div aria-hidden="true" style={{
-                position: 'absolute', top: -10, right: -10, display: 'flex', gap: 4,
-                fontSize: 64, opacity: 0.18, pointerEvents: 'none',
-              }}>
-                {block.illustration.map((emoji, i) => (
-                  <span key={i} style={{
-                    animation: `float ${3.4 + i * 0.5}s ease-in-out ${i * 0.3}s infinite`,
-                    display: 'inline-block',
-                  }}>{emoji}</span>
-                ))}
+              {/* Small scattered accent glyphs — decorative, sit behind the copy */}
+              <div aria-hidden="true" style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+                {block.illustration.map((emoji, i) => {
+                  const spot = ACCENT_SPOTS[i % ACCENT_SPOTS.length];
+                  return (
+                    <span key={i} style={{
+                      position: 'absolute', top: spot.top, left: spot.left,
+                      fontSize: spot.size, opacity: 0.3,
+                      animation: `float ${3.4 + i * 0.5}s ease-in-out ${i * 0.3}s infinite`,
+                      display: 'inline-block',
+                    }}>{emoji}</span>
+                  );
+                })}
               </div>
 
               <div style={{
-                width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.2)',
+                width: 52, height: 52, borderRadius: 16, background: 'rgba(255,255,255,0.2)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 6,
                 animation: `float ${3.2 + blockIdx * 0.3}s ease-in-out ${blockIdx * 0.2}s infinite`,
               }}>
@@ -49,7 +63,7 @@ export default function CtaBlocksSection() {
                 style={{
                   display: 'inline-flex', alignItems: 'center', gap: 8, alignSelf: 'flex-start',
                   background: 'white', color: block.bg, fontFamily: 'Nunito', fontWeight: 700, fontSize: 14,
-                  borderRadius: 10, padding: '10px 18px', textDecoration: 'none',
+                  borderRadius: 999, padding: '10px 20px', textDecoration: 'none',
                   transition: 'transform 200ms ease',
                 }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-2px)'; }}

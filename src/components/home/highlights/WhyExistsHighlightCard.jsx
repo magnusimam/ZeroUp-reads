@@ -3,11 +3,19 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { WHY_EXISTS_COPY } from './highlightsConfig';
 
+// Illustration asset: two children reading a book together, sourced from the
+// design reference screenshot with its baked-in text painted out (see the
+// reference's own "Why ZeroUp Reads Exists" / "Learn more" copy — reproduced
+// below as real, live text rather than pixels, same treatment as
+// LanguagesMapHighlightCard). Replaces the old decorative emoji placeholder.
+const WHY_EXISTS_ILLUSTRATION = '/images/why-exists-illustration.png';
+
 export default function WhyExistsHighlightCard() {
   return (
     <div className="home-card-lift" style={{
       background: '#F1EBFB', borderRadius: 20, padding: 28,
       display: 'flex', flexDirection: 'column', height: '100%',
+      overflow: 'hidden',
     }}>
       <h3 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', margin: '0 0 12px' }}>
         {WHY_EXISTS_COPY.title}
@@ -26,18 +34,18 @@ export default function WhyExistsHighlightCard() {
         Learn more <ArrowRight size={14} />
       </Link>
 
-      {/* Decorative illustration accent — same low-fidelity emoji/shape
-          style used elsewhere on the homepage (HowItWorksSection) rather
-          than a sourced illustration asset. */}
-      <div aria-hidden="true" style={{
-        marginTop: 'auto', borderRadius: 16, background: 'rgba(255,255,255,0.55)',
-        padding: '20px 16px', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', gap: 8, fontSize: 40,
-      }}>
-        <span role="img" aria-label="">🧒</span>
-        <span style={{ fontSize: 26 }} role="img" aria-label="">📖</span>
-        <span role="img" aria-label="">👧</span>
-      </div>
+      {/* Real illustration (two children reading a book together), not a
+          decorative emoji/shape substitute — matches the LanguagesMapHighlightCard
+          treatment in the sibling card. */}
+      <img
+        src={WHY_EXISTS_ILLUSTRATION}
+        alt="Two children sitting together outdoors, reading a book and smiling"
+        style={{
+          marginTop: 'auto', width: '100%', aspectRatio: '212 / 98',
+          objectFit: 'cover', objectPosition: 'center',
+          borderRadius: 16, display: 'block',
+        }}
+      />
     </div>
   );
 }

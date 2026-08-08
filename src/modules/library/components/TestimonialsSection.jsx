@@ -2,30 +2,35 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCoverArt from '../../books/BookCoverArt';
 
-const AVATAR_COLORS = ['#7A3FA0', '#1F6F6B', '#A9762F', '#1F5C33', '#2A3E8C'];
+const AVATAR_COLORS = ['#E8A020', '#3DBE8A', '#FF6B6B', '#2D6BE4', '#7A3FA0'];
+const BORDER_CLASSES = ['border-l-amber', 'border-l-green', 'border-l-coral', 'border-l-sky-blue', 'border-l-[#7A3FA0]'];
 
 export default function TestimonialsSection({ testimonials, books }) {
   const navigate = useNavigate();
 
   return (
     <section className="max-w-content mx-auto w-full px-4 sm:px-6 py-12">
-      <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-cocoa text-center mb-10">
-        Parent &amp; Teacher Picks
+      <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-cocoa text-center mb-2">
+        💛 Parent &amp; Teacher Picks
       </h2>
+      <p className="font-nunito-sans text-charcoal/50 text-sm text-center mb-10">
+        Real words from the grown-ups who read along.
+      </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {testimonials.map((t, i) => {
           const book = books.find(b => b.id === t.bookId);
           const avatarColor = AVATAR_COLORS[i % AVATAR_COLORS.length];
+          const borderClass = BORDER_CLASSES[i % BORDER_CLASSES.length];
 
           return (
             <div
               key={t.id}
-              className="rounded-2xl bg-white border-l-4 border-l-gold border border-gold/15 p-6 flex flex-col gap-5 shadow-card"
+              className={`rounded-3xl bg-white border-l-[6px] ${borderClass} border border-gold/15 p-6 flex flex-col gap-5 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all`}
             >
               <div className="flex items-center gap-3">
                 <div
-                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-nunito font-bold text-lg shrink-0"
+                  className="w-12 h-12 rounded-full flex items-center justify-center text-white font-nunito font-bold text-lg shrink-0 shadow-card"
                   style={{ background: avatarColor }}
                 >
                   {t.name[0]}
@@ -37,7 +42,7 @@ export default function TestimonialsSection({ testimonials, books }) {
               </div>
 
               <p className="font-nunito-sans italic text-charcoal/75 text-sm leading-relaxed">
-                “{t.quote}”
+                <span aria-hidden="true">💬</span> “{t.quote}”
               </p>
 
               {book && (

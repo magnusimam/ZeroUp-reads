@@ -61,9 +61,40 @@ export const HOMEPAGE_CATEGORIES = Object.keys(CATEGORY_META)
 // than inventing a 4th filter value nothing would ever match, each tier below
 // maps to the closest real BOOK_LEVELS value so these cards always resolve to
 // real books on the Library page.
+//
+// `illustration` is a real cropped asset (not an emoji stand-in) — sourced
+// from the design reference screenshot the same way LanguagesMapHighlightCard's
+// map art was: the baked-in title/age text and card background are cropped
+// away above the illustration band, reproduced below as real, live text
+// (`label`/`ageRange`) so it stays screen-reader accessible and editable in
+// one place instead of trapped inside an image. The reference's own arrow
+// icon is kept baked into the crop (purely decorative — the whole card is
+// already a Link) rather than duplicated as a second live element.
+// `bg` is sampled directly from the same screenshot so the live text-zone
+// background blends seamlessly into the top edge of the illustration crop.
 export const READING_LEVELS = [
-  { key: 'beginner', label: 'Beginner', ageRange: 'Ages 3–6', emoji: '🐣📖', accent: '#D97706', bg: '#FEF3C7', libraryLevel: 'Beginner' },
-  { key: 'growing', label: 'Growing Reader', ageRange: 'Ages 6–9', emoji: '🧒🌳', accent: '#16A34A', bg: '#DCFCE7', libraryLevel: 'Beginner' },
-  { key: 'explorer', label: 'Explorer', ageRange: 'Ages 9–12', emoji: '🧑‍🚀📖', accent: '#2563EB', bg: '#DBEAFE', libraryLevel: 'Intermediate' },
-  { key: 'advanced', label: 'Advanced', ageRange: 'Ages 12+', emoji: '🌌📖', accent: '#0F172A', bg: '#E2E8F0', libraryLevel: 'Advanced' },
+  {
+    key: 'beginner', label: 'Beginner', icon: '🐣', ageRange: 'Ages 3–6',
+    accent: '#3A2E1C', bg: '#FBF2C6',
+    illustration: '/images/reading-level-beginner.png',
+    libraryLevel: 'Beginner',
+  },
+  {
+    key: 'growing', label: 'Growing Reader', icon: '🌿', ageRange: 'Ages 6–9',
+    accent: '#1F6B3D', bg: '#EDF4C1',
+    illustration: '/images/reading-level-growing.png',
+    libraryLevel: 'Beginner',
+  },
+  {
+    key: 'explorer', label: 'Explorer', icon: '🚀', ageRange: 'Ages 9–12',
+    accent: '#16223D', bg: '#D8EAF3',
+    illustration: '/images/reading-level-explorer.png',
+    libraryLevel: 'Intermediate',
+  },
+  {
+    key: 'advanced', label: 'Advanced', icon: '🎓', ageRange: 'Ages 12+',
+    accent: '#16223D', bg: '#EBDCF6',
+    illustration: '/images/reading-level-advanced.png',
+    libraryLevel: 'Advanced',
+  },
 ];

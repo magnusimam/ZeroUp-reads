@@ -2,7 +2,6 @@ import React from 'react';
 import { Lightbulb, Languages, Mic, Laptop, Sparkles } from 'lucide-react';
 import { useScrollReveal } from '../../hooks/useScrollReveal';
 import { HOW_IT_WORKS_STEPS } from './howItWorksConfig';
-import AmbientDecor from './AmbientDecor';
 
 const ICONS = { lightbulb: Lightbulb, languages: Languages, mic: Mic, laptop: Laptop, sparkles: Sparkles };
 
@@ -11,7 +10,6 @@ export default function HowItWorksSection() {
 
   return (
     <section style={{ background: 'white', padding: '72px 0', position: 'relative', overflow: 'hidden' }}>
-      <AmbientDecor count={4} offset={2} />
       <div className="container" style={{ position: 'relative', zIndex: 1 }}>
         <h2 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 32, color: 'var(--navy)', textAlign: 'center', margin: '0 0 56px' }}>
           How ZeroUp Reads Works

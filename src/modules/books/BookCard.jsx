@@ -47,7 +47,7 @@ function StarRating({ rating }) {
   );
 }
 
-export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'Read Now', shelf = false }) {
+export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'Read Now', shelf = false, onTranslateRequest = null }) {
   const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(book.bookmarked || false);
 
@@ -87,6 +87,22 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
             borderRadius: 99, padding: '4px 12px', letterSpacing: '0.03em',
             backdropFilter: 'blur(4px)',
           }}>{book.ageGroup}</span>
+        )}
+
+        {/* Translate request (reader-facing; queued for admin approval) */}
+        {onTranslateRequest && (
+          <button
+            onClick={e => { e.stopPropagation(); onTranslateRequest(book); }}
+            aria-label={`Request a translation of ${book.title}`}
+            title="Request a translation"
+            style={{
+              position: 'absolute', top: 12, right: 12,
+              background: 'rgba(10,10,15,0.55)', border: '1px solid rgba(212,175,55,0.5)',
+              color: 'var(--gold)', fontSize: 12, fontWeight: 700, fontFamily: 'Nunito',
+              borderRadius: 99, padding: '4px 10px', letterSpacing: '0.02em',
+              backdropFilter: 'blur(4px)', cursor: 'pointer',
+            }}
+          >🌍 Translate</button>
         )}
 
         {/* Bottom info panel */}
@@ -219,6 +235,19 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
               fontSize: 12, fontWeight: 700, fontFamily: 'Nunito',
               borderRadius: 99, padding: '3px 10px',
             }}>{book.level}</span>
+          )}
+          {onTranslateRequest && (
+            <button
+              onClick={e => { e.stopPropagation(); onTranslateRequest(book); }}
+              aria-label={`Request a translation of ${book.title}`}
+              title="Request a translation"
+              style={{
+                background: isLuxury ? 'rgba(212,175,55,0.15)' : 'rgba(31,61,110,0.08)',
+                color: isLuxury ? 'var(--gold)' : 'var(--navy)',
+                border: 'none', fontSize: 12, fontWeight: 700, fontFamily: 'Nunito',
+                borderRadius: 99, padding: '3px 10px', cursor: 'pointer',
+              }}
+            >🌍 Translate</button>
           )}
         </div>
 

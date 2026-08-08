@@ -106,13 +106,14 @@ Adapted from *Afrizonemart 2.0 — 10 Engineering Principles for Building a Plat
 **What it means here:** UI (JSX/Tailwind), business logic (filtering, validation, pagination math, translation), and data (mock/localStorage) should not live in the same function.
 
 **Audit findings:**
-- ~~`HomePage.jsx` — 1,154 lines, by far the largest file in the app.~~ **Fixed:** split into 11 presentational components under `src/components/home/` — `HomePage.jsx` itself is now 433 lines, a composition of imports rather than a monolith.
+- ~~`HomePage.jsx` — 1,154 lines, by far the largest file in the app.~~ **Fixed:** split into 11 presentational components under `src/components/home/` — `HomePage.jsx` itself dropped to 433 lines, a composition of imports rather than a monolith. (Its hero section was later reverted to inline JSX — see action item below.)
 - ~~`LibraryPage.jsx` — defines a `FilterPanel` component inside the page file, alongside filter/sort business logic.~~ **Fixed:** rebuilt as a thin composition of `src/modules/library/components/*` sections plus `useLibraryFilters.js`.
 - ~~`AdminCMSPage.jsx` — form validation, delete logic, and a translation stub are all inline in the page component.~~ **Fixed:** all of it now lives in `src/modules/admin/useBookUpload.js`.
 - ~~`AnalyticsPage.jsx`'s pie-chart geometry math (conic-gradient segment calculation) is computed inline in the page component's render body.~~ **Fixed:** extracted into `src/modules/analytics/pieChart.js` (`computeTotal`, `computePieGradient`) — pure functions, unit-testable without rendering anything. `AnalyticsPage.jsx` just calls them. Verified live: the pie chart still renders with the correct `conic-gradient` background after the extraction.
 - ~~A re-audit found `StoryBooksSection.jsx` and `EducationalBooksSection.jsx` independently duplicating near-identical dropdown-filter logic (local open/select state, filter-by-field predicate) — the same behavior implemented twice instead of shared.~~ **Fixed:** extracted into `src/modules/library/useSectionFilter.js` (open/select/filter state), used by both components; each keeps only its own field selector and its own slicing/display composition, which genuinely differ (a plain slice vs. a featured-book + small-list split).
 
-**Action items:** none open for this principle.
+**Action items:**
+- `HomePage.jsx`'s hero + `Navbar.jsx` were reverted to a second developer's pixel-matched, inline-styled implementation (per explicit request, to use his committed design verbatim over the app's own extracted `HeroSection`/`HeroNavbar` components, which were deleted as the now-duplicate copy). This reintroduces ~200 lines of inline `style={{}}` JSX into both files — a deliberate, known exception like the Library header/footer one below, not a fresh violation to chase. If this hero/nav is kept long-term, re-extract it into presentational components (headline/CTA/slide data driven, matching the deleted `heroSlides.ts` pattern) the same way the rest of `HomePage.jsx` already is.
 
 ---
 
