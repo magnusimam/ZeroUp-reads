@@ -77,7 +77,7 @@ export default function EducationalBooksSection({ books, viewAll = false, onTran
           {/* Featured wide card */}
           <div
             className="lg:col-span-3 rounded-3xl overflow-hidden border-2 border-sky-blue/25 bg-white grid grid-cols-1 sm:grid-cols-2 cursor-pointer group shadow-card hover:shadow-card-hover transition-shadow"
-            onClick={() => navigate(`/read/${featuredBook.id}`)}
+            onClick={() => navigate(`/book/${featuredBook.id}`)}
           >
             <div className="relative h-48 sm:h-full min-h-[220px]">
               <BookCoverArt category={featuredBook.category} style={{ position: 'absolute', inset: 0 }} />
@@ -94,10 +94,10 @@ export default function EducationalBooksSection({ books, viewAll = false, onTran
               </p>
               <div className="flex items-center gap-3">
                 <button
-                  onClick={e => { e.stopPropagation(); navigate(`/read/${featuredBook.id}`); }}
+                  onClick={e => { e.stopPropagation(); navigate(`/book/${featuredBook.id}`); }}
                   className="self-start px-6 py-3 rounded-full bg-sky-blue text-white font-nunito font-bold text-sm hover:opacity-90 transition-opacity group-hover:scale-[1.02]"
                 >
-                  Open Library
+                  View Details
                 </button>
                 {onTranslateRequest && (
                   <button
@@ -118,8 +118,8 @@ export default function EducationalBooksSection({ books, viewAll = false, onTran
                 key={book.id}
                 role="button"
                 tabIndex={0}
-                onClick={() => navigate(`/read/${book.id}`)}
-                onKeyDown={e => e.key === 'Enter' && navigate(`/read/${book.id}`)}
+                onClick={() => navigate(`/book/${book.id}`)}
+                onKeyDown={e => e.key === 'Enter' && navigate(`/book/${book.id}`)}
                 className="flex items-center gap-4 p-3 rounded-2xl border-2 border-sky-blue/15 bg-black/[0.02] hover:border-sky-blue/50 hover:bg-black/[0.04] hover:-translate-y-0.5 transition-all text-left cursor-pointer"
               >
                 <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0">

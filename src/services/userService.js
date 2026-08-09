@@ -1,7 +1,8 @@
 import { MOCK_USER } from '../utils/mockData';
 import * as eventBus from '../utils/eventBus';
 import * as booksService from '../modules/books/booksService';
-import { READING_MINUTES_PER_PAGE, WEEKDAY_LABELS } from '../config/rules';
+import * as syncService from '../modules/reading/syncService';
+import { READING_MINUTES_PER_PAGE, READING_POINTS_PER_PAGE, WEEKDAY_LABELS } from '../config/rules';
 
 const PROGRESS_KEY = 'zeroup_reading_progress';
 
@@ -86,6 +87,13 @@ export function getProgress() {
   return readProgress();
 }
 
+// ReaderSidebar's "Reading Points" stat — a simple derived multiple of pages
+// actually read, not a separately-persisted counter, so it can never drift
+// out of sync with pagesRead the way two independently-tracked totals could.
+export function getReadingPoints() {
+  return Math.round(readProgress().pagesRead * READING_POINTS_PER_PAGE);
+}
+
 // Reader Dashboard's "Reading Progress" bar chart — last persisted Mon-Sun
 // week, labelled and ready to render, so the chart component doesn't touch
 // raw progress internals (Separation of Concerns).
@@ -99,6 +107,8 @@ export function getWeeklyActivity() {
 // reader actually opened, instead of the homepage fabricating two books as
 // "in progress" for every logged-in user regardless of their real history.
 export function recordProgress(bookId, currentPage, totalPages) {
+  if (!navigator.onLine) syncService.markPendingSync();
+
   let progress = bumpStreak(readProgress());
   progress = bumpWeeklyActivity(progress, READING_MINUTES_PER_PAGE / 60);
   if (progress.completedBookIds.includes(bookId)) return writeProgress(progress);

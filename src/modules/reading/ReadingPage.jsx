@@ -1,172 +1,251 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link, useParams } from 'react-router-dom';
-import Navbar from '../../components/Navbar';
-import Footer from '../../components/Footer';
-import { isBookmarked, toggleBookmark } from './bookmarksService';
-import * as booksService from '../books/booksService';
+import {
+  ArrowLeft, Star, Headphones, Languages, Type, Moon, Sun,
+  List, Bookmark, StickyNote, Settings, BookOpen, ChevronLeft, ChevronRight, Volume2,
+} from 'lucide-react';
+import BookCoverArt from '../books/BookCoverArt';
+import ReaderSidebar from './components/ReaderSidebar';
+import TranslateMenu from './components/TranslateMenu';
+import ReadingText from './components/ReadingText';
+import DidYouKnowCard from './components/DidYouKnowCard';
+import ContentsDrawer from './components/ContentsDrawer';
+import NotesDrawer from './components/NotesDrawer';
+import ReadingSettingsPanel from './components/ReadingSettingsPanel';
+import TranslateRequestModal from '../library/components/TranslateRequestModal';
 import * as userService from '../../services/userService';
-import * as eventBus from '../../utils/eventBus';
-import { useToast } from '../../context/ToastContext';
-import * as settingsService from '../settings/settingsService';
+import useReadingPage from './useReadingPage';
 
+// Small icon-over-label header action (Save / Listen / Translate / Text
+// Size / Night Mode) — page-local, not reused elsewhere, same pattern
+// BookDetailPage uses for its own local InfoPill/StarRating helpers.
+function HeaderAction({ icon: Icon, label, active, filled, onClick }) {
+  return (
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1 group">
+      <span className={`w-10 h-10 rounded-full flex items-center justify-center border transition-colors ${
+        active ? 'bg-story-orange border-story-orange text-white' : 'bg-white border-story-navy/10 text-story-navy shadow-story-card group-hover:border-story-orange/40'
+      }`}>
+        <Icon size={17} fill={filled ? 'currentColor' : 'none'} />
+      </span>
+      <span className={`text-[11px] font-nunito font-bold ${active ? 'text-story-orange' : 'text-ink-secondary'}`}>{label}</span>
+    </button>
+  );
+}
+
+// Bottom-toolbar icon+label pair (Contents / Bookmark / Notes / Settings).
+function ToolbarButton({ icon: Icon, label, active, onClick }) {
+  return (
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1">
+      <Icon size={19} className={active ? 'text-story-orange' : 'text-ink-secondary'} fill={active ? 'currentColor' : 'none'} />
+      <span className={`text-[11px] font-nunito font-bold ${active ? 'text-story-orange' : 'text-ink-secondary'}`}>{label}</span>
+    </button>
+  );
+}
+
+// Immersive, sidebar-driven reading experience — its own app shell (own
+// sidebar + header, no marketing Navbar/Footer), same reasoning as the
+// Reader Dashboard: a signed-in-feeling screen, not a public marketing page.
+// Page itself stays presentational; all state/logic lives in useReadingPage
+// (Separation of Concerns).
 export default function ReadingPage() {
   const { bookId } = useParams();
-  const toast = useToast();
+  const reading = useReadingPage(bookId);
+  const { book } = reading;
 
-  const book = booksService.getBook(bookId);
-
-  const [pageIndex, setPageIndex] = useState(0);
-  const [fontSize, setFontSize] = useState(() => settingsService.getSettings().readerFontSize);
-  const [bookmarked, setBookmarked] = useState(() => isBookmarked(bookId));
-
-  useEffect(() => {
-    if (book) setBookmarked(isBookmarked(book.id));
-  }, [book]);
-
-  // Real per-book progress (Continue Reading on the homepage reads this
-  // instead of two hardcoded books being shown as "in progress" for everyone).
-  useEffect(() => {
-    if (book) userService.recordProgress(book.id, pageIndex + 1, book.content.length);
-  }, [book, pageIndex]);
-
-  //if book doesn't exist
   if (!book) {
     return (
-      <div className='bg-slate-50 min-h-screen flex flex-col'>
-        <Navbar />
-        <div className='flex items-center justify-center px-6'>
-         <div className='text-center'>
-          <p className='text-4xl mb-4'>📖</p>
-          <h1 className='text-xl font-bold text-slate-900'>Book not found</h1>
-          <Link to="/library" className='text-teal-600 font-medium text-sm mt-3 inline-block'>
-              Back to Library
+      <div style={{ background: 'var(--hero-cream)' }} className="min-h-screen flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-4xl mb-4">📖</p>
+          <h1 className="text-xl font-bold text-story-navy font-nunito">Book not found</h1>
+          <Link to="/library" className="text-story-orange font-nunito font-bold text-sm mt-3 inline-block">
+            ← Back to Library
           </Link>
-         </div>
         </div>
-        < Footer />
       </div>
     );
   }
 
-
-  const totalPages = book.content.length;
-  const isLastPage = pageIndex === totalPages - 1;
-  const isFirstPage = pageIndex === 0;
-
-  function nextPage(){
-    if (!isLastPage) {
-      setPageIndex(pageIndex + 1);
-    } else {
-      eventBus.emit('book.completed', { id: book.id, title: book.title });
-      toast?.addToast(`You finished "${book.title}"!`, 'success');
-    }
-  }
-
-  function prevPage(){
-    if (!isFirstPage)  setPageIndex(pageIndex - 1);
-  }
-
-  function increaseFont() {
-    setFontSize((f) => Math.min(f + 2, 28));
-  }
-
-  function decreaseFont() {
-    setFontSize((f) => Math.max(f - 2, 14));
-  }
+  const streak = userService.getProgress().streak || 0;
+  const points = userService.getReadingPoints();
 
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col">
-      <Navbar />
+    <div style={{ background: 'var(--hero-cream)', minHeight: '100vh' }} className="reader-shell flex gap-6 p-6">
+      {!reading.focusMode && <ReaderSidebar streak={streak} points={points} />}
 
-      {/*--- TOP BAR ---*/}
-      <div className="bg-white border-b border-slate-200 px-6 py-4">
-        <div className="max-w-3xl mx-auto flex items-center justify-between">
-          <Link
-           to="/library"
-           className="text-sm font-medium text-teal-600 hover:text-teal-700"
-          >
-            Back to Library
-          </Link>
+      <main className="flex-1 min-w-0 flex flex-col gap-5 max-w-4xl mx-auto w-full pb-32 font-nunito-sans">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Link
+              to="/library"
+              aria-label="Back to Library"
+              className="w-10 h-10 rounded-full bg-white border border-story-navy/10 flex items-center justify-center text-story-navy hover:bg-story-cream shadow-story-card shrink-0"
+            >
+              <ArrowLeft size={18} />
+            </Link>
+            <div>
+              <h1 className="font-nunito font-extrabold text-story-navy text-lg leading-tight">{book.title}</h1>
+              <p className="text-ink-secondary text-xs font-nunito font-bold">
+                {book.category} • {book.level}
+                {reading.readingOffline && <span className="ml-2 text-green">• Reading offline 📶</span>}
+              </p>
+            </div>
+          </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setBookmarked((current) => {
-                const updated = toggleBookmark(book.id);
-                return updated.includes(book.id);
-              })}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center text-sm transition-colors ${
-                bookmarked ? 'bg-amber-100 border-amber-300 text-amber-600' : 'border-slate-300 text-slate-400 hover:bg-slate-100'
-              }`}
-            >
-              {bookmarked ? '★' : '☆'}
-            </button>
-            <button
-              onClick={decreaseFont}
-              className="w-8 h-8 rounded-full border border-slate-300 text-slate-600 text-sm font-bold hover:bg-slate-100"
-            >
-              A-
-            </button>
-            <button
-            onClick={increaseFont}
-             className="w-8 h-8 rounded-full border border-slate-300 text-slate-600 text-sm font-bold hover:bg-slate-100">
-              A+
-              </button>
+          <div className="flex items-center gap-2.5">
+            <HeaderAction icon={Star} label="Save" active={reading.saved} filled={reading.saved} onClick={reading.toggleSave} />
+            <HeaderAction icon={Headphones} label="Listen" active={reading.speaking} onClick={reading.toggleListen} />
+            <div className="relative">
+              <HeaderAction
+                icon={Languages}
+                label="Translate"
+                active={reading.translateMenuOpen}
+                onClick={() => reading.setTranslateMenuOpen((v) => !v)}
+              />
+              {reading.translateMenuOpen && (
+                <TranslateMenu
+                  book={book}
+                  availableLanguages={reading.availableLanguages}
+                  onSelectAvailable={reading.selectAvailableLanguage}
+                  onMoreLanguages={reading.openMoreLanguages}
+                />
+              )}
+            </div>
+            <HeaderAction icon={Type} label="Text Size" onClick={() => reading.setSettingsOpen(true)} />
+            <HeaderAction
+              icon={reading.nightMode ? Sun : Moon}
+              label="Night Mode"
+              active={reading.nightMode}
+              onClick={reading.toggleNightMode}
+            />
           </div>
         </div>
-      </div>
 
-      {/*---BOOK HEADER---*/}
-      <div className="max-w-3xl mx-auto px-6 pt-10 pb-6 text-center">
-        <div className="w-28 h-40 mx-auto mb-5 rounded-lg bg-gradient-to-br from-teal-600 to-slate-800 flex items-center justify-center text-3xl">
-          📚
+        {/* Hero image */}
+        <div className="relative w-full h-56 sm:h-72 rounded-3xl overflow-hidden shadow-story-card">
+          <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
         </div>
-       
-        <h1 className="text-2xl font-bold text-slate-900">
-          {book.title}
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">{book.author}</p>
 
-        <div className="flex gap-2 justify-center mt-3">
-          <span className="text-xs bg-teal-100 text-teal-700 px-3 py-1 rounded-full font-medium">
-            {book.language}
-          </span>
-          <span className="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
-            {book.level}
-          </span>
+        {/* Page content */}
+        <div className={`relative rounded-3xl border px-6 py-7 sm:px-9 sm:py-9 shadow-story-card transition-colors ${
+          reading.nightMode ? 'bg-midnight-light border-white/5' : 'bg-white border-story-navy/8'
+        }`}>
+          <ReadingText
+            text={book.content[reading.pageIndex]}
+            matches={reading.vocabularyMatches}
+            className={`leading-relaxed transition-all ${reading.nightMode ? 'text-white/90' : 'text-ink-primary'}`}
+            style={{ fontSize: `${reading.fontSize}px` }}
+          />
+          <DidYouKnowCard fact={reading.funFact} />
+        </div>
+      </main>
+
+      {/* Floating listen button */}
+      <button
+        type="button"
+        onClick={reading.toggleListen}
+        aria-label={reading.speaking ? 'Stop listening' : 'Listen to this page'}
+        className={`fixed bottom-32 right-6 sm:right-10 z-30 w-14 h-14 rounded-full flex items-center justify-center shadow-story-float transition-colors ${
+          reading.speaking ? 'bg-story-orange' : 'bg-story-navy'
+        } text-white`}
+      >
+        <Volume2 size={22} />
+      </button>
+
+      {/* Bottom progress + toolbar */}
+      <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-story-navy/10">
+        <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between gap-4">
+          <button
+            type="button"
+            onClick={reading.prevPage}
+            disabled={reading.isFirstPage}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-story-navy text-white text-sm font-nunito font-bold disabled:opacity-30 disabled:cursor-not-allowed"
+          >
+            <ChevronLeft size={15} /> Previous
+          </button>
+
+          <div className="flex-1 flex flex-col items-center gap-1.5 max-w-xs mx-auto">
+            <span className="text-xs font-nunito font-bold text-ink-secondary">
+              Page {reading.pageIndex + 1} of {reading.totalPages} • {reading.progressPercent}%
+            </span>
+            <div className="w-full h-1.5 rounded-full bg-story-navy/10 overflow-hidden">
+              <div className="h-full bg-story-orange rounded-full transition-all" style={{ width: `${reading.progressPercent}%` }} />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={reading.nextPage}
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-story-orange text-white text-sm font-nunito font-bold hover:bg-story-orange-dark"
+          >
+            {reading.isLastPage ? 'Finish' : 'Next'} <ChevronRight size={15} />
+          </button>
+        </div>
+
+        <div className="border-t border-story-navy/8 px-6 py-2.5 flex items-center justify-around">
+          <ToolbarButton icon={List} label="Contents" onClick={() => reading.setContentsOpen(true)} />
+          <ToolbarButton
+            icon={Bookmark}
+            label="Bookmark"
+            active={reading.pageBookmark === reading.pageIndex}
+            onClick={reading.togglePageBookmark}
+          />
+          <button
+            type="button"
+            onClick={reading.setFocusMode}
+            aria-label={reading.focusMode ? 'Exit focus mode' : 'Enter focus mode'}
+            title={reading.focusMode ? 'Exit focus mode' : 'Distraction-free reading'}
+            className="w-12 h-12 -mt-6 rounded-full bg-story-orange text-white flex items-center justify-center shadow-story-float hover:bg-story-orange-dark transition-colors"
+          >
+            <BookOpen size={20} />
+          </button>
+          <ToolbarButton icon={StickyNote} label="Notes" onClick={() => reading.setNotesOpen(true)} />
+          <ToolbarButton icon={Settings} label="Settings" onClick={() => reading.setSettingsOpen(true)} />
         </div>
       </div>
 
-      {/*-- CONTENT AREA--*/}
-      <div className="max-w-3xl mx-auto px-6 py-8 bg-white rounded-xl border border-slate-200 mb-8 w-full">
-        <p 
-        className="leading-relaxed text-slate-800 transition-all"
-        style={{fontSize: `${fontSize}px`}}>
-          {book.content[pageIndex]}
-        </p>
-      </div>
+      <ContentsDrawer
+        open={reading.contentsOpen}
+        onClose={() => reading.setContentsOpen(false)}
+        content={book.content}
+        currentIndex={reading.pageIndex}
+        bookmarkedIndex={reading.pageBookmark}
+        onJump={reading.goToPage}
+      />
+      <NotesDrawer
+        open={reading.notesOpen}
+        onClose={() => reading.setNotesOpen(false)}
+        notes={reading.notes}
+        pageIndex={reading.pageIndex}
+        onAdd={reading.addNote}
+        onDelete={reading.deleteNote}
+      />
+      <ReadingSettingsPanel
+        open={reading.settingsOpen}
+        onClose={() => reading.setSettingsOpen(false)}
+        fontSize={reading.fontSize}
+        onIncrease={reading.increaseFont}
+        onDecrease={reading.decreaseFont}
+        nightMode={reading.nightMode}
+        onToggleNightMode={reading.toggleNightMode}
+      />
 
-      {/*--PAGE NAVIGATION--*/}
-      <div className="max-w-2xl mx-auto px-6 pb-14 flex items-center justify-between w-full">
-        <button
-        onClick={prevPage}
-        disabled={isFirstPage}
-        className="px-5 py-2 rounded-lg border border-slate-300 text-slate-600 font-medium hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
-          Previous
-        </button>
+      <TranslateRequestModal
+        book={reading.translateRequest.book}
+        language={reading.translateRequest.language}
+        onLanguageChange={reading.translateRequest.setLanguage}
+        submitting={reading.translateRequest.submitting}
+        onCancel={reading.translateRequest.close}
+        onSubmit={reading.translateRequest.submit}
+      />
 
-        
-        <span className="text-sm text-slate-500">
-          Page {pageIndex + 1} of {totalPages}
-        </span>
-
-        <button 
-        onClick={nextPage}
-        className="px-5 py-2 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700">
-          {isLastPage ? "Finish" : "Next"}
-        </button>
-      </div>
-
-      <Footer />
+      <style>{`
+        @media (max-width: 900px) {
+          .reader-shell { flex-direction: column; padding: 16px !important; }
+          .reader-sidebar { display: none; }
+        }
+      `}</style>
     </div>
   );
 }

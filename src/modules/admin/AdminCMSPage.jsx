@@ -1,12 +1,10 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import { useAuth } from '../auth/AuthContext';
 import { BOOK_CATEGORIES, BOOK_LANGUAGES, BOOK_LEVELS } from '../../utils/mockData';
 import useBookUpload from './useBookUpload';
 import useTranslationRequests from './useTranslationRequests';
 import { isFeatureEnabled } from '../../config/featureFlags';
-import * as booksService from '../books/booksService';
 
 // Shared with mockData.js so a book uploaded here always matches a browsable
 // category/language/level elsewhere (the Library page's chips and filters, etc.).
@@ -15,11 +13,8 @@ const LANGUAGES = BOOK_LANGUAGES;
 const LEVELS = BOOK_LEVELS;
 
 export default function AdminCMSPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
   const {
-    books, setBooks,
+    books,
     showForm, setShowForm,
     successMSG,
     deleteConfirm, setDeleteConfirm,
@@ -37,21 +32,11 @@ export default function AdminCMSPage() {
   const {
     pendingRequests,
     requestMSG,
-    approve: approveTranslationRequest,
     reject: rejectTranslationRequest,
   } = useTranslationRequests();
 
-  function handleApproveRequest(requestId) {
-    approveTranslationRequest(requestId);
-    setBooks(booksService.getBooks());
-  }
-
-  //REDIRECT IF NOT ADMIN
-  if (!user || user.role !== "admin"){
-    navigate("/library");
-    return null;
-  }
-
+  // Route-level gating (RequireRole, App.js) already ensures only an
+  // administrator ever reaches this component — no inline check needed here.
   const translationEnabled = isFeatureEnabled('bookTranslation');
 
 return (
@@ -68,12 +53,26 @@ return (
           Manage books, uploads, and translations
         </p>
       </div>
-      <button
-      onClick={() => setShowForm(!showForm)}
-      className='bg-teal-600 hover:bg-teal-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm'
-      >
-        {showForm ? "cancel" : "+ Upload Book"}
-      </button>
+      <div className='flex gap-2'>
+        <Link
+        to='/admin/users'
+        className='bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm'
+        >
+          👥 User Management
+        </Link>
+        <Link
+        to='/admin/support'
+        className='bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm'
+        >
+          🎫 Support Tickets
+        </Link>
+        <button
+        onClick={() => setShowForm(!showForm)}
+        className='bg-teal-600 hover:bg-teal-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors text-sm'
+        >
+          {showForm ? "cancel" : "+ Upload Book"}
+        </button>
+      </div>
     </div>
 
     {/* SUCCESS MESSAGE */}
@@ -197,7 +196,8 @@ return (
             </span>
           </h2>
           <p className='text-xs text-slate-500 mt-1'>
-            Readers can request a book be translated from the Library page. Nothing publishes until you approve it here.
+            Readers can request a book be translated from the Library page. Open a request in the
+            Translation Workspace for a human translator to review before anything publishes.
           </p>
         </div>
 
@@ -226,12 +226,12 @@ return (
                   >
                     Decline
                   </button>
-                  <button
-                    onClick={() => handleApproveRequest(request.id)}
+                  <Link
+                    to={`/translate/${request.bookId}/${request.language}`}
                     className='px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition-colors'
                   >
-                    Approve
-                  </button>
+                    Open in Workspace →
+                  </Link>
                 </div>
               </div>
             ))}

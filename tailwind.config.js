@@ -22,6 +22,21 @@ module.exports = {
         "midnight-light": "#12213F",
         ink: "#0F2044",
         "deep-navy": "#0F1629",
+        // BookDetailPage's "storybook" palette (docs reference: premium child-
+        // friendly light theme) — kept as its own named set rather than
+        // overwriting navy/amber/cream above, since those are still the
+        // active palette everywhere else in the app.
+        "story-cream": "#FFF9F2",
+        "story-orange": "#FF8A1E",
+        "story-orange-dark": "#E8760A",
+        "story-navy": "#0B1F4D",
+        "story-lavender": "#EDE6FF",
+        "story-sky": "#EAF5FF",
+        "story-mint": "#EAF9EE",
+        "story-yellow": "#FFF4D9",
+        "story-pink": "#FFEDEE",
+        "ink-primary": "#152238",
+        "ink-secondary": "#5C6574",
       },
       fontFamily: {
         nunito: ["Nunito", "sans-serif"],
@@ -42,6 +57,8 @@ module.exports = {
         card: "0 4px 20px rgba(31,61,110,0.10)",
         "card-hover": "0 12px 40px rgba(31,61,110,0.18)",
         nav: "0 2px 16px rgba(31,61,110,0.08)",
+        "story-card": "0 10px 34px rgba(11,31,77,0.08)",
+        "story-float": "0 24px 60px rgba(11,31,77,0.18)",
       },
     },
   },

@@ -64,7 +64,7 @@ export default function RegisterPage() {
 
     if (result.success) {
       login(result.user);
-      navigate('/dashboard');
+      navigate('/welcome');
     } else {
       setError(result.message || 'Registration failed. Please try again.');
     }

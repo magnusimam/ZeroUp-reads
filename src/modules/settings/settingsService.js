@@ -5,6 +5,7 @@ const SETTINGS_KEY = 'zeroup_reader_settings';
 const DEFAULT_SETTINGS = {
   preferredLanguage: '',
   readerFontSize: 18,
+  readerNightMode: false,
 };
 
 export function getSettings() {

@@ -452,3 +452,31 @@ h4 { font-size: 22px; font-weight: 600; }
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--cream); }
 ::-webkit-scrollbar-thumb { background: var(--navy); border-radius: 99px; }
+
+/* Hides the scrollbar on horizontally-scrolling rows (e.g. BookDetailPage's
+   Related Books carousel) while keeping the element natively scrollable/
+   swipeable — nav arrows and touch/trackpad scrolling remain the affordance. */
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+
+/* Soft entrance for BookDetailPage's hero content — staggered via the
+   `animation-delay` set inline per child so title/tagline/meta/actions settle
+   in one after another instead of all popping in at once. */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-hero-fade-up {
+  animation: heroFadeUp 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Slow ambient drift for the hero panel's decorative glow blobs — kept subtle
+   (small travel distance, long duration) so it reads as "alive" without
+   distracting from the book info it sits behind. */
+@keyframes blobFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50%      { transform: translate(3%, -4%) scale(1.08); }
+}
+.animate-blob-float {
+  animation: blobFloat 9s ease-in-out infinite;
+}

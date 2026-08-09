@@ -21,7 +21,7 @@ const QUICK_LINKS = [
 const RESOURCE_LINKS = [
   { to: '#', label: 'For Teachers' },
   { to: '#', label: 'For Parents' },
-  { to: '#', label: 'Help Center' },
+  { to: '/help', label: 'Help Center' },
   { to: '/privacy', label: 'Privacy Policy' },
   { to: '/terms', label: 'Terms of Use' },
 ];

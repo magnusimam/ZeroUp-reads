@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../modules/auth/AuthContext';
 import ExploreMegaMenu from './ExploreMegaMenu';
 import { getAvatarColor } from '../utils/avatarColor';
+import { effectiveRole, hasRole, ROLES, PUBLISHING_ROLES, TRANSLATION_ROLES } from '../config/roles';
 
 // Open-book logo icon — blue pages, orange/red cover, matches the source design
 function BookLogoIcon() {
@@ -58,7 +59,7 @@ function AvatarDropdown({ user, logout }) {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'white', fontFamily: 'Nunito', fontWeight: 700, fontSize: 16,
         }}>{initial}</div>
-        {user.role === 'admin' && (
+        {effectiveRole(user) === ROLES.ADMINISTRATOR && (
           <span style={{
             background: 'var(--hero-orange)', color: 'white', fontSize: 11,
             fontWeight: 700, borderRadius: 99, padding: '2px 8px',
@@ -91,12 +92,43 @@ function AvatarDropdown({ user, logout }) {
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >👤 My Profile</Link>
-            {user.role === 'admin' && (
-              <Link to="/admin" onClick={() => setOpen(false)}
+            <Link to="/downloads" onClick={() => setOpen(false)}
+              style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >📥 My Downloads</Link>
+            <Link to="/help" onClick={() => setOpen(false)}
+              style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >❓ Help &amp; Support</Link>
+            {hasRole(user, PUBLISHING_ROLES) && (
+              <Link to="/publishing" onClick={() => setOpen(false)}
                 style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
-              >⚙️ Admin Dashboard</Link>
+              >📝 Publishing Studio</Link>
+            )}
+            {hasRole(user, TRANSLATION_ROLES) && (
+              <Link to="/translate" onClick={() => setOpen(false)}
+                style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >🌍 Translation Workspace</Link>
+            )}
+            {effectiveRole(user) === ROLES.ADMINISTRATOR && (
+              <>
+                <Link to="/admin" onClick={() => setOpen(false)}
+                  style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >⚙️ Admin Dashboard</Link>
+                <Link to="/admin/users" onClick={() => setOpen(false)}
+                  style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >👥 User Management</Link>
+              </>
             )}
             <button onClick={() => { logout(); setOpen(false); navigate('/'); }}
               style={{

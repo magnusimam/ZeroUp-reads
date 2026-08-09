@@ -288,6 +288,94 @@ export const MOCK_BOOKS = [
       "Artificial intelligence is just a computer that has been shown so many examples, it starts recognizing patterns on its own.",
     ],
   },
+  // The next three books exist to demonstrate BookDetailPage (src/modules/books/BookDetailPage.jsx)
+  // working from data alone — availableLanguages/learningObjectives live in the
+  // `attributes` bag (Schema-Driven Design) rather than as new core fields, so
+  // every other book above still renders on the same detail page unchanged.
+  {
+    id: '17', title: 'Queen of Katsina', author: 'Halima Yusuf',
+    language: 'English', level: 'Intermediate',
+    totalPages: 14,
+    category: 'History', ageGroup: 'Young Adult', rating: 4.8, reads: 2100,
+    description: "A young queen inherits a troubled throne in the ancient trading city of Katsina, and must learn that real power lies in listening before it lies in command.",
+    isEducational: true,
+    attributes: {
+      theme: 'History & Leadership',
+      tagline: 'A throne, a market at dawn, and a queen who chose to listen first.',
+      availableLanguages: ['English', 'Hausa', 'Yoruba'],
+      funFacts: [
+        'A kingdom is a place ruled by a king or queen. It can be big or small.',
+        'Katsina was one of the great Hausa trading cities, known for its busy markets over 1,000 years ago.',
+        'A council of elders traditionally helped advise a ruler on important decisions.',
+        'Caravan routes connected West African kingdoms to traders from across the desert.',
+        'A good leader often listens more than they speak — just like Queen Amina.',
+      ],
+      learningObjectives: [
+        { title: 'Leadership', description: 'Learn how good leaders inspire and protect their people.' },
+        { title: 'Nigerian History', description: 'Discover the rich history of great African kingdoms.' },
+        { title: 'Courage', description: 'Be brave and stand up for what is right.' },
+        { title: 'Teamwork', description: 'Understand the power of working together.' },
+        { title: 'Wisdom', description: 'Make wise decisions that bring peace and prosperity.' },
+      ],
+    },
+    content: [
+      "When the old king of Katsina died, his daughter Amina was not yet ready to rule — but the throne would not wait for her to feel ready.",
+      "The elders expected a young queen to sit quietly while men made the decisions. Amina had other plans.",
+      "She rode out to the market at dawn, before the councillors were even awake, and listened to what traders and farmers actually needed.",
+      "When a dispute broke out between two caravan leaders over a trade route, Amina settled it not with soldiers, but with a question: \"What would keep both your families fed this winter?\"",
+      "Katsina prospered under her — not because she commanded the loudest, but because she was the last person in the room still listening.",
+    ],
+  },
+  {
+    id: '18', title: 'The Boy Who Invested', author: 'Emeka Chukwu',
+    language: 'English', level: 'Beginner',
+    totalPages: 10,
+    category: 'Finance', ageGroup: 'Children', rating: 4.7, reads: 1870,
+    description: "Nine-year-old Chidi turns his weekend market-stall earnings into his first real lesson about saving, patience, and watching small money grow into bigger money.",
+    isEducational: true,
+    attributes: {
+      theme: 'Money & Investing',
+      tagline: 'One boy, one roasting pan, and the week he learned to make money grow.',
+      availableLanguages: ['English', 'Yoruba', 'Igbo'],
+      learningObjectives: [
+        { title: 'Saving vs Spending', description: 'Learn the difference between spending, saving, and investing.' },
+        { title: 'Patience', description: 'Understand how small, regular savings grow over time.' },
+        { title: 'Goal Setting', description: 'Practice setting a simple savings goal and tracking progress toward it.' },
+      ],
+    },
+    content: [
+      "Chidi sold roasted corn at his mother's stall every Saturday, and every Saturday he spent every single naira he earned by Sunday night.",
+      "His uncle noticed and asked him a strange question: \"What if you only spent half of what you earned, and grew the other half instead?\"",
+      "Chidi didn't understand at first. \"Grow money? It's not a seed.\" His uncle smiled. \"It's exactly like a seed, if you're patient.\"",
+      "So Chidi began setting aside a little each week, and his uncle showed him how that little bit could be put to work instead of sitting still.",
+      "Months later, Chidi looked at what he'd saved and grown — enough to buy his own roasting pan. He hadn't just earned money. He'd learned how to make it work for him.",
+    ],
+  },
+  {
+    id: '19', title: 'Young Inventors', author: 'Tobenna Eze',
+    language: 'English', level: 'Intermediate',
+    totalPages: 15,
+    category: 'Technology', ageGroup: 'Student', rating: 4.9, reads: 2450,
+    description: "A team of curious kids turns bottle caps, old motors and recycled wire into working machines — and discovers that every invention starts with a problem worth solving.",
+    isEducational: true,
+    attributes: {
+      theme: 'Engineering & Innovation',
+      tagline: 'A broken water pump, four friends, and a backyard full of spare parts.',
+      availableLanguages: ['English', 'Swahili'],
+      learningObjectives: [
+        { title: 'Design Thinking', description: 'Learn the basic engineering design cycle: problem, idea, build, test, improve.' },
+        { title: 'Resourcefulness', description: 'See how simple, everyday materials can be reused to build working machines.' },
+        { title: 'Confidence', description: 'Build confidence that big inventions usually start as small, imperfect prototypes.' },
+      ],
+    },
+    content: [
+      "The water pump in Ijeoma's neighbourhood had been broken for weeks, and every trip to fetch water meant walking twice as far.",
+      "\"Someone should fix it,\" her brother said. Ijeoma looked at him. \"Why not us?\"",
+      "She gathered three friends, a box of spare parts, and an old bicycle wheel, and they got to work in her family's backyard.",
+      "Their first attempt didn't work at all. Their second attempt worked for about six seconds before falling apart. Their third attempt pumped water for real.",
+      "It wasn't a perfect machine. But it was theirs, it worked, and it taught them that inventors aren't people who never fail — they're people who keep building anyway.",
+    ],
+  },
 ];
 
 export const MOCK_USER = {

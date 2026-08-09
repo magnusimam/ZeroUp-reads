@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SORT_OPTIONS, sortBooks } from './libraryConfig';
 import { BOOK_LEVELS } from '../../utils/mockData';
+import { searchBooks } from '../books/searchBooks';
 
 // Search + category + language + level + sort logic extracted out of LibraryPage's
 // JSX so the page component stays presentational (Separation of Concerns).
@@ -32,10 +33,11 @@ export default function useLibraryFilters(books) {
       result = result.filter(b => b.level === level);
     }
     if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      result = result.filter(b =>
-        b.title.toLowerCase().includes(q) || b.author.toLowerCase().includes(q)
-      );
+      // Matches title, author, category, language, reading level, description
+      // and keyword-ish metadata (theme/tagline/learning objectives) — not
+      // just title/author — so "History", "Finance" or "Yoruba" surface books
+      // the same way a title search does (searchBooks.js is the shared rule).
+      result = searchBooks(result, search);
     }
     return sortBooks(result, sort);
   }, [books, activeCategory, language, level, search, sort]);

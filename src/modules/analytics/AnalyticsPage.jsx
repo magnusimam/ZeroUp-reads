@@ -1,20 +1,12 @@
 import React from 'react';
-import { useAuth } from '../auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import * as statsService from './statsService';
 import { computeTotal, computePieGradient } from './pieChart';
 
+// Route-level gating (RequireRole, App.js) already ensures only an
+// administrator ever reaches this component — no inline check needed here.
 export default function AnalyticsPage() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-
-  if (!user || user.role?.toLowerCase() !== 'admin') {
-    navigate('/library');
-    return null;
-  }
-
   const stats = statsService.getStats();
   const maxLangReads = Math.max(...stats.byLanguage.map((l) => l.reads));
 

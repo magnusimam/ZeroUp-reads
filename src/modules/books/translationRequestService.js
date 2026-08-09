@@ -75,3 +75,18 @@ export function rejectRequest(requestId) {
   eventBus.emit('translation.request.rejected', { id: requestId });
   return updated.find((r) => r.id === requestId) || null;
 }
+
+// Called by translationService.approve() once a human translator's draft is
+// actually approved through the Translation Portal — marks the reader's
+// original request fulfilled without re-running the old instant-stub
+// translateBook() a second time (that book already exists by this point).
+export function resolvePendingRequest(bookId, language, translatedBookId) {
+  const requests = readAll();
+  const pending = requests.find((r) => r.bookId === bookId && r.language === language && r.status === 'pending');
+  if (!pending) return null;
+
+  writeAll(requests.map((r) => (
+    r.id === pending.id ? { ...r, status: 'approved', translatedBookId } : r
+  )));
+  return pending;
+}

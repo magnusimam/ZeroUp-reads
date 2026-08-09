@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCoverArt from './BookCoverArt';
+import DownloadButton from '../reading/components/DownloadButton';
 
 const langBadgeStyle = {
   english:  { background: 'var(--navy)',     color: 'white' },
@@ -47,7 +48,7 @@ function StarRating({ rating }) {
   );
 }
 
-export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'Read Now', shelf = false, onTranslateRequest = null }) {
+export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'View Details', shelf = false, onTranslateRequest = null }) {
   const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(book.bookmarked || false);
 
@@ -59,11 +60,11 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
     return (
       <div
         className="book-card-portrait"
-        onClick={() => navigate(`/read/${book.id}`)}
+        onClick={() => navigate(`/book/${book.id}`)}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && navigate(`/read/${book.id}`)}
-        aria-label={`Read ${book.title}`}
+        onKeyDown={e => e.key === 'Enter' && navigate(`/book/${book.id}`)}
+        aria-label={`View details for ${book.title}`}
         style={{
           position: 'relative',
           aspectRatio: '3 / 4',
@@ -105,6 +106,10 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
           >🌍 Translate</button>
         )}
 
+        <div style={{ position: 'absolute', top: onTranslateRequest ? 52 : 12, right: 12 }}>
+          <DownloadButton book={book} variant="icon" />
+        </div>
+
         {/* Bottom info panel */}
         <div style={{
           position: 'absolute', left: 0, right: 0, bottom: 0,
@@ -132,7 +137,7 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
             {book.rating ? <StarRating rating={book.rating} /> : <span />}
           </div>
           <button
-            onClick={e => { e.stopPropagation(); navigate(`/read/${book.id}`); }}
+            onClick={e => { e.stopPropagation(); navigate(`/book/${book.id}`); }}
             style={{
               marginTop: 4, width: '100%', background: 'var(--gold)', color: 'var(--ink)',
               border: 'none', borderRadius: 10, padding: '9px 0',
@@ -158,12 +163,12 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
   return (
     <div
       className={`${isLuxury ? 'book-card-luxury' : 'book-card'} ${shelf ? 'shelf-book' : ''}`}
-      onClick={() => navigate(`/read/${book.id}`)}
+      onClick={() => navigate(`/book/${book.id}`)}
       style={{ position: 'relative', userSelect: 'none' }}
       role="button"
       tabIndex={0}
-      onKeyDown={e => e.key === 'Enter' && navigate(`/read/${book.id}`)}
-      aria-label={`Read ${book.title}`}
+      onKeyDown={e => e.key === 'Enter' && navigate(`/book/${book.id}`)}
+      aria-label={`View details for ${book.title}`}
     >
       {/* Cover */}
       <div className={shelf ? 'shelf-book-cover' : ''} style={{ position: 'relative' }}>
@@ -196,15 +201,11 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
           {bookmarked ? '🔖' : '🏷️'}
         </button>
 
-        {/* Saved badge (offline) */}
-        {book.saved && (
-          <span style={{
-            position: 'absolute', top: 10, left: 10,
-            background: 'var(--green)', color: 'white',
-            fontSize: 11, fontWeight: 700, fontFamily: 'Nunito',
-            borderRadius: 99, padding: '3px 10px',
-          }}>Saved ✓</span>
-        )}
+        {/* Offline download toggle — replaces the old unwired `book.saved`
+            placeholder badge with the real per-device download state. */}
+        <div style={{ position: 'absolute', top: 10, left: 10 }}>
+          <DownloadButton book={book} variant="icon" />
+        </div>
       </div>
 
       {/* Body */}

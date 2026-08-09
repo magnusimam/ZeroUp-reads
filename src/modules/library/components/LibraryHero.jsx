@@ -106,7 +106,7 @@ export default function LibraryHero({
             value={search}
             onChange={e => onSearchChange(e.target.value)}
             placeholder="Search for a story or author… 🔍"
-            aria-label="Search by title or author"
+            aria-label="Search by title, author, category, language or reading level"
             className="flex-1 px-5 py-3 rounded-full bg-white border-2 border-gold/20 text-charcoal placeholder-charcoal/30 text-sm focus:outline-none focus:border-sky-blue transition-colors shadow-card"
           />
           <button

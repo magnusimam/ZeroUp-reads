@@ -47,7 +47,7 @@ export default function TestimonialsSection({ testimonials, books }) {
 
               {book && (
                 <button
-                  onClick={() => navigate(`/read/${book.id}`)}
+                  onClick={() => navigate(`/book/${book.id}`)}
                   className="flex items-center gap-3 pt-4 border-t border-gold/15 text-left"
                 >
                   <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0">

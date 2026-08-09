@@ -33,8 +33,22 @@ const TRACKED_EVENTS = [
   'translation.request.rejected',
   'book.completed',
   'book.bookmarked',
+  'book.downloaded',
+  'book.download.removed',
   'streak.updated',
   'settings.updated',
+  'user.role.changed',
+  'user.password_reset.requested',
+  'user.password_reset.completed',
+  'onboarding.completed',
+  'support.ticket.submitted',
+  'submission.created',
+  'submission.status.changed',
+  'submission.published',
+  'translation.draft.saved',
+  'sync.completed',
+  'note.added',
+  'note.deleted',
 ];
 
 TRACKED_EVENTS.forEach((eventName) => {

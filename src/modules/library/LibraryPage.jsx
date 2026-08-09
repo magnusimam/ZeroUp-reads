@@ -13,6 +13,7 @@ import ContinueReadingSection from './components/ContinueReadingSection';
 import BestForYouCarousel from './components/BestForYouCarousel';
 import StoryBooksSection from './components/StoryBooksSection';
 import EducationalBooksSection from './components/EducationalBooksSection';
+import EmptySearchState from './components/EmptySearchState';
 import TestimonialsSection from './components/TestimonialsSection';
 import OrderCTA from './components/OrderCTA';
 import LibraryFooter from './components/LibraryFooter';
@@ -68,6 +69,7 @@ export default function LibraryPage() {
 
   const storyBooks = filtered.filter(b => !b.isEducational);
   const educationalBooks = filtered.filter(b => b.isEducational);
+  const noSearchResults = Boolean(search.trim()) && filtered.length === 0;
 
   return (
     <div className="min-h-screen flex flex-col bg-cream font-nunito-sans">
@@ -91,17 +93,23 @@ export default function LibraryPage() {
 
       {!hasActiveFilters && <BestForYouCarousel books={books} />}
 
-      <StoryBooksSection
-        books={storyBooks}
-        viewAll={hasActiveFilters || typeFilter === 'story'}
-        onTranslateRequest={translateRequest.open}
-      />
+      {noSearchResults ? (
+        <EmptySearchState />
+      ) : (
+        <>
+          <StoryBooksSection
+            books={storyBooks}
+            viewAll={hasActiveFilters || typeFilter === 'story'}
+            onTranslateRequest={translateRequest.open}
+          />
 
-      <EducationalBooksSection
-        books={educationalBooks}
-        viewAll={hasActiveFilters || typeFilter === 'educational'}
-        onTranslateRequest={translateRequest.open}
-      />
+          <EducationalBooksSection
+            books={educationalBooks}
+            viewAll={hasActiveFilters || typeFilter === 'educational'}
+            onTranslateRequest={translateRequest.open}
+          />
+        </>
+      )}
 
       <TestimonialsSection testimonials={testimonials} books={books} />
 

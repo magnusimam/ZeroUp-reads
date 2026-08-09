@@ -4,7 +4,9 @@ import { Link, useLocation } from 'react-router-dom';
 // Route (+ optional hash) each sidebar item resolves to. "Downloads" points
 // at OfflinePage — the closest existing stub route — rather than a dead
 // link, since a dedicated offline-downloads feature doesn't exist yet.
-const NAV_ITEMS = [
+// Exported so ReaderSidebar (src/modules/reading) reuses the same nav list
+// instead of maintaining a second, driftable copy (Modular Architecture).
+export const NAV_ITEMS = [
   { label: 'Dashboard', icon: '🏠', to: '/dashboard' },
   { label: 'My Library', icon: '📚', to: '/library' },
   { label: 'Categories', icon: '🗂️', to: '/dashboard#categories' },
@@ -16,7 +18,7 @@ const NAV_ITEMS = [
   { label: 'Settings', icon: '⚙️', to: '/settings' },
 ];
 
-function BookLogoIcon() {
+export function BookLogoIcon() {
   return (
     <svg width="28" height="28" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style={{ flexShrink: 0 }}>
       <path d="M18 9 C14 6 8 6 4 8 V27 C8 25 14 25 18 28 Z" fill="#2D6BE4" stroke="#3A1A10" strokeWidth="1.2" strokeLinejoin="round" />

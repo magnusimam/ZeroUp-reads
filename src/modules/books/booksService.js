@@ -24,7 +24,7 @@ export function getBook(id) {
   return readAll().find((book) => book.id === id) || null;
 }
 
-export function createBook({ title, author, language, level, category, content }) {
+export function createBook({ title, author, language, level, category, content, attributes = {} }) {
   const books = readAll();
   const contentParagraphs = Array.isArray(content) ? content : [content];
   const wordCount = contentParagraphs.join(' ').trim().split(/\s+/).filter(Boolean).length;
@@ -38,7 +38,7 @@ export function createBook({ title, author, language, level, category, content }
     category,
     totalPages: Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE)),
     content: contentParagraphs,
-    attributes: {},
+    attributes,
   };
 
   writeAll([newBook, ...books]);
@@ -51,6 +51,25 @@ export function deleteBook(id) {
   writeAll(books);
   eventBus.emit('book.deleted', { id });
   return books;
+}
+
+// Generic partial update — `attributes` (if present in `patch`) is merged
+// into the existing bag rather than replacing it outright, so one caller
+// setting `availableLanguages` can't accidentally wipe another book
+// attribute (theme, tagline, learningObjectives, ...) set separately.
+export function updateBook(id, patch) {
+  const books = readAll();
+  const updated = books.map((book) => {
+    if (book.id !== id) return book;
+    const { attributes: attrPatch, ...rest } = patch;
+    return {
+      ...book,
+      ...rest,
+      attributes: attrPatch ? { ...book.attributes, ...attrPatch } : book.attributes,
+    };
+  });
+  writeAll(updated);
+  return updated.find((book) => book.id === id) || null;
 }
 
 export function translateBook(id, language) {
