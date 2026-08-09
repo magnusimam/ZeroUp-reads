@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../modules/auth/AuthContext';
 import ExploreMegaMenu from './ExploreMegaMenu';
+import { getAvatarColor } from '../utils/avatarColor';
 
 // Open-book logo icon — blue pages, orange/red cover, matches the source design
 function BookLogoIcon() {
@@ -37,8 +38,7 @@ function AvatarDropdown({ user, logout }) {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const initial = user.name ? user.name[0].toUpperCase() : 'U';
-  const colours = ['#2F7A26', '#2D6BE4', '#E5533D', '#E8A020', '#3DBE8A'];
-  const bg = colours[user.name.charCodeAt(0) % colours.length];
+  const bg = getAvatarColor(user.name);
 
   return (
     <div style={{ position: 'relative' }}>
@@ -81,6 +81,11 @@ function AvatarDropdown({ user, logout }) {
               <div style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 15, color: 'var(--hero-ink)' }}>{user.name}</div>
               <div style={{ fontSize: 13, color: 'var(--hero-gray)' }}>{user.email}</div>
             </div>
+            <Link to="/dashboard" onClick={() => setOpen(false)}
+              style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >🏠 My Dashboard</Link>
             <Link to="/profile" onClick={() => setOpen(false)}
               style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
@@ -259,6 +264,7 @@ export default function Navbar() {
           <div style={{ height: 1, width: 60, background: 'var(--hero-border)' }} />
           {user ? (
             <>
+              <Link to="/dashboard" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Dashboard</Link>
               <Link to="/profile" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Profile</Link>
               <button onClick={() => { logout(); setMenuOpen(false); }} style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--coral)', background: 'none', border: 'none', cursor: 'pointer' }}>Log out</button>
             </>

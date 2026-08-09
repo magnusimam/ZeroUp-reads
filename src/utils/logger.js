@@ -33,6 +33,8 @@ const TRACKED_EVENTS = [
   'translation.request.rejected',
   'book.completed',
   'book.bookmarked',
+  'streak.updated',
+  'settings.updated',
 ];
 
 TRACKED_EVENTS.forEach((eventName) => {

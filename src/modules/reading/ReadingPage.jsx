@@ -7,6 +7,7 @@ import * as booksService from '../books/booksService';
 import * as userService from '../../services/userService';
 import * as eventBus from '../../utils/eventBus';
 import { useToast } from '../../context/ToastContext';
+import * as settingsService from '../settings/settingsService';
 
 export default function ReadingPage() {
   const { bookId } = useParams();
@@ -15,7 +16,7 @@ export default function ReadingPage() {
   const book = booksService.getBook(bookId);
 
   const [pageIndex, setPageIndex] = useState(0);
-  const [fontSize, setFontSize] = useState(18);
+  const [fontSize, setFontSize] = useState(() => settingsService.getSettings().readerFontSize);
   const [bookmarked, setBookmarked] = useState(() => isBookmarked(bookId));
 
   useEffect(() => {

@@ -9,6 +9,8 @@ import LoginPage from './modules/auth/LoginPage';
 import LibraryPage from './modules/library/LibraryPage';
 import ReadingPage from './modules/reading/ReadingPage';
 import ProfilePage from './pages/ProfilePage';
+import DashboardPage from './modules/dashboard/DashboardPage';
+import SettingsPage from './modules/settings/SettingsPage';
 import AdminCMSPage from './modules/admin/AdminCMSPage';
 import AnalyticsPage from './modules/analytics/AnalyticsPage';
 import AboutPage from './pages/AboutPage';
@@ -36,6 +38,8 @@ function App() {
               <Route path="/library"           element={<LibraryPage />} />
               <Route path="/read/:bookId"      element={<ReadingPage />} />
               <Route path="/profile"           element={<ProfilePage />} />
+              <Route path="/dashboard"         element={<DashboardPage />} />
+              <Route path="/settings"          element={<SettingsPage />} />
               <Route path="/admin"             element={<AdminCMSPage />} />
               <Route path="/admin/analytics"   element={<AnalyticsPage />} />
               <Route path="/about"             element={<AboutPage />} />

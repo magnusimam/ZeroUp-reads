@@ -29,7 +29,7 @@ export default function LoginPage() {
 
     if (result.success)  {
       login(result.user);
-      navigate("/library");
+      navigate("/dashboard");
     } else {
       setError(result.message || "Login failed.  please try again");
     }

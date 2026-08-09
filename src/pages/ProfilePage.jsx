@@ -18,6 +18,16 @@ export default function ProfilePage() {
     }
   } , [user, navigate]);
 
+  // Lets the Reader Dashboard's "Favourites" and "Recently Read" links jump
+  // straight to /profile#bookmarks / /profile#completed instead of
+  // duplicating either list on a second page (Modular Architecture — each
+  // lives in one place).
+  useEffect(() => {
+    if (window.location.hash) {
+      document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
   // don't render anything while redirecting
   if (!user) return null;
 
@@ -87,7 +97,7 @@ export default function ProfilePage() {
         </div>
 
         {/*-- BOOKMARKS SECTION--*/}
-        <div className="mt-6">
+        <div id="bookmarks" className="mt-6">
           <h2 className="text-lg font-bold text-slate-900 mb-3">My Bookmarks</h2>
           {bookmarkedBooks.length === 0 ? (
            <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400">
@@ -109,7 +119,7 @@ export default function ProfilePage() {
           </div>
 
         {/*--- completed books ---*/}
-        <div className='mt-6'>
+        <div id="completed" className='mt-6'>
           <h2 className='text-lg font-bold text-slate-900 mb-3'>
             Completed Books
           </h2>
