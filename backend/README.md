@@ -32,6 +32,7 @@ npm run deploy      # deploy to Cloudflare
 - **Local dev:** copy `.dev.vars.example` to `.dev.vars` (gitignored) and set `JWT_SECRET` to any long random string. Wrangler loads it automatically for `wrangler dev`.
 - **Real deploy:** set the real secret with `wrangler secret put JWT_SECRET` — never put it in `wrangler.jsonc`'s `vars` (that file is committed).
 - **Tests:** `vitest.config.ts` injects a fixed test-only `JWT_SECRET` via Miniflare bindings, same mechanism as the migrations binding below.
+- **Known local quirk:** on this project's pinned `wrangler@3.114.17`, the *very first* `wrangler dev` boot in a session can start before `.dev.vars` finishes loading — `/auth/register` will 500 with `JWT_SECRET` reading as `undefined` even though the startup banner lists it. If you hit this, save any file (or just Ctrl+S `wrangler.jsonc`) to trigger a reload — it resolves immediately and doesn't recur for the rest of that `wrangler dev` session. Worth re-checking once the project upgrades to `wrangler@4` (already flagged as a to-do from Stage 1).
 
 ## Database (D1)
 
@@ -51,4 +52,4 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 ## Stage status
 
-Stage 3 (Auth API) of the backend build. See the plan in the project's engineering tracker for the full stage roadmap: books API, publishing workflow, reading progress, and beyond.
+Stage 4 (frontend integration: auth) of the backend build — `src/modules/auth/authService.js` in the root app can now call this API, gated behind `realAuthApi` in `src/config/featureFlags.js`. See the plan in the project's engineering tracker for the full stage roadmap: books API, publishing workflow, reading progress, and beyond.

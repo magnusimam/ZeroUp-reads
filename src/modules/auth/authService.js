@@ -1,10 +1,24 @@
 import * as eventBus from '../../utils/eventBus';
 import { ROLES } from '../../config/roles';
 import { PASSWORD_RESET_TOKEN_TTL_MINUTES } from '../../config/rules';
+import { isFeatureEnabled } from '../../config/featureFlags';
 
 const USERS_KEY = 'zeroup_users';
 const SESSION_KEY = 'zeroup_user';
 const RESETS_KEY = 'zeroup_password_resets';
+const TOKEN_KEY = 'zeroup_auth_token';
+
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+// Stage 4 (frontend integration): register/login route to the real
+// backend/ API when the flag is on AND a base URL is actually configured —
+// otherwise this always falls back to the existing localStorage mock, the
+// same "swap the implementation, not the call site" seam every other
+// service in this app already uses (see ENGINEERING_PRINCIPLES_TRACKER.md
+// Principle 1).
+function realApiEnabled() {
+  return isFeatureEnabled('realAuthApi') && Boolean(API_BASE_URL);
+}
 
 function getStoredUsers() {
   const raw = localStorage.getItem(USERS_KEY);
@@ -20,7 +34,63 @@ function withoutPassword(user) {
   return safeUser;
 }
 
-export function register(name, email, password, role, orgName) {
+// The real API's JWT, kept separate from the session's user object so every
+// existing reader of getSession()'s shape (ProfilePage, logger, roles.js)
+// is unaffected — this is purely for Stage 5+ authenticated requests.
+export function getToken() {
+  return localStorage.getItem(TOKEN_KEY);
+}
+
+function setToken(token) {
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+export function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+// Backend's `persona`/`systemRole` naming maps onto this app's existing
+// `role`/`systemRole` user shape, so every current reader of a session user
+// object (ProfilePage, roles.js's effectiveRole, logger) keeps working
+// unchanged regardless of which implementation produced it.
+function fromApiUser(apiUser) {
+  return {
+    id: apiUser.id,
+    name: apiUser.name,
+    email: apiUser.email,
+    role: apiUser.persona,
+    orgName: apiUser.orgName,
+    systemRole: apiUser.systemRole,
+  };
+}
+
+async function apiRequest(path, body) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    return { success: false, message: data.error || 'Something went wrong. Please try again.' };
+  }
+  setToken(data.token);
+  return { success: true, user: fromApiUser(data.user) };
+}
+
+async function realRegister(name, email, password, role, orgName) {
+  try {
+    const result = await apiRequest('/auth/register', { name, email, password, persona: role, orgName });
+    if (result.success) {
+      eventBus.emit('user.registered', { id: result.user.id, email: result.user.email, role: result.user.role });
+    }
+    return result;
+  } catch {
+    return { success: false, message: 'Could not reach the server. Please check your connection and try again.' };
+  }
+}
+
+async function mockRegister(name, email, password, role, orgName) {
   const users = getStoredUsers();
   const normalizedEmail = email.trim().toLowerCase();
 
@@ -49,6 +119,11 @@ export function register(name, email, password, role, orgName) {
   return { success: true, user: safeUser };
 }
 
+export async function register(name, email, password, role, orgName) {
+  if (realApiEnabled()) return realRegister(name, email, password, role, orgName);
+  return mockRegister(name, email, password, role, orgName);
+}
+
 // User & Role Management (/admin/users, administrator-only) — every
 // registered user, password stripped, for the promote/demote table.
 export function getAllUsers() {
@@ -66,7 +141,21 @@ export function setUserRole(userId, systemRole) {
   return { success: true, user: withoutPassword(target) };
 }
 
-export function login(email, password) {
+async function realLogin(email, password) {
+  try {
+    const result = await apiRequest('/auth/login', { email, password });
+    if (result.success) {
+      eventBus.emit('user.login.success', { id: result.user.id, email: result.user.email });
+    } else {
+      eventBus.emit('user.login.failed', { email: email.trim().toLowerCase() });
+    }
+    return result;
+  } catch {
+    return { success: false, message: 'Could not reach the server. Please check your connection and try again.' };
+  }
+}
+
+async function mockLogin(email, password) {
   const users = getStoredUsers();
   const normalizedEmail = email.trim().toLowerCase();
   const user = users.find(
@@ -83,6 +172,11 @@ export function login(email, password) {
   return { success: true, user: safeUser };
 }
 
+export async function login(email, password) {
+  if (realApiEnabled()) return realLogin(email, password);
+  return mockLogin(email, password);
+}
+
 export function getSession() {
   const raw = localStorage.getItem(SESSION_KEY);
   return raw ? JSON.parse(raw) : null;
@@ -94,6 +188,7 @@ export function setSession(user) {
 
 export function clearSession() {
   localStorage.removeItem(SESSION_KEY);
+  clearToken();
 }
 
 function getResets() {

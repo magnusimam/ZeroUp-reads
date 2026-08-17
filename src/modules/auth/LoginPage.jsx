@@ -15,17 +15,17 @@ export default function LoginPage() {
 
   
   
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError("")
-    
+
     //Basic validation
     if(!email || !password){
       setError("Please fill in all fields.");
       return;
     }
 
-    const result = authService.login(email, password);
+    const result = await authService.login(email, password);
 
     if (result.success)  {
       login(result.user);
