@@ -23,6 +23,8 @@ npm run deploy      # deploy to Cloudflare
 - `POST /auth/register` → `{ name, email, password, persona?, orgName? }` → `201 { user, token }` (or `409` if the email's taken, `400` on validation failure)
 - `POST /auth/login` → `{ email, password }` → `200 { user, token }` (or `401 { error: "Invalid email or password." }` — same message whether the email doesn't exist or the password is wrong)
 - `GET /auth/me` → requires `Authorization: Bearer <token>` → `200 { user }`
+- `GET /books` → optional query params `category`, `language`, `level`, `isEducational` (`true`/`false`), combined with AND → `200 { books: [...] }` (summaries — no page content)
+- `GET /books/:id` → `200 { book: { ...summary, content: string[] } }` (full detail, ordered pages) or `404` if the id doesn't exist
 
 ## Auth
 
@@ -48,8 +50,10 @@ npx wrangler d1 execute zeroup-reads-db --local --command="SELECT * FROM roles;"
 
 Tests apply migrations automatically before each run, via `test/apply-migrations.ts` (`vitest.config.ts` reads `migrations/` with `readD1Migrations` and binds them as `TEST_MIGRATIONS`).
 
+`migrations/0002_seed_books.sql` seeds the 19 books (and their page content) from the frontend's `src/utils/mockData.js` `MOCK_BOOKS` — **generated, not hand-written**: run `node scripts/generate-seed-migration.mjs` to regenerate it whenever `mockData.js`'s books change, rather than hand-editing the SQL (which would drift from the actual source of truth the same way the category/language/level taxonomies once did — see `ENGINEERING_PRINCIPLES_TRACKER.md` Principle 4).
+
 **Before any real deploy:** whoever controls the project's Cloudflare account needs to run `wrangler d1 create zeroup-reads-db` and replace the placeholder `database_id` in `wrangler.jsonc` (both the top-level and `env.staging` blocks) with the real one — the same account-level, deferred-until-owner step already used for the Cloudflare Pages project (see `../wrangler.toml`).
 
 ## Stage status
 
-Stage 4 (frontend integration: auth) of the backend build — `src/modules/auth/authService.js` in the root app can now call this API, gated behind `realAuthApi` in `src/config/featureFlags.js`. See the plan in the project's engineering tracker for the full stage roadmap: books API, publishing workflow, reading progress, and beyond.
+Stage 5 (Books API — read) of the backend build. See the plan in the project's engineering tracker for the full stage roadmap: frontend integration for books, publishing workflow, reading progress, and beyond.
