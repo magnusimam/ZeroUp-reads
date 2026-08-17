@@ -25,6 +25,9 @@ npm run deploy      # deploy to Cloudflare
 - `GET /auth/me` → requires `Authorization: Bearer <token>` → `200 { user }`
 - `GET /books` → optional query params `category`, `language`, `level`, `isEducational` (`true`/`false`), combined with AND → `200 { books: [...] }` (summaries — no page content)
 - `GET /books/:id` → `200 { book: { ...summary, content: string[] } }` (full detail, ordered pages) or `404` if the id doesn't exist
+- `POST /books` → **Administrator only** (`Authorization: Bearer <token>`) → `{ title, author, language, level, category, content, ageGroup?, description?, isEducational?, attributes? }` → `201 { book }` (`401` no token, `403` wrong role, `400` invalid language/missing field)
+- `PATCH /books/:id` → **Administrator only** → any subset of the create fields; `attributes` is merged into the existing bag, not replaced; providing `content` replaces all pages and recomputes `totalPages` → `200 { book }` (`404` unknown id)
+- `DELETE /books/:id` → **Administrator only** → `200 { success: true }` (`404` unknown id) — cascades to `book_pages`/`reading_progress`/`bookmarks`/`page_bookmarks`
 
 ## Auth
 
@@ -56,4 +59,4 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 ## Stage status
 
-Stage 5 (Books API — read) of the backend build. See the plan in the project's engineering tracker for the full stage roadmap: frontend integration for books, publishing workflow, reading progress, and beyond.
+Stage 7 (Books API — write) of the backend build. Publishing workflow (draft → submitted → review → needs_changes → approved → published submissions, matching `src/modules/publishing`) was split out as its own next stage rather than bundled here — it's a materially bigger feature with its own table/lifecycle, not a natural fit for one PR alongside admin CRUD. `POST/PATCH/DELETE /books` intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap.

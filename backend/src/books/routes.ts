@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
+import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
+import { ROLES } from "../config/roles";
+import { WORDS_PER_PAGE } from "../config/rules";
 
 type BookRow = {
   id: string;
@@ -50,7 +53,69 @@ const listQuerySchema = z.object({
   isEducational: z.enum(["true", "false"]).optional(),
 });
 
-const books = new Hono<{ Bindings: Env }>();
+// Accepts either a single string or an array of page strings, same as the
+// frontend's booksService.createBook() — normalized to an array immediately.
+const contentSchema = z.union([z.string().min(1), z.array(z.string().min(1)).min(1)]);
+
+const createSchema = z.object({
+  title: z.string().trim().min(1),
+  author: z.string().trim().min(1),
+  language: z.string().trim().min(1),
+  level: z.enum(["Beginner", "Intermediate", "Advanced"]),
+  category: z.string().trim().min(1),
+  ageGroup: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  isEducational: z.boolean().optional(),
+  content: contentSchema,
+  attributes: z.record(z.unknown()).optional(),
+});
+
+const updateSchema = z.object({
+  title: z.string().trim().min(1).optional(),
+  author: z.string().trim().min(1).optional(),
+  language: z.string().trim().min(1).optional(),
+  level: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
+  category: z.string().trim().min(1).optional(),
+  ageGroup: z.string().trim().min(1).optional(),
+  description: z.string().trim().min(1).optional(),
+  isEducational: z.boolean().optional(),
+  content: contentSchema.optional(),
+  // Merged into the existing bag (Schema-Driven Design), not a replacement —
+  // matches booksService.updateBook()'s merge behavior, so one caller
+  // setting `theme` can't accidentally wipe another attribute set
+  // separately.
+  attributes: z.record(z.unknown()).optional(),
+});
+
+function toContentArray(content: string | string[]): string[] {
+  return Array.isArray(content) ? content : [content];
+}
+
+function estimatePages(pages: string[]): number {
+  const wordCount = pages.join(" ").trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.ceil(wordCount / WORDS_PER_PAGE));
+}
+
+async function getPageContent(db: D1Database, bookId: string): Promise<string[]> {
+  const { results } = await db
+    .prepare("SELECT content FROM book_pages WHERE book_id = ? ORDER BY page_number ASC")
+    .bind(bookId)
+    .all<{ content: string }>();
+  return results.map((row) => row.content);
+}
+
+async function replacePages(db: D1Database, bookId: string, pages: string[]): Promise<void> {
+  await db.batch([
+    db.prepare("DELETE FROM book_pages WHERE book_id = ?").bind(bookId),
+    ...pages.map((content, index) =>
+      db
+        .prepare("INSERT INTO book_pages (book_id, page_number, content) VALUES (?, ?, ?)")
+        .bind(bookId, index + 1, content)
+    ),
+  ]);
+}
+
+const books = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
 books.get("/", zValidator("query", listQuerySchema), async (c) => {
   const { category, language, level, isEducational } = c.req.valid("query");
@@ -92,18 +157,117 @@ books.get("/:id", async (c) => {
     return c.json({ error: "Book not found." }, 404);
   }
 
-  const { results: pageRows } = await c.env.DB.prepare(
-    "SELECT content FROM book_pages WHERE book_id = ? ORDER BY page_number ASC"
-  )
-    .bind(id)
-    .all<{ content: string }>();
+  const content = await getPageContent(c.env.DB, id);
 
-  return c.json({
-    book: {
-      ...toApiBook(bookRow),
-      content: pageRows.map((row) => row.content),
-    },
-  });
+  return c.json({ book: { ...toApiBook(bookRow), content } });
+});
+
+books.post(
+  "/",
+  authMiddleware,
+  requireRole(ROLES.ADMINISTRATOR),
+  zValidator("json", createSchema),
+  async (c) => {
+    const body = c.req.valid("json");
+    const pages = toContentArray(body.content);
+    const id = crypto.randomUUID();
+
+    try {
+      await c.env.DB.prepare(
+        `INSERT INTO books (id, title, author, language, level, total_pages, category, age_group, description, is_educational, attributes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+        .bind(
+          id,
+          body.title,
+          body.author,
+          body.language,
+          body.level,
+          estimatePages(pages),
+          body.category,
+          body.ageGroup ?? null,
+          body.description ?? null,
+          body.isEducational ? 1 : 0,
+          JSON.stringify(body.attributes ?? {})
+        )
+        .run();
+    } catch (err) {
+      return c.json({ error: `Could not create book — check the language is valid (${(err as Error).message}).` }, 400);
+    }
+
+    await replacePages(c.env.DB, id, pages);
+
+    const bookRow = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
+    return c.json({ book: { ...toApiBook(bookRow as BookRow), content: pages } }, 201);
+  }
+);
+
+books.patch(
+  "/:id",
+  authMiddleware,
+  requireRole(ROLES.ADMINISTRATOR),
+  zValidator("json", updateSchema),
+  async (c) => {
+    const id = c.req.param("id");
+    const body = c.req.valid("json");
+
+    const existing = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
+    if (!existing) {
+      return c.json({ error: "Book not found." }, 404);
+    }
+
+    const mergedAttributes = body.attributes
+      ? { ...JSON.parse(existing.attributes), ...body.attributes }
+      : JSON.parse(existing.attributes);
+
+    const pages = body.content ? toContentArray(body.content) : null;
+    const totalPages = pages ? estimatePages(pages) : existing.total_pages;
+
+    try {
+      await c.env.DB.prepare(
+        `UPDATE books SET title = ?, author = ?, language = ?, level = ?, category = ?, age_group = ?, description = ?, is_educational = ?, attributes = ?, total_pages = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE id = ?`
+      )
+        .bind(
+          body.title ?? existing.title,
+          body.author ?? existing.author,
+          body.language ?? existing.language,
+          body.level ?? existing.level,
+          body.category ?? existing.category,
+          body.ageGroup ?? existing.age_group,
+          body.description ?? existing.description,
+          (body.isEducational ?? Boolean(existing.is_educational)) ? 1 : 0,
+          JSON.stringify(mergedAttributes),
+          totalPages,
+          id
+        )
+        .run();
+    } catch (err) {
+      return c.json({ error: `Could not update book — check the language is valid (${(err as Error).message}).` }, 400);
+    }
+
+    if (pages) {
+      await replacePages(c.env.DB, id, pages);
+    }
+
+    const updatedRow = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
+    const content = await getPageContent(c.env.DB, id);
+    return c.json({ book: { ...toApiBook(updatedRow as BookRow), content } });
+  }
+);
+
+books.delete("/:id", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
+  const id = c.req.param("id");
+
+  const existing = await c.env.DB.prepare("SELECT id FROM books WHERE id = ?").bind(id).first();
+  if (!existing) {
+    return c.json({ error: "Book not found." }, 404);
+  }
+
+  // book_pages/reading_progress/bookmarks/page_bookmarks all cascade via
+  // ON DELETE CASCADE (migrations/0001_initial_schema.sql).
+  await c.env.DB.prepare("DELETE FROM books WHERE id = ?").bind(id).run();
+  return c.json({ success: true });
 });
 
 export default books;
