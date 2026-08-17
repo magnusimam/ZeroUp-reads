@@ -16,3 +16,10 @@ export const ROLES = {
 export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export const ALL_ROLES = Object.values(ROLES) as Role[];
+
+// Publishing Pipeline access — mirrors the frontend's roles.js
+// PUBLISHING_ROLES. "Reviewer" from the publishing workflow brief is
+// performed by Editor/Administrator rather than a 7th distinct role.
+export const PUBLISHING_ROLES: Role[] = [ROLES.AUTHOR, ROLES.TRANSLATOR, ROLES.EDITOR, ROLES.PUBLISHER, ROLES.ADMINISTRATOR];
+export const REVIEWER_ROLES: Role[] = [ROLES.EDITOR, ROLES.ADMINISTRATOR];
+export const PUBLISHER_ROLES: Role[] = [ROLES.PUBLISHER, ROLES.ADMINISTRATOR];

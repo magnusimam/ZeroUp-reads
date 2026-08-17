@@ -3,6 +3,7 @@ import { cors } from "hono/cors";
 import type { Env } from "./env";
 import auth from "./auth/routes";
 import books from "./books/routes";
+import publishing from "./publishing/routes";
 
 export type { Env };
 
@@ -21,6 +22,7 @@ app.get("/health", (c) =>
 
 app.route("/auth", auth);
 app.route("/books", books);
+app.route("/submissions", publishing);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 
