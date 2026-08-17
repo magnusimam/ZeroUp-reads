@@ -24,6 +24,13 @@ const FLAGS = {
   // false so this only turns on deliberately, and can be flipped back off
   // instantly — no redeploy — if the real API misbehaves.
   realAuthApi: false,
+  // Stage 6 of the backend build: hydrates booksService's localStorage
+  // catalogue from the real backend/ Books API once at app boot (see
+  // src/index.js's bootstrap()) instead of every getBooks()/getBook() call
+  // site being reworked into async/loading-state code — see
+  // backend/README.md and ENGINEERING_PRINCIPLES_TRACKER.md Principle 1.
+  // Same default-false, instantly-reversible posture as realAuthApi.
+  realBooksApi: false,
 };
 
 export function isFeatureEnabled(flagName) {

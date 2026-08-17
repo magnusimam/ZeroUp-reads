@@ -1,8 +1,14 @@
 import { MOCK_BOOKS } from '../../utils/mockData';
 import * as eventBus from '../../utils/eventBus';
 import { WORDS_PER_PAGE } from '../../config/rules';
+import { isFeatureEnabled } from '../../config/featureFlags';
 
 const BOOKS_KEY = 'zeroup_books';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+function realApiEnabled() {
+  return isFeatureEnabled('realBooksApi') && Boolean(API_BASE_URL);
+}
 
 function readAll() {
   const raw = localStorage.getItem(BOOKS_KEY);
@@ -22,6 +28,39 @@ export function getBooks() {
 
 export function getBook(id) {
   return readAll().find((book) => book.id === id) || null;
+}
+
+// Stage 6 (frontend integration): hydrates the localStorage catalogue from
+// the real backend/ Books API once, at app boot (see src/index.js) — every
+// getBooks()/getBook() call site above keeps reading synchronously from
+// that same cache, unchanged, rather than every one of this app's dozen
+// call sites (Library, Home, Dashboard, Admin, Profile, SearchBar,
+// Translation, Reading, onboarding) needing to become async/loading-state
+// code. No-ops instantly when realBooksApi/REACT_APP_API_BASE_URL aren't
+// configured. Never throws: a broken/unreachable API just leaves whatever
+// catalogue is already cached in place instead of blocking the app from
+// loading.
+export async function syncBooksFromApi() {
+  if (!realApiEnabled()) return;
+
+  try {
+    const listRes = await fetch(`${API_BASE_URL}/books`);
+    if (!listRes.ok) throw new Error(`GET /books failed: ${listRes.status}`);
+    const { books: summaries } = await listRes.json();
+
+    const details = await Promise.all(
+      summaries.map(async ({ id }) => {
+        const res = await fetch(`${API_BASE_URL}/books/${id}`);
+        if (!res.ok) throw new Error(`GET /books/${id} failed: ${res.status}`);
+        const { book } = await res.json();
+        return book;
+      })
+    );
+
+    writeAll(details);
+  } catch (err) {
+    console.error('Failed to sync books from the real API — keeping the cached catalogue.', err);
+  }
 }
 
 export function createBook({ title, author, language, level, category, content, attributes = {} }) {
