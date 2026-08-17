@@ -47,7 +47,7 @@ export default function RegisterPage() {
     setStep(2);
   }
 
-  function handleRoleSubmit() {
+  async function handleRoleSubmit() {
     setError('');
 
     if (!role) {
@@ -60,7 +60,7 @@ export default function RegisterPage() {
       return;
     }
 
-    const result = authService.register(name, email, password, role, orgName);
+    const result = await authService.register(name, email, password, role, orgName);
 
     if (result.success) {
       login(result.user);

@@ -17,6 +17,13 @@ const FLAGS = {
   publishingPipeline: true,
   translationPortal: true,
   offlineReading: true,
+  // Stage 4 of the backend build (see ENGINEERING_PRINCIPLES_TRACKER.md
+  // Principle 1): routes authService's register/login/session calls to the
+  // real Cloudflare Workers API (backend/) instead of localStorage, when a
+  // REACT_APP_API_BASE_URL is also configured (see .env.example). Default
+  // false so this only turns on deliberately, and can be flipped back off
+  // instantly — no redeploy — if the real API misbehaves.
+  realAuthApi: false,
 };
 
 export function isFeatureEnabled(flagName) {
