@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import type { Env } from "./env";
+import auth from "./auth/routes";
 
 export type { Env };
 
@@ -8,6 +9,8 @@ const app = new Hono<{ Bindings: Env }>();
 app.get("/health", (c) =>
   c.json({ status: "ok", environment: c.env.ENVIRONMENT })
 );
+
+app.route("/auth", auth);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 

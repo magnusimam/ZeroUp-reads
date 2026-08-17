@@ -12,9 +12,17 @@ export default defineWorkersConfig(async () => {
         workers: {
           wrangler: { configPath: "./wrangler.jsonc" },
           miniflare: {
-            // Test-only binding so the setup file can apply migrations
-            // before each test file runs.
-            bindings: { TEST_MIGRATIONS: migrations },
+            bindings: {
+              // Test-only binding so the setup file can apply migrations
+              // before each test file runs.
+              TEST_MIGRATIONS: migrations,
+              // Test-only JWT signing secret — never used outside this test
+              // run. Real deploys set JWT_SECRET via `wrangler secret put`;
+              // local dev sets it in `.dev.vars` (see .dev.vars.example).
+              // Deliberately not in wrangler.jsonc's `vars` at all, since
+              // that file is committed and vars aren't for secrets.
+              JWT_SECRET: "test-only-secret-not-for-production",
+            },
           },
         },
       },

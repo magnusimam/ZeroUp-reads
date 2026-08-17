@@ -20,6 +20,18 @@ npm run deploy      # deploy to Cloudflare
 ## Current endpoints
 
 - `GET /health` → `{ status: "ok", environment: "..." }`
+- `POST /auth/register` → `{ name, email, password, persona?, orgName? }` → `201 { user, token }` (or `409` if the email's taken, `400` on validation failure)
+- `POST /auth/login` → `{ email, password }` → `200 { user, token }` (or `401 { error: "Invalid email or password." }` — same message whether the email doesn't exist or the password is wrong)
+- `GET /auth/me` → requires `Authorization: Bearer <token>` → `200 { user }`
+
+## Auth
+
+- Passwords are hashed with PBKDF2 (Web Crypto `crypto.subtle`, 100k iterations, per-password random salt) — see `src/auth/password.ts`. No native bcrypt/scrypt in the Workers runtime without a WASM dependency, and this needs zero extra packages.
+- Tokens are HS256 JWTs (`hono/jwt`), 7-day expiry, payload `{ sub: userId, role, exp }`.
+- `src/auth/middleware.ts` exports `authMiddleware` (verifies the bearer token, attaches `c.get('authUser')`) and `requireRole(...roles)` (composes after it) — the RBAC building block future write endpoints (books admin, publishing) will reuse.
+- **Local dev:** copy `.dev.vars.example` to `.dev.vars` (gitignored) and set `JWT_SECRET` to any long random string. Wrangler loads it automatically for `wrangler dev`.
+- **Real deploy:** set the real secret with `wrangler secret put JWT_SECRET` — never put it in `wrangler.jsonc`'s `vars` (that file is committed).
+- **Tests:** `vitest.config.ts` injects a fixed test-only `JWT_SECRET` via Miniflare bindings, same mechanism as the migrations binding below.
 
 ## Database (D1)
 
@@ -39,4 +51,4 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 ## Stage status
 
-Stage 2 (D1 schema + migrations) of the backend build. See the plan in the project's engineering tracker for the full stage roadmap: auth, books API, publishing workflow, reading progress, and beyond.
+Stage 3 (Auth API) of the backend build. See the plan in the project's engineering tracker for the full stage roadmap: books API, publishing workflow, reading progress, and beyond.

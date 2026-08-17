@@ -1,0 +1,5 @@
+## Copy to .dev.vars (gitignored) for local `wrangler dev`.
+## Wrangler loads .dev.vars automatically; it is never committed.
+## Real deploys set this via `wrangler secret put JWT_SECRET` instead.
+
+JWT_SECRET=replace-with-a-long-random-string-for-local-dev
