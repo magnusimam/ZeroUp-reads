@@ -1,8 +1,7 @@
 import { Hono } from "hono";
+import type { Env } from "./env";
 
-export type Env = {
-  ENVIRONMENT: string;
-};
+export type { Env };
 
 const app = new Hono<{ Bindings: Env }>();
 
