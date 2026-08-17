@@ -1,10 +1,22 @@
 import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import app from "../index";
+import { issueToken } from "../auth/jwt";
+import { ROLES } from "../config/roles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function json(res: Response): Promise<any> {
   return res.json();
+}
+
+async function adminAuthHeader() {
+  const token = await issueToken("admin-test-user", ROLES.ADMINISTRATOR, env.JWT_SECRET);
+  return { Authorization: `Bearer ${token}` };
+}
+
+async function readerAuthHeader() {
+  const token = await issueToken("reader-test-user", ROLES.READER, env.JWT_SECRET);
+  return { Authorization: `Bearer ${token}` };
 }
 
 describe("GET /books", () => {
@@ -81,5 +93,218 @@ describe("GET /books/:id", () => {
   it("returns 404 for an unknown id", async () => {
     const res = await app.request("/books/does-not-exist", {}, env);
     expect(res.status).toBe(404);
+  });
+});
+
+describe("POST /books", () => {
+  const validBody = {
+    title: "Test Created Book",
+    author: "Test Author",
+    language: "English",
+    level: "Beginner",
+    category: "Storybooks",
+    content: ["Page one of the test book.", "Page two of the test book."],
+  };
+
+  it("rejects a request with no Authorization header", async () => {
+    const res = await app.request(
+      "/books",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(validBody) },
+      env
+    );
+    expect(res.status).toBe(401);
+  });
+
+  it("rejects a reader token with 403", async () => {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await readerAuthHeader()) },
+        body: JSON.stringify(validBody),
+      },
+      env
+    );
+    expect(res.status).toBe(403);
+  });
+
+  it("creates a book as an administrator, computing totalPages from word count", async () => {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify(validBody),
+      },
+      env
+    );
+    expect(res.status).toBe(201);
+    const body = await json(res);
+    expect(body.book.title).toBe("Test Created Book");
+    expect(body.book.totalPages).toBe(1); // well under WORDS_PER_PAGE (300)
+    expect(body.book.content).toEqual(validBody.content);
+    expect(body.book.attributes).toEqual({});
+
+    const getRes = await app.request(`/books/${body.book.id}`, {}, env);
+    expect(getRes.status).toBe(200);
+  });
+
+  it("rejects a language that isn't in the languages table", async () => {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ ...validBody, language: "Klingon" }),
+      },
+      env
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a missing required field with 400", async () => {
+    const { title, ...withoutTitle } = validBody;
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify(withoutTitle),
+      },
+      env
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
+describe("PATCH /books/:id", () => {
+  async function createTestBook() {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Patch Target",
+          author: "Original Author",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["Original page one."],
+          attributes: { theme: "Original Theme" },
+        }),
+      },
+      env
+    );
+    const body = await json(res);
+    return body.book.id as string;
+  }
+
+  it("updates fields and merges attributes without dropping existing ones", async () => {
+    const id = await createTestBook();
+
+    const res = await app.request(
+      `/books/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ author: "New Author", attributes: { tagline: "New tagline" } }),
+      },
+      env
+    );
+    expect(res.status).toBe(200);
+    const body = await json(res);
+    expect(body.book.author).toBe("New Author");
+    expect(body.book.title).toBe("Patch Target"); // untouched field preserved
+    expect(body.book.attributes).toEqual({ theme: "Original Theme", tagline: "New tagline" });
+  });
+
+  it("replaces page content and recomputes totalPages when content is provided", async () => {
+    const id = await createTestBook();
+
+    const res = await app.request(
+      `/books/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ content: ["Replaced page one.", "Replaced page two.", "Replaced page three."] }),
+      },
+      env
+    );
+    const body = await json(res);
+    expect(body.book.content).toEqual(["Replaced page one.", "Replaced page two.", "Replaced page three."]);
+  });
+
+  it("returns 404 for an unknown id", async () => {
+    const res = await app.request(
+      "/books/does-not-exist",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ title: "New Title" }),
+      },
+      env
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects a reader token with 403", async () => {
+    const id = await createTestBook();
+    const res = await app.request(
+      `/books/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await readerAuthHeader()) },
+        body: JSON.stringify({ title: "Hijacked" }),
+      },
+      env
+    );
+    expect(res.status).toBe(403);
+  });
+});
+
+describe("DELETE /books/:id", () => {
+  it("deletes a book as an administrator", async () => {
+    const createRes = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Delete Target",
+          author: "Author",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["A page."],
+        }),
+      },
+      env
+    );
+    const { book } = await json(createRes);
+
+    const deleteRes = await app.request(
+      `/books/${book.id}`,
+      { method: "DELETE", headers: await adminAuthHeader() },
+      env
+    );
+    expect(deleteRes.status).toBe(200);
+
+    const getRes = await app.request(`/books/${book.id}`, {}, env);
+    expect(getRes.status).toBe(404);
+  });
+
+  it("returns 404 for an unknown id", async () => {
+    const res = await app.request(
+      "/books/does-not-exist",
+      { method: "DELETE", headers: await adminAuthHeader() },
+      env
+    );
+    expect(res.status).toBe(404);
+  });
+
+  it("rejects a reader token with 403", async () => {
+    const res = await app.request("/books/1", { method: "DELETE", headers: await readerAuthHeader() }, env);
+    expect(res.status).toBe(403);
   });
 });
