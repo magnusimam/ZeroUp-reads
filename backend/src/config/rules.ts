@@ -9,3 +9,10 @@ export const MIN_PASSWORD_LENGTH = 8;
 // estimate a new book's page count from its raw word count on create/update,
 // same "each layer keeps its own copy" pattern as config/roles.ts.
 export const WORDS_PER_PAGE = 300;
+
+// Mirrors the frontend's READING_MINUTES_PER_PAGE/READING_POINTS_PER_PAGE —
+// the reading-progress API needs the same weekly-activity-hours and
+// reading-points math the frontend's userService.js used to do in
+// localStorage, now computed server-side per Stage 9.
+export const READING_MINUTES_PER_PAGE = WORDS_PER_PAGE / 200;
+export const READING_POINTS_PER_PAGE = 5;

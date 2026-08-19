@@ -4,6 +4,8 @@ import type { Env } from "./env";
 import auth from "./auth/routes";
 import books from "./books/routes";
 import publishing from "./publishing/routes";
+import progress from "./progress/routes";
+import bookmarks from "./bookmarks/routes";
 
 export type { Env };
 
@@ -23,6 +25,8 @@ app.get("/health", (c) =>
 app.route("/auth", auth);
 app.route("/books", books);
 app.route("/submissions", publishing);
+app.route("/progress", progress);
+app.route("/bookmarks", bookmarks);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 

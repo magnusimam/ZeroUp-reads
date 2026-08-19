@@ -29,6 +29,13 @@ npm run deploy      # deploy to Cloudflare
 - `PATCH /books/:id` → **Administrator only** → any subset of the create fields; `attributes` is merged into the existing bag, not replaced; providing `content` replaces all pages and recomputes `totalPages` → `200 { book }` (`404` unknown id)
 - `DELETE /books/:id` → **Administrator only** → `200 { success: true }` (`404` unknown id) — cascades to `book_pages`/`reading_progress`/`bookmarks`/`page_bookmarks`
 - `GET /submissions`, `GET /submissions/:id`, `POST /submissions`, `PATCH /submissions/:id`, `POST /submissions/:id/{submit,start-review,request-changes,approve,publish,comments}` — see **Publishing workflow** below.
+- `GET /progress` → requires `Authorization: Bearer <token>` → `200 { stats, inProgress, completedBookIds }` — see **Reading progress & bookmarks** below.
+- `PUT /progress/:bookId` → `{ currentPage, totalPages }` → `200 { stats, inProgress, completedBookIds }` (`404` unknown book, `400` invalid body)
+- `POST /progress/:bookId/complete` → `200 { stats, inProgress, completedBookIds }` (`404` unknown book) — idempotent
+- `GET /bookmarks` → `200 { bookmarks: string[] }` (book ids)
+- `POST /bookmarks/:bookId/toggle` → `200 { bookmarked, bookmarks }` (`404` unknown book)
+- `GET /bookmarks/:bookId/page` → `200 { pageIndex: number | null }`
+- `PUT /bookmarks/:bookId/page` → `{ pageIndex }` → `200 { pageIndex }` (`404` unknown book) — sending the same `pageIndex` again clears it
 
 ## Auth
 
@@ -56,6 +63,16 @@ Mirrors `src/modules/publishing`'s pipeline exactly: `draft → submitted → re
 
 All of the above return `409` if the submission isn't in the state the action expects (e.g. approving something still `submitted`, not `review`) — the transition rules are enforced server-side, not just as UI button visibility like `publishingConfig.js`'s `ACTIONS_BY_STATUS`.
 
+## Reading progress & bookmarks
+
+Mirrors the frontend's `userService.js` (per-book position, lifetime/weekly stats, streak) and `bookmarksService.js` (book-level "Save" + page-level pin), now computed server-side against `reading_progress`/`user_stats`/`bookmarks`/`page_bookmarks` (all in the Stage 2 schema) instead of two independent `localStorage` copies.
+
+- `PUT /progress/:bookId` always bumps the reader's streak (no-op if already recorded today, +1 if the last read day was yesterday, reset to 1 otherwise) and adds `READING_MINUTES_PER_PAGE/60` hours to today's `weeklyActivity` bucket — even for a book that's already completed, matching the frontend's own "a page turn always counts as activity" behavior. It only advances `inProgress[bookId]`'s position if that book isn't already marked completed.
+- `weekly_activity` is stored at full float precision and rounded to one decimal only when read back out (`toApiStats()`). Rounding on every write (as the original frontend `userService.js` does) discards the sub-0.1 remainder each time, so repeated small per-page increments (~0.025h) can never sum to a visible number — a real bug in the mirrored logic, fixed here rather than carried over.
+- `POST /progress/:bookId/complete` is idempotent (a second call for an already-completed book is a no-op) and moves the book out of `inProgress` while bumping `booksCompleted`/`pagesRead`/`booksCompletedThisWeek` — `pagesRead` increments by the book's real `total_pages` from the `books` table, not a client-supplied number.
+- A brand-new reader's `user_stats` row starts at zero — unlike the frontend's one-time demo seed off `MOCK_USER`, there's no mock history to seed a real account from.
+- Book-level bookmarks (`POST /bookmarks/:bookId/toggle`) and the separate page-level pin (`PUT /bookmarks/:bookId/page`, toggle-off semantics — sending the same `pageIndex` twice clears it) are plain per-user rows, isolated by `user_id`.
+
 ## Database (D1)
 
 Schema lives in [`migrations/`](./migrations), applied in order. `wrangler.jsonc`'s `database_id` is currently a **placeholder** (`00000000-...`) — no real remote D1 database exists yet. Local dev and tests don't need it to be real:
@@ -76,4 +93,6 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 ## Stage status
 
-Stage 8 (Publishing workflow) of the backend build. `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap: reading progress/bookmarks, translation workflow, search, and beyond.
+Stage 9 (Reading progress & bookmarks) of the backend build. `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap: translation workflow, search, and beyond.
+
+None of the frontend's `userService.js`/`bookmarksService.js` are wired to these new endpoints yet (they're still `localStorage`-only) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6 closed for auth/books.
