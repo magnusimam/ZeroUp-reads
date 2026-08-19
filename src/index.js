@@ -3,8 +3,10 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './utils/logger'; // registers observability subscribers on the event bus before any page mounts
 import './modules/analytics/statsService'; // registers analytics-tally subscribers before any page mounts
-import './services/userService'; // registers reading-progress subscribers before any page mounts
+import { syncProgressFromApi } from './services/userService'; // also registers reading-progress subscribers before any page mounts
+import { syncBookmarksFromApi } from './modules/reading/bookmarksService';
 import { syncBooksFromApi } from './modules/books/booksService';
+import { getSession } from './modules/auth/authService';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
@@ -20,6 +22,13 @@ root.render(
 
 async function bootstrap() {
   await syncBooksFromApi();
+  // Only meaningful for a reader reloading with an existing session — both
+  // are per-user/authenticated (unlike the public book catalogue above) and
+  // no-op instantly if there's no session, matching the token-gated
+  // realApiEnabled() check inside each service.
+  if (getSession()) {
+    await Promise.all([syncProgressFromApi(), syncBookmarksFromApi()]);
+  }
   root.render(
     <React.StrictMode>
       <App />

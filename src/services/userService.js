@@ -2,9 +2,75 @@ import { MOCK_USER } from '../utils/mockData';
 import * as eventBus from '../utils/eventBus';
 import * as booksService from '../modules/books/booksService';
 import * as syncService from '../modules/reading/syncService';
+import { getToken } from '../modules/auth/authService';
+import { isFeatureEnabled } from '../config/featureFlags';
 import { READING_MINUTES_PER_PAGE, READING_POINTS_PER_PAGE, WEEKDAY_LABELS } from '../config/rules';
 
 const PROGRESS_KEY = 'zeroup_reading_progress';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+// Stage 9 (frontend integration): mirrors authService.js/booksService.js's
+// realApiEnabled() — on only when the flag, a base URL, AND a real signed-in
+// session's token are all present, since /progress is per-user and
+// authenticated. Reads stay synchronous against the localStorage cache below
+// regardless (see syncProgressFromApi()); this only gates whether writes are
+// also mirrored to the real API and whether that API is hydrated from at
+// session start.
+function realApiEnabled() {
+  return isFeatureEnabled('realProgressApi') && Boolean(API_BASE_URL) && Boolean(getToken());
+}
+
+function fromApiState(apiState) {
+  const { stats, inProgress, completedBookIds } = apiState;
+  return {
+    booksCompleted: stats.booksCompleted,
+    pagesRead: stats.pagesRead,
+    completedBookIds,
+    streak: stats.streak,
+    lastReadDate: stats.lastReadDate,
+    weekStart: stats.weekStart,
+    weeklyActivity: stats.weeklyActivity,
+    booksCompletedThisWeek: stats.booksCompletedThisWeek,
+    inProgress,
+  };
+}
+
+async function apiRequest(path, options = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...options.headers },
+  });
+  if (!res.ok) throw new Error(`${options.method || 'GET'} ${path} failed: ${res.status}`);
+  return res.json();
+}
+
+// Hydrates the localStorage progress cache from the real API — called once
+// per session (app boot if already signed in, or right after login/register,
+// see src/index.js and AuthContext.js) rather than on every read, the same
+// "sync at the seam, keep call sites synchronous" pattern booksService.js's
+// syncBooksFromApi() already uses. No-ops instantly when the flag/URL/token
+// aren't all set, and never throws — a broken/unreachable API just leaves
+// whatever is already cached in place.
+export async function syncProgressFromApi() {
+  if (!realApiEnabled()) return;
+  try {
+    const apiState = await apiRequest('/progress');
+    writeProgress(fromApiState(apiState));
+  } catch (err) {
+    console.error('Failed to sync reading progress from the real API — keeping the cached copy.', err);
+  }
+}
+
+// Best-effort mirror of a local write to the real API — fire-and-forget so
+// no call site (many of them inside render bodies/useEffects) needs to
+// become async. A failure here doesn't touch the localStorage write that
+// already happened; the next syncProgressFromApi() (next login) reconciles.
+function mirrorToApi(method, path, body) {
+  if (!realApiEnabled()) return;
+  apiRequest(path, { method, body: body !== undefined ? JSON.stringify(body) : undefined }).catch((err) => {
+    console.error(`Failed to mirror reading progress to the real API (${method} ${path}).`, err);
+  });
+}
 
 // Monday (ISO) of the week a given date falls in — the anchor `weeklyActivity`
 // is keyed against, so the Reading Progress chart always resets on week
@@ -108,6 +174,7 @@ export function getWeeklyActivity() {
 // "in progress" for every logged-in user regardless of their real history.
 export function recordProgress(bookId, currentPage, totalPages) {
   if (!navigator.onLine) syncService.markPendingSync();
+  mirrorToApi('PUT', `/progress/${bookId}`, { currentPage, totalPages });
 
   let progress = bumpStreak(readProgress());
   progress = bumpWeeklyActivity(progress, READING_MINUTES_PER_PAGE / 60);
@@ -126,6 +193,7 @@ export function recordProgress(bookId, currentPage, totalPages) {
 eventBus.on('book.completed', ({ id }) => {
   const progress = readProgress();
   if (progress.completedBookIds.includes(id)) return;
+  mirrorToApi('POST', `/progress/${id}/complete`);
 
   const book = booksService.getBook(id);
   const { [id]: _finished, ...stillInProgress } = progress.inProgress || {};

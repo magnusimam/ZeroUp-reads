@@ -31,6 +31,15 @@ const FLAGS = {
   // backend/README.md and ENGINEERING_PRINCIPLES_TRACKER.md Principle 1.
   // Same default-false, instantly-reversible posture as realAuthApi.
   realBooksApi: false,
+  // Stage 9 of the backend build: routes userService's reading-progress
+  // reads/writes and bookmarksService's book-/page-level bookmarks to the
+  // real backend/ Progress + Bookmarks APIs — hydrated once per session
+  // (app boot / login, see AuthContext.js) into the same localStorage cache
+  // every existing synchronous call site already reads, with writes
+  // best-effort mirrored to the API in the background. Same default-false,
+  // instantly-reversible posture as realAuthApi/realBooksApi.
+  realProgressApi: false,
+  realBookmarksApi: false,
 };
 
 export function isFeatureEnabled(flagName) {

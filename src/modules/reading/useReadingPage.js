@@ -48,6 +48,11 @@ export default function useReadingPage(bookId) {
     setSaved(bookmarksService.isBookmarked(book.id));
     setPageBookmark(bookmarksService.getPageBookmark(book.id));
     setNotes(notesService.getNotes(book.id));
+    // Page pins have no bulk sync endpoint (unlike the book-level bookmark
+    // list, hydrated once per session) — refresh this one book's pin lazily
+    // as it's opened. No-ops synchronously and resolves to the same cached
+    // value when realBookmarksApi is off.
+    bookmarksService.syncPageBookmarkFromApi(book.id).then(setPageBookmark);
   }, [book]);
 
   // Real per-book progress (Continue Reading on the homepage reads this
