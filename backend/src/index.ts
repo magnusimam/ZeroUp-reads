@@ -14,6 +14,8 @@ import notifications from "./notifications/routes";
 import audit from "./audit/routes";
 import authors from "./authors/routes";
 import illustrators from "./illustrators/routes";
+import ratings from "./ratings/routes";
+import reviews from "./reviews/routes";
 import { logEvent } from "./utils/logger";
 
 export type { Env };
@@ -59,6 +61,8 @@ app.route("/notifications", notifications);
 app.route("/audit-log", audit);
 app.route("/authors", authors);
 app.route("/illustrators", illustrators);
+app.route("/ratings", ratings);
+app.route("/reviews", reviews);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 

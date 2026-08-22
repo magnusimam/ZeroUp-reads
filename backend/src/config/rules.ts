@@ -42,3 +42,7 @@ export const REGISTER_RATE_LIMIT_WINDOW_MINUTES = 60;
 // long enough for a real consent-screen round trip, short enough to keep a
 // leaked/guessed state's window of usefulness small.
 export const OAUTH_STATE_TTL_MINUTES = 10;
+
+// Bounds for POST /ratings/:bookId's body — a star rating, not a free number.
+export const MIN_RATING = 1;
+export const MAX_RATING = 5;
