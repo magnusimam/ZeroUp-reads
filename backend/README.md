@@ -47,6 +47,13 @@ npm run deploy      # deploy to Cloudflare
 - `GET /audit-log` → **Administrator only** → optional `?limit=` (default/max 50) → `200 { entries: [...] }` — see **Audit log** below.
 - `GET /auth/oauth/google/start` → `302` to Google's consent screen — see **OAuth (Google)** below.
 - `GET /auth/oauth/google/callback` → `302` to the frontend with `?token=...` on success, `400`/`502` on failure.
+- `GET /books/:id/versions`, `GET /books/:id/versions/:versionNumber`, `POST /books/:id/versions/:versionNumber/restore` → **Administrator only** — see **Book Versions** below.
+- `GET /authors`, `GET /authors/:id` → public; `PATCH /authors/:id` → **Administrator only** (`bio`/`photoUrl` only) — see **Authors & Illustrators** below. `GET /illustrators`, `GET /illustrators/:id`, `PATCH /illustrators/:id` mirror these exactly.
+- `GET /ratings/:bookId` → public → `200 { average, count }`; `GET /ratings/:bookId/mine` → requires auth → `200 { rating: number | null }`; `PUT /ratings/:bookId` → `{ rating: 1-5 }` → `200 { average, count }`; `DELETE /ratings/:bookId` → `200 { average, count }` — see **Ratings & Reviews** below.
+- `GET /reviews/:bookId` → public → `200 { reviews: [...] }`; `PUT /reviews/:bookId` → `{ reviewText }` → `200 { review }` (upsert); `DELETE /reviews/:bookId` → `200 { success: true }`.
+- `GET /collections`, `GET /collections/:id` → public/optional auth; `POST /collections`, `PATCH /collections/:id`, `DELETE /collections/:id`, `POST /collections/:id/books`, `DELETE /collections/:id/books/:bookId` → requires auth, owner or Administrator — see **Collections** below.
+- `GET /downloads` → requires auth → `200 { downloads: [...] }`; `POST /downloads/:bookId` → `201 { success: true }` (`404` unknown book) — see **Downloads** below.
+- `GET /permissions`, `GET /permissions/roles` → **Administrator only** — see **Permissions** below.
 
 ## Auth
 
@@ -118,6 +125,30 @@ A real, persisted feed (`notifications` table, `migrations/0005_notifications.sq
 
 Generalizes the Publishing workflow's `submission_history` pattern (actor name/role snapshotted at write-time, not a live join) to any entity via `entity_type`/`entity_id`. Currently written from `PATCH /users/:id/role` (`role_changed`, and `role_change_denied_owner` on the existing Owner-protection 403), and `DELETE /books/:id` (`book_deleted`). Publishing's own lifecycle changes aren't duplicated here — `submission_history` already covers those. `GET /audit-log` is Administrator-only.
 
+## Book Versions
+
+`book_versions` (`migrations/0008_book_versions.sql`) snapshots a book's editable fields and page content immediately before every `PATCH /books/:id`, so an edit is recoverable rather than a silent overwrite — `version_number` is per-book, starting at 1. Restoring an earlier version snapshots the *current* state first, so a restore is itself just another recoverable edit, not a one-way door. `edited_by` is deliberately not a foreign key, same reasoning as `audit_log.actor_id` — a snapshot must never be able to fail (and so block) the edit it's recording.
+
+## Authors & Illustrators
+
+Real entities (`authors`/`illustrators` tables, `migrations/0009_authors_illustrators.sql`), additive alongside the existing `books.author` text column rather than replacing it — every existing route/service that reads/writes `author` keeps working unchanged. `books.author_id`/`illustrator_id` link a book to a full profile (bio, photo) once one exists. `POST`/`PATCH /books` find-or-create the linked row from the `author`/`illustrator` name given (the same idiom the Stage 14 migration used once, as a one-time backfill, now running on every book create/edit too) — renaming happens by editing the book's `author`/`illustrator` field, not by `PATCH`ing the person directly (that endpoint only touches `bio`/`photoUrl`).
+
+## Ratings & Reviews
+
+Two separate tables (`ratings`, `reviews`, `migrations/0011_ratings_reviews.sql`) — a reader can rate a book (a bare 1-5 number) without writing anything, and the two are queried independently. Both are upserts, one row per user per book. `books.rating` (the pre-existing seeded/static number) is untouched by either — nothing recomputes it from `ratings` yet.
+
+## Collections
+
+Curated reading lists (`collections`/`collection_books`, `migrations/0010_collections.sql`), distinct from a reader's own bookmarks: a collection holds several books in order, can be personal or public, and (unlike a bookmark list) is itself a browsable, ownable entity. A private collection a stranger can't see 404s rather than 403ing, same "don't confirm another user's row exists" posture as Notifications.
+
+## Downloads
+
+`downloads` (`migrations/0012_downloads.sql`) logs an offline-download event per `POST /downloads/:bookId` call — one row per event, not deduped, since a re-download after clearing local storage is still a real event worth counting later (e.g. a future "most downloaded" analytics tile).
+
+## Permissions
+
+`permissions`/`role_permissions` (`migrations/0013_permissions.sql`) is a read-only, Administrator-only mirror of exactly what `requireRole(...)` already enforces across `books`/`users`/`publishing`/`analytics`/`audit` routes — a granular breakdown for an admin UI to display "what can an Editor do", not a new enforcement mechanism. `requireRole(...)` itself still checks a hardcoded role list; wiring it to read this table instead is a separate follow-up, not done here.
+
 ## Database (D1)
 
 Schema lives in [`migrations/`](./migrations), applied in order. `wrangler.jsonc`'s top-level `database_id` now points at the real D1 database (`zeroup-reads-db`, region WEUR) created under the project's Cloudflare account — the `env.staging` block is still a placeholder pending a separate staging database. Local dev and tests don't need either to be real:
@@ -148,8 +179,8 @@ After that, every additional admin is a normal `PATCH /users/:id/role` call from
 
 ## Stage status
 
-Through Stage 13 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, and Search/Recommendations/Analytics/Notifications/Languages + security hardening (13) are all done. Every domain's frontend service (`authService.js`, `booksService.js`, `userService.js`, `bookmarksService.js`, `publishingService.js`) that existed before Stage 13 calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set.
+Through Stage 14 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, Search/Recommendations/Analytics/Notifications/Languages + security hardening (13, backend and frontend both), and BookVersions/Authors/Illustrators/Ratings/Reviews/Collections/Downloads/Permissions (14) are all done. Every domain's frontend service that existed before Stage 13 calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set.
 
-**Stage 13 is backend-only** — `GET /languages`, `GET /recommendations`, `GET /analytics`, `GET /notifications` (+ read/read-all), `GET /audit-log`, and `GET /books`'s new `q` param all exist and are tested, but nothing on the frontend calls them yet (`statsService.js` is still `localStorage`-only, `DashboardTopBar.jsx`'s bell is still fake, `LibraryHeader.jsx`'s search bar isn't wired, `BestForYouCarousel.jsx` still shows the unfiltered catalogue) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6/9/10 closed for their own domains. OAuth (Google) is additionally gated on registering a real client — see **OAuth (Google)** above.
+**Stage 14 is backend-only** — every table/endpoint listed above (Book Versions, Authors, Illustrators, Ratings, Reviews, Collections, Downloads, Permissions) exists and is tested, but nothing on the frontend calls any of it yet — same "API exists, frontend swap is a separate stage" gap every prior stage closed for its own domain in turn. OAuth (Google) is additionally gated on registering a real client — see **OAuth (Google)** above.
 
 `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), deliberately out of scope. Also deliberately out of scope: Audio/TTS, a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS), and JWT revocation/token-versioning (a real gap — a role change doesn't invalidate an already-issued token until it expires — but a separate feature from what Stage 13 covers).

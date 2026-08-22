@@ -214,6 +214,7 @@ The original roadmap (Immediate / Week 1 / Week 2 / Post-MVP) is fully cleared: 
 | Cloudflare Pages project + `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` secrets actually set up | Infrastructure as Code | Account-level action, outside version control by nature. |
 | Modules for Translation, Audio, CMS, AI | Domain-Driven Design | Add as those features get built — not worth pre-creating empty folders. Languages (`src/modules/books/languagesService.js`), Recommendations (`src/modules/library/recommendationsService.js`), Search (folded into `booksService.js`'s existing `GET /books` query params, not a separate module), and Notifications (`src/modules/notifications/`) are now real, Stage 13. |
 | Wire `LibraryHeader.jsx`'s `UI_LANGUAGES` dropdown to real i18n | (not yet a tracked principle violation) | Currently a non-functional placeholder — no `onChange`/state. Fine as-is until site localization is an actual feature. |
+| Frontend wiring for BookVersions/Authors/Illustrators/Ratings/Reviews/Collections/Downloads/Permissions | API-First Design | Stage 14 — all 8 backend domains exist (`backend/README.md`'s **Book Versions** through **Permissions** sections), tested, and pushed, but no frontend service calls any of them yet. Same "backend built, frontend swap is a separate stage" gap Stage 13's own domains had until this session's frontend-wiring pass closed it for *them*. |
 
 ---
 
