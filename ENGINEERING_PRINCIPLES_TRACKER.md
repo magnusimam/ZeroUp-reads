@@ -208,7 +208,7 @@ The original roadmap (Immediate / Week 1 / Week 2 / Post-MVP) is fully cleared: 
 
 | Item | Principle | Why it's still open |
 |---|---|---|
-| `booksService.js`/`authService.js`/`statsService.js`/`userService.js`/`testimonialsService.js` should swap to real API calls | API-First Design | No backend exists yet to call. |
+| `statsService.js`/`testimonialsService.js` should swap to real API calls | API-First Design | `booksService.js`, `authService.js` (including user/role management), `userService.js` (reading progress), `bookmarksService.js`, and `publishingService.js` now all call the real `backend/` API behind `realXApi` feature flags (Stages 4–12) — analytics/testimonials are the only domains with no backend endpoint yet. |
 | Admin-editable rules table, per-cohort feature flags | Rules Engine, Feature Flags | Explicitly post-MVP — only pay off with a real admin CMS and a real audience. |
 | Real error tracking (`Sentry`) | Observability by Default | No backend/user base yet to make it useful. |
 | Cloudflare Pages project + `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` secrets actually set up | Infrastructure as Code | Account-level action, outside version control by nature. |

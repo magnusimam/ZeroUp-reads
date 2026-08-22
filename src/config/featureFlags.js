@@ -23,14 +23,14 @@ const FLAGS = {
   // REACT_APP_API_BASE_URL is also configured (see .env.example). Default
   // false so this only turns on deliberately, and can be flipped back off
   // instantly — no redeploy — if the real API misbehaves.
-  realAuthApi: false,
+  realAuthApi: true,
   // Stage 6 of the backend build: hydrates booksService's localStorage
   // catalogue from the real backend/ Books API once at app boot (see
   // src/index.js's bootstrap()) instead of every getBooks()/getBook() call
   // site being reworked into async/loading-state code — see
   // backend/README.md and ENGINEERING_PRINCIPLES_TRACKER.md Principle 1.
   // Same default-false, instantly-reversible posture as realAuthApi.
-  realBooksApi: false,
+  realBooksApi: true,
   // Stage 9 of the backend build: routes userService's reading-progress
   // reads/writes and bookmarksService's book-/page-level bookmarks to the
   // real backend/ Progress + Bookmarks APIs — hydrated once per session
@@ -38,8 +38,20 @@ const FLAGS = {
   // every existing synchronous call site already reads, with writes
   // best-effort mirrored to the API in the background. Same default-false,
   // instantly-reversible posture as realAuthApi/realBooksApi.
-  realProgressApi: false,
-  realBookmarksApi: false,
+  realProgressApi: true,
+  realBookmarksApi: true,
+  // Stage 10 of the backend build: routes authService's getAllUsers()/
+  // setUserRole() (the /admin/users page) to the real backend/ Users API —
+  // an Administrator-only endpoint, so this only does anything for a
+  // session whose token actually carries that role. Same default-false,
+  // instantly-reversible posture as the other realXApi flags.
+  realUserManagementApi: true,
+  // Stage 12 of the backend build: routes the Publishing Studio
+  // (publishingService.js) to the real backend/ Publishing API (built in
+  // Stage 8) — every submission read/write, including the publish action
+  // that creates a real book server-side. Same default-false,
+  // instantly-reversible posture as the other realXApi flags.
+  realPublishingApi: true,
 };
 
 export function isFeatureEnabled(flagName) {
