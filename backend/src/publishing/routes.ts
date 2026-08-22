@@ -6,6 +6,7 @@ import { authMiddleware, requireRole, type AuthVariables } from "../auth/middlew
 import { ROLES, PUBLISHING_ROLES, REVIEWER_ROLES, PUBLISHER_ROLES } from "../config/roles";
 import { toApiBook, getPageContent, createBookRecord, type BookRow } from "../books/service";
 import { createNotification } from "../notifications/service";
+import { getActorName } from "../users/service";
 
 type SubmissionRow = {
   id: string;
@@ -97,11 +98,6 @@ async function getComments(db: D1Database, id: string) {
     .bind(id)
     .all<CommentRow>();
   return results.map(toApiComment);
-}
-
-async function getActorName(db: D1Database, userId: string): Promise<string> {
-  const row = await db.prepare("SELECT name FROM users WHERE id = ?").bind(userId).first<{ name: string }>();
-  return row?.name ?? "Unknown";
 }
 
 async function pushHistory(

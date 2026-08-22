@@ -55,6 +55,31 @@ describe("GET /books", () => {
     expect(body.books.every((b: { level: string }) => b.level === "Advanced")).toBe(true);
   });
 
+  it("searches by title, case-insensitively, combined with other filters", async () => {
+    const res = await app.request("/books?q=anansi", {}, env);
+    const body = await json(res);
+    expect(body.books.some((b: { id: string }) => b.id === "1")).toBe(true);
+
+    const combined = await app.request("/books?q=anansi&language=Swahili", {}, env);
+    expect((await json(combined)).books).toHaveLength(0);
+  });
+
+  it("searches by author and by description substring", async () => {
+    const byAuthor = await app.request("/books?q=Kwame%20Mensah", {}, env);
+    expect((await json(byAuthor)).books.some((b: { id: string }) => b.id === "1")).toBe(true);
+
+    const byDescription = await app.request("/books?q=Sky%20God", {}, env);
+    expect((await json(byDescription)).books.some((b: { id: string }) => b.id === "1")).toBe(true);
+  });
+
+  it("treats a literal % or _ in the search term as a literal, not a SQL LIKE wildcard", async () => {
+    const res = await app.request("/books?q=" + encodeURIComponent("%"), {}, env);
+    const body = await json(res);
+    // An unescaped "%" would match every book's title/author/description;
+    // escaped, it matches none of the seeded (no literal "%" in any of them).
+    expect(body.books).toHaveLength(0);
+  });
+
   it("filters by isEducational", async () => {
     const res = await app.request("/books?isEducational=false", {}, env);
     const body = await json(res);

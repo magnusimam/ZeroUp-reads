@@ -13,13 +13,24 @@ import {
   replacePages,
   createBookRecord,
 } from "./service";
+import { writeAuditLog } from "../audit/service";
+import { getActorName } from "../users/service";
 
 const listQuerySchema = z.object({
   category: z.string().trim().min(1).optional(),
   language: z.string().trim().min(1).optional(),
   level: z.string().trim().min(1).optional(),
   isEducational: z.enum(["true", "false"]).optional(),
+  q: z.string().trim().min(1).optional(),
 });
+
+// Escapes SQLite LIKE's own wildcards (%, _) out of a user-supplied search
+// term before it's wrapped in %...% — otherwise someone typing a literal "%"
+// or "_" gets unintended wildcard matching instead of a literal substring
+// search (the LIKE equivalent of not escaping regex metacharacters).
+function escapeLikeTerm(term: string): string {
+  return term.replace(/[\\%_]/g, "\\$&");
+}
 
 // Accepts either a single string or an array of page strings, same as the
 // frontend's booksService.createBook() — normalized to an array immediately.
@@ -58,7 +69,7 @@ const updateSchema = z.object({
 const books = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
 books.get("/", zValidator("query", listQuerySchema), async (c) => {
-  const { category, language, level, isEducational } = c.req.valid("query");
+  const { category, language, level, isEducational, q } = c.req.valid("query");
 
   const conditions: string[] = [];
   const params: (string | number)[] = [];
@@ -77,6 +88,13 @@ books.get("/", zValidator("query", listQuerySchema), async (c) => {
   if (isEducational !== undefined) {
     conditions.push("is_educational = ?");
     params.push(isEducational === "true" ? 1 : 0);
+  }
+  if (q) {
+    const like = `%${escapeLikeTerm(q)}%`;
+    conditions.push(
+      "(title LIKE ? ESCAPE '\\' OR author LIKE ? ESCAPE '\\' OR description LIKE ? ESCAPE '\\')"
+    );
+    params.push(like, like, like);
   }
   const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -179,8 +197,11 @@ books.patch(
 
 books.delete("/:id", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
   const id = c.req.param("id");
+  const authUser = c.get("authUser");
 
-  const existing = await c.env.DB.prepare("SELECT id FROM books WHERE id = ?").bind(id).first();
+  const existing = await c.env.DB.prepare("SELECT id, title FROM books WHERE id = ?")
+    .bind(id)
+    .first<{ id: string; title: string }>();
   if (!existing) {
     return c.json({ error: "Book not found." }, 404);
   }
@@ -188,6 +209,18 @@ books.delete("/:id", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c)
   // book_pages/reading_progress/bookmarks/page_bookmarks all cascade via
   // ON DELETE CASCADE (migrations/0001_initial_schema.sql).
   await c.env.DB.prepare("DELETE FROM books WHERE id = ?").bind(id).run();
+
+  const actorName = await getActorName(c.env.DB, authUser.sub);
+  await writeAuditLog(c.env.DB, {
+    actorId: authUser.sub,
+    actorName,
+    actorRole: authUser.role,
+    action: "book_deleted",
+    entityType: "book",
+    entityId: id,
+    metadata: { title: existing.title },
+  });
+
   return c.json({ success: true });
 });
 

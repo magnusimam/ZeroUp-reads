@@ -8,6 +8,9 @@ import { hashPassword, verifyPassword } from "./password";
 import { issueToken } from "./jwt";
 import { authMiddleware, type AuthVariables } from "./middleware";
 import { toSafeUser, type UserRow } from "../users/service";
+import { clientIp, isLoginRateLimited, isRegisterRateLimited, recordAuthAttempt } from "./rateLimit";
+import google from "./oauthGoogle";
+import { logEvent } from "../utils/logger";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
@@ -27,11 +30,18 @@ const auth = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 auth.post("/register", zValidator("json", registerSchema), async (c) => {
   const { name, email, password, persona, orgName } = c.req.valid("json");
   const normalizedEmail = email.toLowerCase();
+  const ip = clientIp(c);
+
+  if (await isRegisterRateLimited(c.env.DB, ip)) {
+    logEvent("warn", "Register rate limit exceeded", { ip });
+    return c.json({ error: "Too many registration attempts from this network. Please try again later." }, 429);
+  }
 
   const existing = await c.env.DB.prepare("SELECT id FROM users WHERE email = ?")
     .bind(normalizedEmail)
     .first();
   if (existing) {
+    await recordAuthAttempt(c.env.DB, "register", normalizedEmail, ip, false);
     return c.json({ error: "This email is already registered." }, 409);
   }
 
@@ -44,6 +54,7 @@ auth.post("/register", zValidator("json", registerSchema), async (c) => {
   )
     .bind(id, name, normalizedEmail, passwordHash, persona ?? null, orgName ?? null, ROLES.READER)
     .run();
+  await recordAuthAttempt(c.env.DB, "register", normalizedEmail, ip, true);
 
   const row = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first<UserRow>();
   const token = await issueToken(id, ROLES.READER, c.env.JWT_SECRET);
@@ -54,6 +65,14 @@ auth.post("/register", zValidator("json", registerSchema), async (c) => {
 auth.post("/login", zValidator("json", loginSchema), async (c) => {
   const { email, password } = c.req.valid("json");
   const normalizedEmail = email.toLowerCase();
+  const ip = clientIp(c);
+
+  // Checked before the password is even compared — a locked-out attacker's
+  // next guess never reaches verifyPassword().
+  if (await isLoginRateLimited(c.env.DB, normalizedEmail)) {
+    logEvent("warn", "Login rate limit exceeded", { email: normalizedEmail, ip });
+    return c.json({ error: "Too many failed attempts. Please try again later." }, 429);
+  }
 
   const row = await c.env.DB.prepare("SELECT * FROM users WHERE email = ?")
     .bind(normalizedEmail)
@@ -61,8 +80,10 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
 
   // Same generic message either way — never reveal whether the email exists.
   if (!row || !(await verifyPassword(password, row.password_hash))) {
+    await recordAuthAttempt(c.env.DB, "login", normalizedEmail, ip, false);
     return c.json({ error: "Invalid email or password." }, 401);
   }
+  await recordAuthAttempt(c.env.DB, "login", normalizedEmail, ip, true);
 
   const token = await issueToken(row.id, row.system_role as import("../config/roles").Role, c.env.JWT_SECRET);
   return c.json({ user: toSafeUser(row), token });
@@ -80,5 +101,7 @@ auth.get("/me", authMiddleware, async (c) => {
 
   return c.json({ user: toSafeUser(row) });
 });
+
+auth.route("/oauth/google", google);
 
 export default auth;

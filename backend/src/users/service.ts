@@ -8,9 +8,18 @@ export type UserRow = {
   system_role: string;
   preferred_language: string | null;
   is_owner: number;
+  oauth_provider: string | null;
   created_at: string;
   updated_at: string;
 };
+
+// Resolves a user id to their current display name — used anywhere an audit
+// trail needs to snapshot "who did this" (publishing's submission_history,
+// the audit_log table) without every call site re-writing the same lookup.
+export async function getActorName(db: D1Database, userId: string): Promise<string> {
+  const row = await db.prepare("SELECT name FROM users WHERE id = ?").bind(userId).first<{ name: string }>();
+  return row?.name ?? "Unknown";
+}
 
 // Maps the DB row (snake_case, includes password_hash) to the shape the API
 // returns (camelCase, password stripped) — shared by auth/routes.ts (its own
@@ -26,6 +35,7 @@ export function toSafeUser(row: UserRow) {
     systemRole: row.system_role,
     preferredLanguage: row.preferred_language,
     isOwner: Boolean(row.is_owner),
+    oauthProvider: row.oauth_provider,
     createdAt: row.created_at,
   };
 }

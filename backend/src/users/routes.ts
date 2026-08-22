@@ -4,7 +4,9 @@ import { z } from "zod";
 import type { Env } from "../env";
 import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
 import { ROLES, ALL_ROLES } from "../config/roles";
-import { toSafeUser, type UserRow } from "./service";
+import { toSafeUser, getActorName, type UserRow } from "./service";
+import { writeAuditLog } from "../audit/service";
+import { logEvent } from "../utils/logger";
 
 const roleSchema = z.object({
   systemRole: z.enum(ALL_ROLES as [string, ...string[]]),
@@ -33,20 +35,43 @@ users.get("/", async (c) => {
 users.patch("/:id/role", zValidator("json", roleSchema), async (c) => {
   const id = c.req.param("id");
   const { systemRole } = c.req.valid("json");
+  const authUser = c.get("authUser");
 
-  const existing = await c.env.DB.prepare("SELECT id, is_owner FROM users WHERE id = ?")
+  const existing = await c.env.DB.prepare("SELECT id, system_role, is_owner FROM users WHERE id = ?")
     .bind(id)
-    .first<{ id: string; is_owner: number }>();
+    .first<{ id: string; system_role: string; is_owner: number }>();
   if (!existing) {
     return c.json({ error: "User not found." }, 404);
   }
   if (existing.is_owner) {
+    const actorName = await getActorName(c.env.DB, authUser.sub);
+    await writeAuditLog(c.env.DB, {
+      actorId: authUser.sub,
+      actorName,
+      actorRole: authUser.role,
+      action: "role_change_denied_owner",
+      entityType: "user",
+      entityId: id,
+      metadata: { attemptedRole: systemRole },
+    });
+    logEvent("warn", "Attempted to change the Owner account's role", { actorId: authUser.sub, targetId: id });
     return c.json({ error: "The Owner account's role cannot be changed." }, 403);
   }
 
   await c.env.DB.prepare("UPDATE users SET system_role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
     .bind(systemRole, id)
     .run();
+
+  const actorName = await getActorName(c.env.DB, authUser.sub);
+  await writeAuditLog(c.env.DB, {
+    actorId: authUser.sub,
+    actorName,
+    actorRole: authUser.role,
+    action: "role_changed",
+    entityType: "user",
+    entityId: id,
+    metadata: { from: existing.system_role, to: systemRole },
+  });
 
   const row = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first<UserRow>();
   return c.json({ user: toSafeUser(row as UserRow) });

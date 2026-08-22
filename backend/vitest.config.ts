@@ -28,6 +28,14 @@ export default defineConfig(async () => {
             // Deliberately not in wrangler.jsonc's `vars` at all, since
             // that file is committed and vars aren't for secrets.
             JWT_SECRET: "test-only-secret-not-for-production",
+            // Test-only OAuth config — the actual Google endpoints are never
+            // called in tests (routes.test.ts stubs global fetch for the
+            // token-exchange/userinfo calls); these just need to exist so
+            // Env's required fields are satisfied.
+            GOOGLE_OAUTH_CLIENT_ID: "test-client-id",
+            GOOGLE_OAUTH_CLIENT_SECRET: "test-client-secret",
+            OAUTH_REDIRECT_BASE_URL: "http://localhost:8787",
+            OAUTH_FRONTEND_REDIRECT_URL: "http://localhost:3000/oauth/callback",
           },
         },
       }),
