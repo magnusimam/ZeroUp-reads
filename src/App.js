@@ -46,6 +46,8 @@ import SubmissionDetailPage from './modules/publishing/SubmissionDetailPage';
 import TranslationHubPage from './modules/translation/TranslationHubPage';
 import TranslationWorkspacePage from './modules/translation/TranslationWorkspacePage';
 import DownloadsPage from './modules/reading/DownloadsPage';
+import AuthorPage from './modules/books/AuthorPage';
+import IllustratorPage from './modules/books/IllustratorPage';
 
 function App() {
   return (
@@ -67,6 +69,8 @@ function App() {
               <Route path="/book/:bookId"      element={<BookDetailPage />} />
               <Route path="/read/:bookId"      element={<ReadingPage />} />
               <Route path="/downloads"         element={<DownloadsPage />} />
+              <Route path="/authors/:id"       element={<AuthorPage />} />
+              <Route path="/illustrators/:id"  element={<IllustratorPage />} />
               <Route path="/profile"           element={<ProfilePage />} />
               <Route path="/dashboard"         element={<DashboardPage />} />
               <Route path="/settings"          element={<SettingsPage />} />
