@@ -52,6 +52,35 @@ const FLAGS = {
   // that creates a real book server-side. Same default-false,
   // instantly-reversible posture as the other realXApi flags.
   realPublishingApi: true,
+  // Stage 13 frontend integration: routes AdminCMSPage's book-upload
+  // language dropdown to the real backend/ Languages API (built in
+  // Stage 13) — hydrated once at app boot (see src/index.js's bootstrap())
+  // into the same localStorage cache pattern as realBooksApi, falling back
+  // to the static BOOK_LANGUAGES taxonomy if unreachable. Same
+  // default-false, instantly-reversible posture as the other realXApi
+  // flags.
+  realLanguagesApi: true,
+  // Stage 13 frontend integration: routes statsService's getStatsFromApi()
+  // (AnalyticsPage.jsx) to the real backend/ Analytics API — fetched fresh
+  // on each page visit rather than cached, since it's a single-consumer,
+  // freshness-sensitive Administrator-only page, not read synchronously
+  // elsewhere like books/progress. Same default-false, instantly-reversible
+  // posture as the other realXApi flags.
+  realAnalyticsApi: true,
+  // Stage 13 frontend integration: routes notificationsService (the
+  // dashboard bell, useDashboardData.js) to the real backend/ Notifications
+  // API — fetched fresh on dashboard mount, same freshness-over-caching
+  // posture as realAnalyticsApi. Falls back to the old "books in progress"
+  // count stand-in when off/unreachable. Same default-false,
+  // instantly-reversible posture as the other realXApi flags.
+  realNotificationsApi: true,
+  // Stage 13 frontend integration: routes recommendationsService
+  // (LibraryPage's BestForYouCarousel) to the real backend/ Recommendations
+  // API for a signed-in reader — fetched fresh per Library visit, falling
+  // back to the plain unfiltered catalogue (today's behavior) when off,
+  // signed out, or unreachable. Same default-false, instantly-reversible
+  // posture as the other realXApi flags.
+  realRecommendationsApi: true,
 };
 
 export function isFeatureEnabled(flagName) {
