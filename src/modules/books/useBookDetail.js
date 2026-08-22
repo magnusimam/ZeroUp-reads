@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import * as booksService from './booksService';
 import * as eventBus from '../../utils/eventBus';
 import { isBookmarked, toggleBookmark } from '../reading/bookmarksService';
+import * as ratingsService from './ratingsService';
+import * as reviewsService from './reviewsService';
+import { useAuth } from '../auth/AuthContext';
 import { READING_MINUTES_PER_PAGE, RELATED_BOOKS_COUNT, TAGLINE_MAX_LENGTH } from '../../config/rules';
 import { BOOK_LANGUAGES } from '../../utils/mockData';
 
@@ -22,8 +25,69 @@ function deriveTagline(description) {
 // here instead of the page's JSX, so the same page works for any bookId
 // purely by what this hook returns (Separation of Concerns).
 export default function useBookDetail(bookId) {
+  const { user } = useAuth();
   const [books] = useState(() => booksService.getBooks());
   const book = useMemo(() => books.find((b) => b.id === bookId) || null, [books, bookId]);
+
+  // null summary/myRating = the real API isn't wired up (flag off,
+  // unreachable, or — for myRating — signed out) — the caller falls back to
+  // the book's own static rating/reads fields exactly as before.
+  const [ratingSummary, setRatingSummary] = useState(null);
+  const [myRating, setMyRating] = useState(null);
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    if (!book) return;
+    let cancelled = false;
+    ratingsService.getRatingSummary(book.id).then((summary) => {
+      if (!cancelled) setRatingSummary(summary);
+    });
+    reviewsService.getReviews(book.id).then((list) => {
+      if (!cancelled) setReviews(list);
+    });
+    if (user) {
+      ratingsService.getMyRating(book.id).then((rating) => {
+        if (!cancelled) setMyRating(rating);
+      });
+    } else {
+      setMyRating(null);
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book?.id, user]);
+
+  async function rateBook(rating) {
+    if (!book) return { success: false };
+    const result = await ratingsService.setRating(book.id, rating);
+    if (result.success) {
+      setRatingSummary(result.summary);
+      setMyRating(rating);
+    }
+    return result;
+  }
+
+  async function submitReview(reviewText) {
+    if (!book) return { success: false };
+    const result = await reviewsService.setReview(book.id, reviewText);
+    if (result.success) {
+      setReviews((prev) => {
+        const withoutMine = prev.filter((r) => r.userId !== result.review.userId);
+        return [result.review, ...withoutMine];
+      });
+    }
+    return result;
+  }
+
+  async function removeReview() {
+    if (!book || !user) return { success: false };
+    const result = await reviewsService.deleteReview(book.id);
+    if (result.success) {
+      setReviews((prev) => prev.filter((r) => r.userId !== user.id));
+    }
+    return result;
+  }
 
   const [favourited, setFavourited] = useState(() => isBookmarked(bookId));
   useEffect(() => {
@@ -85,5 +149,11 @@ export default function useBookDetail(bookId) {
     learningObjectives,
     relatedBooks,
     tagline,
+    ratingSummary,
+    myRating,
+    rateBook,
+    reviews,
+    submitReview,
+    removeReview,
   };
 }

@@ -14,7 +14,9 @@ import DownloadButton from '../reading/components/DownloadButton';
 import useBookDetail from './useBookDetail';
 import useTranslateRequest from '../library/useTranslateRequest';
 import TranslateRequestModal from '../library/components/TranslateRequestModal';
+import AddToCollectionButton from '../library/components/AddToCollectionButton';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../auth/AuthContext';
 import { isFeatureEnabled } from '../../config/featureFlags';
 import { LANGUAGE_FLAG } from './languageFlags';
 
@@ -69,6 +71,30 @@ function StarRating({ rating, size = 18 }) {
   );
 }
 
+// Clickable 1-5 star input — hover previews the value about to be set,
+// distinct from the read-only StarRating above (which only ever displays).
+function StarRatingInput({ value, onChange, size = 22 }) {
+  const [hovered, setHovered] = useState(0);
+  const active = hovered || value || 0;
+  return (
+    <span className="inline-flex gap-1">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          onMouseEnter={() => setHovered(n)}
+          onMouseLeave={() => setHovered(0)}
+          aria-label={`Rate ${n} out of 5 stars`}
+          className="p-0.5"
+        >
+          <Star size={size} fill={n <= active ? 'currentColor' : 'none'} className={n <= active ? 'text-story-orange' : 'text-story-navy/20'} />
+        </button>
+      ))}
+    </span>
+  );
+}
+
 // Label text always stays dark navy for contrast against the light pastel
 // pill backgrounds (colouring the label to match, e.g. orange-on-yellow,
 // fails ~2.5:1 contrast) — only the icon carries the accent colour.
@@ -86,14 +112,22 @@ export default function BookDetailPage() {
   const { bookId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { user } = useAuth();
   const translateRequest = useTranslateRequest();
   const relatedScrollRef = useRef(null);
   const [relatedPage, setRelatedPage] = useState(0);
+  const [reviewDraft, setReviewDraft] = useState('');
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const {
     book, favourited, toggleFavourite, downloadBook,
     estimatedMinutes, availableLanguages, moreLanguagesCount, learningObjectives, relatedBooks, tagline,
+    ratingSummary, myRating, rateBook, reviews, submitReview, removeReview,
   } = useBookDetail(bookId);
+
+  const displayRating = ratingSummary && ratingSummary.count > 0 ? ratingSummary.average : book?.rating;
+  const myReview = reviews.find((r) => r.userId === user?.id);
+  const authorLinkEnabled = isFeatureEnabled('realPeopleApi') && book?.authorId;
 
   if (!book) {
     return (
@@ -126,6 +160,38 @@ export default function BookDetailPage() {
   function handleSave() {
     toggleFavourite();
     toast?.addToast(favourited ? `Removed "${book.title}" from Saved` : `Saved "${book.title}" 💛`, 'success');
+  }
+
+  async function handleRate(rating) {
+    if (!user) {
+      toast?.addToast('Sign in to rate this book.', 'info');
+      return;
+    }
+    const result = await rateBook(rating);
+    if (!result.success) {
+      toast?.addToast(result.message || 'Could not save your rating.', 'error');
+    }
+  }
+
+  async function handleSubmitReview(e) {
+    e.preventDefault();
+    if (!reviewDraft.trim()) return;
+    setSubmittingReview(true);
+    const result = await submitReview(reviewDraft.trim());
+    setSubmittingReview(false);
+    if (result.success) {
+      setReviewDraft('');
+      toast?.addToast('Review posted!', 'success');
+    } else {
+      toast?.addToast(result.message || 'Could not post your review.', 'error');
+    }
+  }
+
+  async function handleRemoveReview() {
+    const result = await removeReview();
+    if (result.success) {
+      toast?.addToast('Review removed.', 'info');
+    }
   }
 
   function scrollRelated(direction) {
@@ -202,12 +268,22 @@ export default function BookDetailPage() {
             <h1 className="font-nunito text-3xl md:text-5xl font-extrabold leading-tight text-story-navy">
               {book.title}
             </h1>
-            <p className="text-story-navy/70 font-nunito font-bold">By {book.author}</p>
+            <p className="text-story-navy/70 font-nunito font-bold">
+              By{' '}
+              {authorLinkEnabled ? (
+                <Link to={`/authors/${book.authorId}`} className="hover:text-story-orange transition-colors">
+                  {book.author}
+                </Link>
+              ) : book.author}
+            </p>
 
             <div className="flex items-center gap-2.5">
-              <StarRating rating={book.rating} />
+              <StarRating rating={displayRating} />
               <span className="text-ink-primary font-nunito font-bold text-sm">
-                {book.rating?.toFixed(1)} <span className="text-ink-secondary font-semibold">({book.reads?.toLocaleString()} readers)</span>
+                {displayRating?.toFixed(1)}{' '}
+                <span className="text-ink-secondary font-semibold">
+                  ({book.reads?.toLocaleString()} readers{ratingSummary && ratingSummary.count > 0 ? `, ${ratingSummary.count} ratings` : ''})
+                </span>
               </span>
             </div>
 
@@ -235,6 +311,7 @@ export default function BookDetailPage() {
                 </button>
               ))}
               <DownloadButton book={book} />
+              <AddToCollectionButton book={book} />
             </div>
           </motion.div>
         </div>
@@ -316,6 +393,79 @@ export default function BookDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Rate & Review */}
+      {isFeatureEnabled('realRatingsApi') && (
+        <div className="container pb-10">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-60px' }}
+            transition={{ duration: 0.5 }}
+            className="bg-white rounded-3xl shadow-story-card p-6 md:p-7"
+          >
+            <h2 className="inline-flex items-center gap-2 font-nunito text-lg font-extrabold text-story-navy mb-4">
+              <Star size={20} className="text-story-orange" /> Ratings &amp; Reviews
+            </h2>
+
+            {user ? (
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-6">
+                <span className="font-nunito font-bold text-sm text-story-navy">
+                  {myRating ? 'Your rating:' : 'Rate this book:'}
+                </span>
+                <StarRatingInput value={myRating} onChange={handleRate} />
+              </div>
+            ) : (
+              <p className="text-ink-secondary text-sm mb-6">
+                <Link to="/login" className="text-story-orange font-bold hover:text-story-navy">Sign in</Link> to rate or review this book.
+              </p>
+            )}
+
+            {user && (
+              <form onSubmit={handleSubmitReview} className="mb-6">
+                <textarea
+                  value={reviewDraft}
+                  onChange={(e) => setReviewDraft(e.target.value)}
+                  placeholder={myReview ? 'Update your review...' : 'Share what you thought of this book...'}
+                  rows={3}
+                  className="w-full rounded-2xl border-2 border-story-navy/10 px-4 py-3 text-sm text-ink-primary focus:outline-none focus:border-story-orange/40"
+                />
+                <div className="flex items-center gap-3 mt-2">
+                  <button
+                    type="submit"
+                    disabled={submittingReview || !reviewDraft.trim()}
+                    className="inline-flex items-center gap-2 rounded-full px-5 py-2 font-nunito font-bold text-sm bg-story-orange text-white hover:bg-story-orange-dark disabled:opacity-50 transition-colors"
+                  >
+                    {myReview ? 'Update Review' : 'Post Review'}
+                  </button>
+                  {myReview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveReview}
+                      className="text-xs font-bold text-ink-secondary hover:text-coral transition-colors"
+                    >
+                      Delete my review
+                    </button>
+                  )}
+                </div>
+              </form>
+            )}
+
+            {reviews.length === 0 ? (
+              <p className="text-ink-secondary text-sm">No reviews yet — be the first to share your thoughts!</p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {reviews.map((review) => (
+                  <div key={review.id} className="border-t border-story-navy/8 pt-4 first:border-t-0 first:pt-0">
+                    <p className="font-nunito font-bold text-sm text-story-navy">{review.reviewerName}</p>
+                    <p className="text-ink-secondary text-sm mt-1 leading-relaxed">{review.reviewText}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      )}
 
       {/* What You'll Learn */}
       {learningObjectives.length > 0 && (
