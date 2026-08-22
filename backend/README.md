@@ -23,7 +23,7 @@ npm run deploy      # deploy to Cloudflare
 - `POST /auth/register` → `{ name, email, password, persona?, orgName? }` → `201 { user, token }` (or `409` if the email's taken, `400` on validation failure)
 - `POST /auth/login` → `{ email, password }` → `200 { user, token }` (or `401 { error: "Invalid email or password." }` — same message whether the email doesn't exist or the password is wrong)
 - `GET /auth/me` → requires `Authorization: Bearer <token>` → `200 { user }`
-- `GET /books` → optional query params `category`, `language`, `level`, `isEducational` (`true`/`false`), combined with AND → `200 { books: [...] }` (summaries — no page content)
+- `GET /books` → optional query params `category`, `language`, `level`, `isEducational` (`true`/`false`), `q` (free-text, matched against title/author/description), combined with AND → `200 { books: [...] }` (summaries — no page content)
 - `GET /books/:id` → `200 { book: { ...summary, content: string[] } }` (full detail, ordered pages) or `404` if the id doesn't exist
 - `POST /books` → **Administrator only** (`Authorization: Bearer <token>`) → `{ title, author, language, level, category, content, ageGroup?, description?, isEducational?, attributes? }` → `201 { book }` (`401` no token, `403` wrong role, `400` invalid language/missing field)
 - `PATCH /books/:id` → **Administrator only** → any subset of the create fields; `attributes` is merged into the existing bag, not replaced; providing `content` replaces all pages and recomputes `totalPages` → `200 { book }` (`404` unknown id)
@@ -38,6 +38,15 @@ npm run deploy      # deploy to Cloudflare
 - `PUT /bookmarks/:bookId/page` → `{ pageIndex }` → `200 { pageIndex }` (`404` unknown book) — sending the same `pageIndex` again clears it
 - `GET /users` → **Administrator only** → `200 { users: [...] }` (password stripped)
 - `PATCH /users/:id/role` → **Administrator only** → `{ systemRole }` → `200 { user }` (`404` unknown id, `400` invalid role). The promoted/demoted user's *existing* token still carries the old role until they log in again — roles are a JWT claim, not re-checked against the DB per-request.
+- `GET /languages` → public → `200 { languages: [{ code, name }] }`
+- `GET /recommendations` → requires `Authorization: Bearer <token>` → `200 { books: [...] }` — see **Recommendations** below.
+- `GET /analytics` → **Administrator only** → `200 { totalUsers, totalBooks, booksReadThisWeek, completionsThisWeek, topBooks, byLanguage, byLevel, libraryReads, libraryTitles }` — see **Analytics** below.
+- `GET /notifications` → requires auth → `200 { notifications: [...], unreadCount }`
+- `PATCH /notifications/:id/read` → requires auth, own notification only → `200 { notification }` (`404` if it isn't the caller's own)
+- `POST /notifications/read-all` → requires auth → `200 { success: true }`
+- `GET /audit-log` → **Administrator only** → optional `?limit=` (default/max 50) → `200 { entries: [...] }` — see **Audit log** below.
+- `GET /auth/oauth/google/start` → `302` to Google's consent screen — see **OAuth (Google)** below.
+- `GET /auth/oauth/google/callback` → `302` to the frontend with `?token=...` on success, `400`/`502` on failure.
 
 ## Auth
 
@@ -48,6 +57,20 @@ npm run deploy      # deploy to Cloudflare
 - **Real deploy:** set the real secret with `wrangler secret put JWT_SECRET` — never put it in `wrangler.jsonc`'s `vars` (that file is committed).
 - **Tests:** `vitest.config.ts` injects a fixed test-only `JWT_SECRET` via Miniflare bindings, same mechanism as the migrations binding below.
 - **Known local quirk:** on this project's pinned `wrangler@3.114.17`, the *very first* `wrangler dev` boot in a session can start before `.dev.vars` finishes loading — `/auth/register` will 500 with `JWT_SECRET` reading as `undefined` even though the startup banner lists it. If you hit this, save any file (or just Ctrl+S `wrangler.jsonc`) to trigger a reload — it resolves immediately and doesn't recur for the rest of that `wrangler dev` session. Worth re-checking once the project upgrades to `wrangler@4` (already flagged as a to-do from Stage 1).
+- **Rate limiting:** `src/auth/rateLimit.ts` blunts brute-force/mass-signup attempts against `/auth/login` (5 failed attempts per email per 15 minutes → `429`, checked *before* the password comparison) and `/auth/register` (10 attempts per `CF-Connecting-IP` per hour → `429`) — a D1-backed counter (`auth_attempts` table, `migrations/0006_security_hardening.sql`) rather than a Cloudflare Rate Limiting binding, so it needs no extra provisioning/plan. The register limiter is skipped when `CF-Connecting-IP` isn't present (local dev outside Cloudflare's edge, or tests) — real deployed traffic always has that header, so this never opens a gap in production.
+- **Audit log:** sensitive admin actions (`PATCH /users/:id/role`, `DELETE /books/:id`, and denied attempts to change the Owner's role) write to `audit_log` — see **Audit log** below.
+
+## OAuth (Google)
+
+Scaffolded but **non-functional as committed** — `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET` in `.dev.vars.example` are placeholders. To make it work:
+
+1. Register a Web application OAuth client at [Google Cloud Console → Credentials](https://console.cloud.google.com/apis/credentials).
+2. Add `<OAUTH_REDIRECT_BASE_URL>/auth/oauth/google/callback` as an authorized redirect URI (e.g. `http://localhost:8787/auth/oauth/google/callback` for local dev).
+3. Set the real `GOOGLE_OAUTH_CLIENT_ID`/`GOOGLE_OAUTH_CLIENT_SECRET`/`OAUTH_REDIRECT_BASE_URL`/`OAUTH_FRONTEND_REDIRECT_URL` in `.dev.vars` for local dev; for a real deploy, set `GOOGLE_OAUTH_CLIENT_SECRET` via `wrangler secret put` (never in `wrangler.jsonc`) and the other three as `vars`.
+
+Flow: `GET /auth/oauth/google/start` mints a one-time `state` (`oauth_states` table, `migrations/0007_oauth.sql`, redeemed and deleted on use — a replayed callback URL `400`s) and redirects to Google's consent screen. `GET /auth/oauth/google/callback` exchanges the code, fetches the profile, finds-or-creates a `users` row by email (linking `oauth_provider`/`oauth_subject` onto an existing password-based account if the email already exists, rather than duplicating it), and redirects to `OAUTH_FRONTEND_REDIRECT_URL?token=...`. An OAuth-created account gets a random, never-disclosed `password_hash` (via the same `hashPassword()` as normal registration) so the column stays `NOT NULL` without a schema change — that account can only ever sign in via Google.
+
+**Not built here:** the frontend catch-page at `OAUTH_FRONTEND_REDIRECT_URL` that reads `?token=` off the URL and stores the session — separate frontend-integration work, same pattern as every other domain's frontend wiring.
 
 ## Publishing workflow
 
@@ -75,9 +98,29 @@ Mirrors the frontend's `userService.js` (per-book position, lifetime/weekly stat
 - A brand-new reader's `user_stats` row starts at zero — unlike the frontend's one-time demo seed off `MOCK_USER`, there's no mock history to seed a real account from.
 - Book-level bookmarks (`POST /bookmarks/:bookId/toggle`) and the separate page-level pin (`PUT /bookmarks/:bookId/page`, toggle-off semantics — sending the same `pageIndex` twice clears it) are plain per-user rows, isolated by `user_id`.
 
+## Search
+
+Not a separate domain — `q` is just another `GET /books` query param, AND-combined with `category`/`language`/`level`/`isEducational`. Matches a case-insensitive substring across `title`/`author`/`description` via SQL `LIKE`. A literal `%` or `_` in the search term is escaped before binding (`ESCAPE '\'`), so a reader searching for a literal `%` gets zero matches instead of an unintended wildcard scan of the whole catalogue.
+
+## Recommendations
+
+Rule-based, not ML — no model, no training data. For the signed-in caller, `src/recommendations/service.ts` reads their completed (`reading_progress.completed=1`) and bookmarked books, derives the distinct categories/languages from those, and returns other books in that overlap (excluding anything already completed or in progress), ordered by `rating`. A brand-new reader with no history — or one whose overlap set comes up short — gets topped up with globally top-rated books, the same fallback the frontend onboarding wizard's `RecommendationsStep.jsx` already uses. Always returns exactly `RECOMMENDATIONS_LIMIT` (6) books.
+
+## Analytics
+
+`GET /analytics`'s response shape matches `src/utils/mockData.js`'s `MOCK_STATS` field-for-field, so swapping `statsService.js`/`AnalyticsPage.jsx` onto this endpoint later is a fetch change, not a reshape. Everything is a read-only aggregate over existing tables (`users`, `books`, `user_stats`) — no new schema. `booksReadThisWeek`/`completionsThisWeek` reuse the per-user `books_completed_this_week` counter the Progress domain already maintains (summed across all users) rather than re-deriving "this week"'s date boundary a second time.
+
+## Notifications
+
+A real, persisted feed (`notifications` table, `migrations/0005_notifications.sql`) — not yet wired to `DashboardTopBar.jsx`'s bell, which today just fakes a notification count from the reader's in-progress book count. Currently raised from three points in the Publishing workflow: a submission's author gets one when it's sent back for changes, approved, or published. `PATCH /notifications/:id/read` on a notification that isn't the caller's own returns `404`, not `403` — same "don't confirm another user's row exists" posture as the rest of the API.
+
+## Audit log
+
+Generalizes the Publishing workflow's `submission_history` pattern (actor name/role snapshotted at write-time, not a live join) to any entity via `entity_type`/`entity_id`. Currently written from `PATCH /users/:id/role` (`role_changed`, and `role_change_denied_owner` on the existing Owner-protection 403), and `DELETE /books/:id` (`book_deleted`). Publishing's own lifecycle changes aren't duplicated here — `submission_history` already covers those. `GET /audit-log` is Administrator-only.
+
 ## Database (D1)
 
-Schema lives in [`migrations/`](./migrations), applied in order. `wrangler.jsonc`'s `database_id` is currently a **placeholder** (`00000000-...`) — no real remote D1 database exists yet. Local dev and tests don't need it to be real:
+Schema lives in [`migrations/`](./migrations), applied in order. `wrangler.jsonc`'s top-level `database_id` now points at the real D1 database (`zeroup-reads-db`, region WEUR) created under the project's Cloudflare account — the `env.staging` block is still a placeholder pending a separate staging database. Local dev and tests don't need either to be real:
 
 ```bash
 # Apply migrations to the local (simulated) D1 database
@@ -91,7 +134,7 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 `migrations/0002_seed_books.sql` seeds the 19 books (and their page content) from the frontend's `src/utils/mockData.js` `MOCK_BOOKS` — **generated, not hand-written**: run `node scripts/generate-seed-migration.mjs` to regenerate it whenever `mockData.js`'s books change, rather than hand-editing the SQL (which would drift from the actual source of truth the same way the category/language/level taxonomies once did — see `ENGINEERING_PRINCIPLES_TRACKER.md` Principle 4).
 
-**Before any real deploy:** whoever controls the project's Cloudflare account needs to run `wrangler d1 create zeroup-reads-db` and replace the placeholder `database_id` in `wrangler.jsonc` (both the top-level and `env.staging` blocks) with the real one — the same account-level, deferred-until-owner step already used for the Cloudflare Pages project (see `../wrangler.toml`).
+**Before any real deploy:** the real `zeroup-reads-db` database still needs its schema applied remotely — `wrangler d1 migrations apply zeroup-reads-db --remote` — and a Cloudflare Pages project + `CLOUDFLARE_API_TOKEN`/`CLOUDFLARE_ACCOUNT_ID` secrets set up for the frontend (see `../wrangler.toml`), both still deferred-until-owner account-level steps.
 
 ## User & Role Management
 
@@ -105,6 +148,8 @@ After that, every additional admin is a normal `PATCH /users/:id/role` call from
 
 ## Stage status
 
-Stage 10 (User & Role Management) of the backend build. `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap: translation workflow, search, and beyond.
+Through Stage 13 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, and Search/Recommendations/Analytics/Notifications/Languages + security hardening (13) are all done. Every domain's frontend service (`authService.js`, `booksService.js`, `userService.js`, `bookmarksService.js`, `publishingService.js`) that existed before Stage 13 calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set.
 
-None of the frontend's `userService.js`/`bookmarksService.js`/`authService.js`'s `getAllUsers()`/`setUserRole()` are wired to these new endpoints yet (they're still `localStorage`-only) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6 closed for auth/books.
+**Stage 13 is backend-only** — `GET /languages`, `GET /recommendations`, `GET /analytics`, `GET /notifications` (+ read/read-all), `GET /audit-log`, and `GET /books`'s new `q` param all exist and are tested, but nothing on the frontend calls them yet (`statsService.js` is still `localStorage`-only, `DashboardTopBar.jsx`'s bell is still fake, `LibraryHeader.jsx`'s search bar isn't wired, `BestForYouCarousel.jsx` still shows the unfiltered catalogue) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6/9/10 closed for their own domains. OAuth (Google) is additionally gated on registering a real client — see **OAuth (Google)** above.
+
+`POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), deliberately out of scope. Also deliberately out of scope: Audio/TTS, a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS), and JWT revocation/token-versioning (a real gap — a role change doesn't invalidate an already-issued token until it expires — but a separate feature from what Stage 13 covers).
