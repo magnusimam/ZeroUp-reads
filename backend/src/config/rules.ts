@@ -16,3 +16,29 @@ export const WORDS_PER_PAGE = 300;
 // localStorage, now computed server-side per Stage 9.
 export const READING_MINUTES_PER_PAGE = WORDS_PER_PAGE / 200;
 export const READING_POINTS_PER_PAGE = 5;
+
+// Mirrors the frontend onboarding wizard's RECOMMENDATIONS_COUNT — how many
+// books GET /recommendations returns.
+export const RECOMMENDATIONS_LIMIT = 6;
+
+// How many books GET /analytics's topBooks list includes.
+export const ANALYTICS_TOP_BOOKS_LIMIT = 5;
+
+// Page size for GET /notifications and GET /audit-log — neither existed
+// before this stage, so there's no prior frontend constant to mirror; picked
+// to comfortably cover a session's worth of activity without an unbounded
+// query.
+export const NOTIFICATIONS_PAGE_SIZE = 50;
+export const AUDIT_LOG_PAGE_SIZE = 50;
+
+// Brute-force protection for /auth/login (by email) and /auth/register (by
+// IP, since no account exists yet to key on) — see auth/rateLimit.ts.
+export const LOGIN_RATE_LIMIT_MAX_ATTEMPTS = 5;
+export const LOGIN_RATE_LIMIT_WINDOW_MINUTES = 15;
+export const REGISTER_RATE_LIMIT_MAX_ATTEMPTS = 10;
+export const REGISTER_RATE_LIMIT_WINDOW_MINUTES = 60;
+
+// How long an OAuth `state` value stays redeemable (auth/oauthGoogle.ts) —
+// long enough for a real consent-screen round trip, short enough to keep a
+// leaked/guessed state's window of usefulness small.
+export const OAUTH_STATE_TTL_MINUTES = 10;
