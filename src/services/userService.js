@@ -2,12 +2,24 @@ import { MOCK_USER } from '../utils/mockData';
 import * as eventBus from '../utils/eventBus';
 import * as booksService from '../modules/books/booksService';
 import * as syncService from '../modules/reading/syncService';
-import { getToken } from '../modules/auth/authService';
+import { getToken, getSession } from '../modules/auth/authService';
 import { isFeatureEnabled } from '../config/featureFlags';
 import { READING_MINUTES_PER_PAGE, READING_POINTS_PER_PAGE, WEEKDAY_LABELS } from '../config/rules';
 
 const PROGRESS_KEY = 'zeroup_reading_progress';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+// Progress is per-account — same bug/fix as bookmarksService.js's
+// storageScope(): without this, every signed-in user reads and writes the
+// exact same localStorage bucket, so switching accounts on one browser
+// leaks one reader's stats/streak/in-progress books into another's.
+function storageScope() {
+  return getSession()?.id || 'guest';
+}
+
+function progressStorageKey() {
+  return `${PROGRESS_KEY}_${storageScope()}`;
+}
 
 // Stage 9 (frontend integration): mirrors authService.js/booksService.js's
 // realApiEnabled() — on only when the flag, a base URL, AND a real signed-in
@@ -92,7 +104,7 @@ function mondayOf(date) {
 const SEED_WEEKLY_ACTIVITY = [0.3, 0.6, 1.2, 0.8, 0.3, 0.1, 0.5];
 
 function readProgress() {
-  const raw = localStorage.getItem(PROGRESS_KEY);
+  const raw = localStorage.getItem(progressStorageKey());
   if (raw) return JSON.parse(raw);
   const seed = {
     booksCompleted: MOCK_USER.booksCompleted,
@@ -104,12 +116,12 @@ function readProgress() {
     weeklyActivity: SEED_WEEKLY_ACTIVITY,
     booksCompletedThisWeek: 2,
   };
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(seed));
+  localStorage.setItem(progressStorageKey(), JSON.stringify(seed));
   return seed;
 }
 
 function writeProgress(progress) {
-  localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress));
+  localStorage.setItem(progressStorageKey(), JSON.stringify(progress));
   return progress;
 }
 

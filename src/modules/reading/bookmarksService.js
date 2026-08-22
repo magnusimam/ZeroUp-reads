@@ -1,9 +1,23 @@
 import * as eventBus from '../../utils/eventBus';
-import { getToken } from '../auth/authService';
+import { getToken, getSession } from '../auth/authService';
 import { isFeatureEnabled } from '../../config/featureFlags';
 
 const BOOKMARKS_KEY = 'zeroup_bookmarks';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
+// Bookmarks are per-account — without this, every signed-in user reads and
+// writes the exact same localStorage bucket, so Account B logging in sees
+// (and can overwrite) Account A's bookmarks. 'guest' is the bucket for a
+// browser session with nobody signed in; the dev role-switcher
+// (AuthContext.js's loginAsReader/loginAsAdmin/loginAs) already assigns
+// fixed per-role ids, so those get naturally separated too.
+function storageScope() {
+  return getSession()?.id || 'guest';
+}
+
+function scopedKey(base) {
+  return `${base}_${storageScope()}`;
+}
 
 // Stage 9 (frontend integration): mirrors userService.js's realApiEnabled() —
 // see that file for the full rationale. Reads stay synchronous against the
@@ -39,14 +53,14 @@ export async function syncBookmarksFromApi() {
   if (!realApiEnabled()) return;
   try {
     const { bookmarks } = await apiRequest('/bookmarks');
-    localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(bookmarks));
+    localStorage.setItem(scopedKey(BOOKMARKS_KEY), JSON.stringify(bookmarks));
   } catch (err) {
     console.error('Failed to sync bookmarks from the real API — keeping the cached copy.', err);
   }
 }
 
 export function getBookmarks() {
-  const saved = localStorage.getItem(BOOKMARKS_KEY);
+  const saved = localStorage.getItem(scopedKey(BOOKMARKS_KEY));
   return saved ? JSON.parse(saved) : [];
 }
 
@@ -56,7 +70,7 @@ export function toggleBookmark(bookId) {
   const updated = exists
     ? current.filter((id) => id !== bookId)
     : [...current, bookId];
-  localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(updated));
+  localStorage.setItem(scopedKey(BOOKMARKS_KEY), JSON.stringify(updated));
   mirrorToApi('POST', `/bookmarks/${bookId}/toggle`);
   eventBus.emit('book.bookmarked', { bookId, bookmarked: !exists });
   return updated;
@@ -74,7 +88,7 @@ export function isBookmarked(bookId) {
 const PAGE_BOOKMARKS_KEY = 'zeroup_page_bookmarks';
 
 function readPageBookmarks() {
-  const raw = localStorage.getItem(PAGE_BOOKMARKS_KEY);
+  const raw = localStorage.getItem(scopedKey(PAGE_BOOKMARKS_KEY));
   return raw ? JSON.parse(raw) : {};
 }
 
@@ -95,7 +109,7 @@ export async function syncPageBookmarkFromApi(bookId) {
     const all = readPageBookmarks();
     if (typeof pageIndex === 'number') all[bookId] = pageIndex;
     else delete all[bookId];
-    localStorage.setItem(PAGE_BOOKMARKS_KEY, JSON.stringify(all));
+    localStorage.setItem(scopedKey(PAGE_BOOKMARKS_KEY), JSON.stringify(all));
     return pageIndex;
   } catch (err) {
     console.error('Failed to sync page bookmark from the real API — keeping the cached copy.', err);
@@ -112,7 +126,7 @@ export function setPageBookmark(bookId, pageIndex) {
   } else {
     all[bookId] = pageIndex;
   }
-  localStorage.setItem(PAGE_BOOKMARKS_KEY, JSON.stringify(all));
+  localStorage.setItem(scopedKey(PAGE_BOOKMARKS_KEY), JSON.stringify(all));
   mirrorToApi('PUT', `/bookmarks/${bookId}/page`, { pageIndex });
   return all[bookId] ?? null;
 }
