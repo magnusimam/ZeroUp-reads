@@ -9,6 +9,7 @@ import bookmarks from "./bookmarks/routes";
 import users from "./users/routes";
 import languages from "./languages/routes";
 import recommendations from "./recommendations/routes";
+import analytics from "./analytics/routes";
 
 export type { Env };
 
@@ -48,6 +49,7 @@ app.route("/bookmarks", bookmarks);
 app.route("/users", users);
 app.route("/languages", languages);
 app.route("/recommendations", recommendations);
+app.route("/analytics", analytics);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 
