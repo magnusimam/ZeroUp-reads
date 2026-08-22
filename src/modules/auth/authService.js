@@ -20,6 +20,13 @@ function realApiEnabled() {
   return isFeatureEnabled('realAuthApi') && Boolean(API_BASE_URL);
 }
 
+// Stage 10 (frontend integration): getAllUsers()/setUserRole() route to the
+// real backend/ Users API — unlike realApiEnabled() above, this needs a
+// signed-in Administrator's token, since /users is authenticated.
+function realUserManagementApiEnabled() {
+  return isFeatureEnabled('realUserManagementApi') && Boolean(API_BASE_URL) && Boolean(getToken());
+}
+
 function getStoredUsers() {
   const raw = localStorage.getItem(USERS_KEY);
   return raw ? JSON.parse(raw) : [];
@@ -61,7 +68,26 @@ function fromApiUser(apiUser) {
     role: apiUser.persona,
     orgName: apiUser.orgName,
     systemRole: apiUser.systemRole,
+    // Stage 11 — the single protected Owner account (backend/migrations/
+    // 0004_owner_flag.sql). No mock/localStorage equivalent: is_owner is a
+    // real-database-only, manually-bootstrapped concept, so this is
+    // undefined (falsy) on the mock path, same as a user who isn't one.
+    isOwner: apiUser.isOwner,
   };
+}
+
+// Generic authenticated request, distinct from apiRequest() below (which is
+// specifically the unauthenticated register/login shape that sets a new
+// token on success) — used by the Stage 10 Users API calls, which need a
+// bearer token and don't set one.
+async function authedApiRequest(path, options = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...options.headers },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `${options.method || 'GET'} ${path} failed: ${res.status}`);
+  return data;
 }
 
 async function apiRequest(path, body) {
@@ -125,12 +151,36 @@ export async function register(name, email, password, role, orgName) {
 }
 
 // User & Role Management (/admin/users, administrator-only) — every
-// registered user, password stripped, for the promote/demote table.
-export function getAllUsers() {
+// registered user, password stripped, for the promote/demote table. Unlike
+// booksService/userService's "sync a localStorage cache" seam, this has
+// exactly one call site (useUserManagement.js), so it goes straight to the
+// real API when enabled rather than through a background-mirrored cache.
+export async function getAllUsers() {
+  if (realUserManagementApiEnabled()) {
+    try {
+      const { users } = await authedApiRequest('/users');
+      return users.map(fromApiUser);
+    } catch (err) {
+      console.error('Failed to fetch users from the real API — falling back to the local mock list.', err);
+    }
+  }
   return getStoredUsers().map(withoutPassword);
 }
 
-export function setUserRole(userId, systemRole) {
+export async function setUserRole(userId, systemRole) {
+  if (realUserManagementApiEnabled()) {
+    try {
+      const { user } = await authedApiRequest(`/users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ systemRole }),
+      });
+      eventBus.emit('user.role.changed', { id: userId, systemRole });
+      return { success: true, user: fromApiUser(user) };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not reach the server. Please check your connection and try again.' };
+    }
+  }
+
   const users = getStoredUsers();
   const target = users.find((u) => u.id === userId);
   if (!target) return { success: false, message: 'User not found.' };

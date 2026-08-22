@@ -36,18 +36,27 @@ export default function UserManagementPage() {
           <div className='sm:hidden divide-y divide-slate-100'>
             {users.map((u) => (
               <div key={u.id} className='p-4'>
-                <p className='font-semibold text-sm text-slate-900 truncate'>{u.name}</p>
+                <p className='font-semibold text-sm text-slate-900 truncate'>
+                  {u.name}
+                  {u.isOwner && <span className='ml-2 text-xs font-medium text-amber-600'>🔒 Owner</span>}
+                </p>
                 <p className='text-xs text-slate-500 mt-0.5'>{u.email}</p>
                 <p className='text-xs text-slate-400 mt-0.5'>Persona: {u.role}</p>
-                <select
-                  value={effectiveRole(u)}
-                  onChange={(e) => changeRole(u.id, e.target.value)}
-                  className='mt-3 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500'
-                >
-                  {ALL_ROLES.map((role) => (
-                    <option key={role} value={role}>{ROLE_LABELS[role]}</option>
-                  ))}
-                </select>
+                {u.isOwner ? (
+                  <p className='mt-3 w-full px-3 py-2 rounded-lg border border-slate-200 bg-slate-50 text-sm text-slate-500'>
+                    {ROLE_LABELS[effectiveRole(u)]} — role locked
+                  </p>
+                ) : (
+                  <select
+                    value={effectiveRole(u)}
+                    onChange={(e) => changeRole(u.id, e.target.value)}
+                    className='mt-3 w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500'
+                  >
+                    {ALL_ROLES.map((role) => (
+                      <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                    ))}
+                  </select>
+                )}
               </div>
             ))}
           </div>
@@ -67,7 +76,10 @@ export default function UserManagementPage() {
                 {users.map((u) => (
                   <tr key={u.id} className='hover:bg-slate-50 transition-colors'>
                     <td className='px-6 py-4'>
-                      <p className='font-medium text-sm text-slate-900'>{u.name}</p>
+                      <p className='font-medium text-sm text-slate-900'>
+                        {u.name}
+                        {u.isOwner && <span className='ml-2 text-xs font-medium text-amber-600'>🔒 Owner</span>}
+                      </p>
                     </td>
                     <td className='px-4 py-4 text-sm text-slate-600'>{u.email}</td>
                     <td className='px-4 py-4'>
@@ -76,15 +88,21 @@ export default function UserManagementPage() {
                       </span>
                     </td>
                     <td className='px-4 py-4'>
-                      <select
-                        value={effectiveRole(u)}
-                        onChange={(e) => changeRole(u.id, e.target.value)}
-                        className='px-3 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500'
-                      >
-                        {ALL_ROLES.map((role) => (
-                          <option key={role} value={role}>{ROLE_LABELS[role]}</option>
-                        ))}
-                      </select>
+                      {u.isOwner ? (
+                        <span className='text-sm text-slate-500' title="The Owner's role can't be changed">
+                          {ROLE_LABELS[effectiveRole(u)]} — locked
+                        </span>
+                      ) : (
+                        <select
+                          value={effectiveRole(u)}
+                          onChange={(e) => changeRole(u.id, e.target.value)}
+                          className='px-3 py-1.5 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500'
+                        >
+                          {ALL_ROLES.map((role) => (
+                            <option key={role} value={role}>{ROLE_LABELS[role]}</option>
+                          ))}
+                        </select>
+                      )}
                     </td>
                   </tr>
                 ))}
