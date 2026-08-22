@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../../components/Navbar';
 import useUserManagement from './useUserManagement';
 import { ALL_ROLES, ROLE_LABELS, effectiveRole } from '../../config/roles';
+import * as permissionsService from './permissionsService';
 
 export default function UserManagementPage() {
   const { users, message, changeRole } = useUserManagement();
+
+  // null = not wired up (flag off/unreachable) — the panel below just hides
+  // itself rather than showing empty. Fetched once; this is a static
+  // reference table, not something that changes during a session.
+  const [rolePermissions, setRolePermissions] = useState(null);
+  useEffect(() => {
+    permissionsService.getRolePermissions().then(setRolePermissions);
+  }, []);
 
   return (
     <div className='bg-slate-50 min-h-screen flex flex-col'>
@@ -114,6 +123,35 @@ export default function UserManagementPage() {
             <p className='px-6 py-10 text-sm text-slate-400 text-center'>No registered users yet.</p>
           )}
         </div>
+
+        {rolePermissions && (
+          <div className='bg-white rounded-2xl border border-slate-200 overflow-hidden mt-8'>
+            <div className='px-6 py-4 border-b border-slate-100'>
+              <h2 className='font-bold text-slate-900'>Role Permissions Reference</h2>
+              <p className='text-xs text-slate-500 mt-1'>
+                What each role can already do — a read-only breakdown, not an editable setting.
+              </p>
+            </div>
+            <div className='divide-y divide-slate-100'>
+              {ALL_ROLES.map((role) => (
+                <div key={role} className='px-6 py-4'>
+                  <p className='font-medium text-sm text-slate-900'>{ROLE_LABELS[role]}</p>
+                  <div className='flex flex-wrap gap-1.5 mt-2'>
+                    {(rolePermissions[role] || []).length === 0 ? (
+                      <span className='text-xs text-slate-400'>No elevated permissions.</span>
+                    ) : (
+                      rolePermissions[role].map((key) => (
+                        <span key={key} className='text-[11px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium'>
+                          {key}
+                        </span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
