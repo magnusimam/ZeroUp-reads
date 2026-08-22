@@ -81,6 +81,43 @@ const FLAGS = {
   // signed out, or unreachable. Same default-false, instantly-reversible
   // posture as the other realXApi flags.
   realRecommendationsApi: true,
+  // Stage 14 frontend integration: routes booksService's new
+  // getBookVersions()/restoreBookVersion() (AdminCMSPage's Edit/History
+  // flow) to the real backend/ BookVersions API. Administrator-only, like
+  // the endpoints themselves. Same default-false, instantly-reversible
+  // posture as the other realXApi flags.
+  realBookVersionsApi: true,
+  // Stage 14 frontend integration: routes peopleService (AuthorPage/
+  // IllustratorPage) to the real backend/ Authors & Illustrators API.
+  // Public read, so this only gates whether a book's author/illustrator
+  // name is a clickable profile link — falls back to plain text when off
+  // or the book has no authorId/illustratorId (local mock data never has
+  // one). Same default-false, instantly-reversible posture as the other
+  // realXApi flags.
+  realPeopleApi: true,
+  // Stage 14 frontend integration: routes ratingsService/reviewsService
+  // (BookDetailPage's new "Rate & Review" section) to the real backend/
+  // Ratings & Reviews API. Same default-false, instantly-reversible
+  // posture as the other realXApi flags.
+  realRatingsApi: true,
+  // Stage 14 frontend integration: routes collectionsService (the new
+  // My Collections pages, and BookDetailPage's "Add to Collection" action)
+  // to the real backend/ Collections API. Same default-false,
+  // instantly-reversible posture as the other realXApi flags.
+  realCollectionsApi: true,
+  // Stage 14 frontend integration: routes a new downloadsService subscriber
+  // (src/index.js) that POSTs to the real backend/ Downloads API whenever
+  // the existing offline-download flow (offlineService.js's book.downloaded
+  // event) fires — a best-effort analytics mirror alongside the pre-existing
+  // local-only "save for offline reading" feature, not a replacement for it.
+  // Same default-false, instantly-reversible posture as the other realXApi
+  // flags.
+  realDownloadTrackingApi: true,
+  // Stage 14 frontend integration: routes a new permissionsService (a
+  // read-only "Role Permissions" reference panel on UserManagementPage) to
+  // the real backend/ Permissions API. Same default-false,
+  // instantly-reversible posture as the other realXApi flags.
+  realPermissionsApi: true,
 };
 
 export function isFeatureEnabled(flagName) {
