@@ -1,18 +1,25 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import { BOOK_CATEGORIES, BOOK_LANGUAGES, BOOK_LEVELS } from '../../utils/mockData';
+import { BOOK_CATEGORIES, BOOK_LEVELS } from '../../utils/mockData';
+import * as languagesService from '../books/languagesService';
 import useBookUpload from './useBookUpload';
 import useTranslationRequests from './useTranslationRequests';
 import { isFeatureEnabled } from '../../config/featureFlags';
 
 // Shared with mockData.js so a book uploaded here always matches a browsable
-// category/language/level elsewhere (the Library page's chips and filters, etc.).
+// category/level elsewhere (the Library page's chips and filters, etc.).
 const CATEGORIES = BOOK_CATEGORIES;
-const LANGUAGES = BOOK_LANGUAGES;
 const LEVELS = BOOK_LEVELS;
 
 export default function AdminCMSPage() {
+  // Read inside the component, not at module scope — languagesService's
+  // boot-synced cache (src/index.js) is only populated by the time this
+  // component actually renders, not at import time. The backend rejects a
+  // book with a language it doesn't recognize (a FK check), so this is the
+  // one BOOK_LANGUAGES call site actually worth sourcing from the real list.
+  const LANGUAGES = languagesService.getLanguages();
+
   const {
     books,
     showForm, setShowForm,

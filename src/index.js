@@ -6,6 +6,7 @@ import './modules/analytics/statsService'; // registers analytics-tally subscrib
 import { syncProgressFromApi } from './services/userService'; // also registers reading-progress subscribers before any page mounts
 import { syncBookmarksFromApi } from './modules/reading/bookmarksService';
 import { syncBooksFromApi } from './modules/books/booksService';
+import { syncLanguagesFromApi } from './modules/books/languagesService';
 import { getSession } from './modules/auth/authService';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -21,7 +22,7 @@ root.render(
 );
 
 async function bootstrap() {
-  await syncBooksFromApi();
+  await Promise.all([syncBooksFromApi(), syncLanguagesFromApi()]);
   // Only meaningful for a reader reloading with an existing session — both
   // are per-user/authenticated (unlike the public book catalogue above) and
   // no-op instantly if there's no session, matching the token-gated
