@@ -4,6 +4,7 @@ import useLibraryFilters from './useLibraryFilters';
 import useTranslateRequest from './useTranslateRequest';
 import * as booksService from '../books/booksService';
 import * as testimonialsService from './testimonialsService';
+import * as recommendationsService from './recommendationsService';
 import { useAuth } from '../auth/AuthContext';
 import useContinueReading from '../reading/useContinueReading';
 
@@ -30,6 +31,25 @@ export default function LibraryPage() {
   const [testimonials] = useState(() => testimonialsService.getTestimonials());
   const continueReadingBooks = useContinueReading(books);
   const translateRequest = useTranslateRequest();
+
+  // Real, personalized picks for a signed-in reader — null (not []) means
+  // "not available", so BestForYouCarousel falls back to the plain,
+  // unfiltered catalogue exactly as before (guest browsing, flag off, or
+  // the request failed) rather than rendering an empty carousel.
+  const [recommendedBooks, setRecommendedBooks] = useState(null);
+  useEffect(() => {
+    if (!user) {
+      setRecommendedBooks(null);
+      return;
+    }
+    let cancelled = false;
+    recommendationsService.getRecommendations().then((result) => {
+      if (!cancelled && result && result.length > 0) setRecommendedBooks(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const {
     search, setSearch,
@@ -91,7 +111,12 @@ export default function LibraryPage() {
         onClearFilters={clearFilters}
       />
 
-      {!hasActiveFilters && <BestForYouCarousel books={books} />}
+      {!hasActiveFilters && (
+        <BestForYouCarousel
+          key={recommendedBooks ? 'recommended' : 'catalogue'}
+          books={recommendedBooks || books}
+        />
+      )}
 
       {noSearchResults ? (
         <EmptySearchState />
