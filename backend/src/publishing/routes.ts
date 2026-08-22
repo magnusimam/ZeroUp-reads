@@ -5,6 +5,7 @@ import type { Env } from "../env";
 import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
 import { ROLES, PUBLISHING_ROLES, REVIEWER_ROLES, PUBLISHER_ROLES } from "../config/roles";
 import { toApiBook, getPageContent, createBookRecord, type BookRow } from "../books/service";
+import { createNotification } from "../notifications/service";
 
 type SubmissionRow = {
   id: string;
@@ -285,6 +286,14 @@ publishing.post(
 
     const actorName = await getActorName(c.env.DB, authUser.sub);
     await pushHistory(c.env.DB, id, "needs_changes", authUser.sub, actorName, comment);
+    await createNotification(c.env.DB, {
+      userId: existing.author_id,
+      type: "submission_needs_changes",
+      title: "Changes requested",
+      message: `${actorName} requested changes on "${existing.title}".`,
+      entityType: "submission",
+      entityId: id,
+    });
 
     const updated = await getSubmissionRow(c.env.DB, id);
     return c.json({ submission: await toApiDetail(c.env.DB, updated as SubmissionRow) });
@@ -303,6 +312,14 @@ publishing.post("/:id/approve", requireRole(...REVIEWER_ROLES), async (c) => {
 
   const actorName = await getActorName(c.env.DB, authUser.sub);
   await pushHistory(c.env.DB, id, "approved", authUser.sub, actorName);
+  await createNotification(c.env.DB, {
+    userId: existing.author_id,
+    type: "submission_approved",
+    title: "Submission approved",
+    message: `${actorName} approved "${existing.title}" — it's ready to publish.`,
+    entityType: "submission",
+    entityId: id,
+  });
 
   const updated = await getSubmissionRow(c.env.DB, id);
   return c.json({ submission: await toApiDetail(c.env.DB, updated as SubmissionRow) });
@@ -337,6 +354,14 @@ publishing.post("/:id/publish", requireRole(...PUBLISHER_ROLES), async (c) => {
     c.env.DB.prepare("UPDATE submissions SET published_book_id = ? WHERE id = ?").bind(bookId, id),
   ]);
   await pushHistory(c.env.DB, id, "published", authUser.sub, actorName);
+  await createNotification(c.env.DB, {
+    userId: existing.author_id,
+    type: "submission_published",
+    title: "Book published!",
+    message: `"${existing.title}" is now live in the library.`,
+    entityType: "book",
+    entityId: bookId,
+  });
 
   const [updated, bookRow] = await Promise.all([
     getSubmissionRow(c.env.DB, id),

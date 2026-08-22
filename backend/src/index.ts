@@ -10,6 +10,7 @@ import users from "./users/routes";
 import languages from "./languages/routes";
 import recommendations from "./recommendations/routes";
 import analytics from "./analytics/routes";
+import notifications from "./notifications/routes";
 
 export type { Env };
 
@@ -50,6 +51,7 @@ app.route("/users", users);
 app.route("/languages", languages);
 app.route("/recommendations", recommendations);
 app.route("/analytics", analytics);
+app.route("/notifications", notifications);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 
