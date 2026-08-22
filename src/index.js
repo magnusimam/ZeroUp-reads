@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './utils/logger'; // registers observability subscribers on the event bus before any page mounts
 import './modules/analytics/statsService'; // registers analytics-tally subscribers before any page mounts
+import './modules/reading/downloadsService'; // registers the Downloads-tracking subscriber before any page mounts
 import { syncProgressFromApi } from './services/userService'; // also registers reading-progress subscribers before any page mounts
 import { syncBookmarksFromApi } from './modules/reading/bookmarksService';
 import { syncBooksFromApi } from './modules/books/booksService';
