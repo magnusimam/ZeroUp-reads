@@ -7,6 +7,7 @@ import publishing from "./publishing/routes";
 import progress from "./progress/routes";
 import bookmarks from "./bookmarks/routes";
 import users from "./users/routes";
+import languages from "./languages/routes";
 
 export type { Env };
 
@@ -44,6 +45,7 @@ app.route("/submissions", publishing);
 app.route("/progress", progress);
 app.route("/bookmarks", bookmarks);
 app.route("/users", users);
+app.route("/languages", languages);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 
