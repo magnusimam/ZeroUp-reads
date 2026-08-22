@@ -197,3 +197,35 @@ export async function deleteBookAsAdmin(id) {
   }
   return { success: true, books: deleteBook(id) };
 }
+
+// Stage 14 — BookVersions. Administrator-only, same realAdminApiEnabled()
+// gate as the CRUD functions above; there's no local-mock fallback (unlike
+// createBook/updateBook/deleteBook) since version history only exists
+// server-side — the mock catalogue has never tracked edit history.
+function realBookVersionsApiEnabled() {
+  return realAdminApiEnabled() && isFeatureEnabled('realBookVersionsApi');
+}
+
+export async function getBookVersions(id) {
+  if (!realBookVersionsApiEnabled()) return [];
+  try {
+    const { versions } = await adminApiRequest(`/books/${id}/versions`);
+    return versions;
+  } catch (err) {
+    console.error('Failed to fetch book versions from the real API.', err);
+    return [];
+  }
+}
+
+export async function restoreBookVersion(id, versionNumber) {
+  if (!realBookVersionsApiEnabled()) {
+    return { success: false, message: 'Version history requires the real API to be enabled.' };
+  }
+  try {
+    const { book } = await adminApiRequest(`/books/${id}/versions/${versionNumber}/restore`, { method: 'POST' });
+    writeAll(readAll().map((existing) => (existing.id === id ? book : existing)));
+    return { success: true, book };
+  } catch (err) {
+    return { success: false, message: err.message || 'Could not restore that version. Please try again.' };
+  }
+}

@@ -29,8 +29,99 @@ export default function useBookUpload() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formError, setFormError] = useState("");
 
+  // Edit flow (Stage 14 — BookVersions is only meaningful once edits can
+  // actually happen from the UI; there was no Edit action before this).
+  const [editingBook, setEditingBook] = useState(null);
+  const [editForm, setEditForm] = useState(EMPTY_FORM);
+  const [editError, setEditError] = useState("");
+
+  // Version history panel — fetched on demand per book, not kept for every
+  // row up front.
+  const [historyBook, setHistoryBook] = useState(null);
+  const [versions, setVersions] = useState([]);
+  const [loadingVersions, setLoadingVersions] = useState(false);
+  const [restoring, setRestoring] = useState(false);
+
   function handleFormChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
+  }
+
+  function openEdit(book) {
+    setEditingBook(book);
+    setEditError("");
+    setEditForm({
+      title: book.title,
+      author: book.author,
+      language: book.language,
+      level: book.level,
+      category: book.category,
+      content: Array.isArray(book.content) ? book.content.join('\n\n') : (book.content || ''),
+    });
+  }
+
+  function closeEdit() {
+    setEditingBook(null);
+  }
+
+  function handleEditFormChange(e) {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  }
+
+  async function handleUpdate(e) {
+    e.preventDefault();
+    setEditError("");
+
+    if (!editForm.title || !editForm.author || !editForm.content) {
+      setEditError("Please fill in title, author, and content.");
+      return;
+    }
+
+    const result = await booksService.updateBookAsAdmin(editingBook.id, {
+      title: editForm.title,
+      author: editForm.author,
+      language: editForm.language,
+      level: editForm.level,
+      category: editForm.category,
+      content: [editForm.content],
+    });
+
+    if (!result.success) {
+      setEditError(result.message || "Could not update the book. Please try again.");
+      return;
+    }
+
+    setBooks(booksService.getBooks());
+    setEditingBook(null);
+    setSuccessMSG("Book updated successfully!");
+    setTimeout(() => setSuccessMSG(""), 3000);
+  }
+
+  async function openHistory(book) {
+    setHistoryBook(book);
+    setLoadingVersions(true);
+    setVersions(await booksService.getBookVersions(book.id));
+    setLoadingVersions(false);
+  }
+
+  function closeHistory() {
+    setHistoryBook(null);
+    setVersions([]);
+  }
+
+  async function handleRestore(versionNumber) {
+    setRestoring(true);
+    const result = await booksService.restoreBookVersion(historyBook.id, versionNumber);
+    setRestoring(false);
+
+    if (!result.success) {
+      setFormError(result.message || "Could not restore that version.");
+      return;
+    }
+
+    setBooks(booksService.getBooks());
+    closeHistory();
+    setSuccessMSG("Book restored to the selected version!");
+    setTimeout(() => setSuccessMSG(""), 3000);
   }
 
   async function handleUpload(e) {
@@ -106,5 +197,9 @@ export default function useBookUpload() {
     handleUpload,
     handleDelete,
     handleTranslate,
+    editingBook, openEdit, closeEdit,
+    editForm, editError, handleEditFormChange, handleUpdate,
+    historyBook, versions, loadingVersions, restoring,
+    openHistory, closeHistory, handleRestore,
   };
 }

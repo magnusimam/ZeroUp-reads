@@ -34,6 +34,10 @@ export default function AdminCMSPage() {
     handleUpload,
     handleDelete,
     handleTranslate,
+    editingBook, openEdit, closeEdit,
+    editForm, editError, handleEditFormChange, handleUpdate,
+    historyBook, versions, loadingVersions, restoring,
+    openHistory, closeHistory, handleRestore,
   } = useBookUpload();
 
   const {
@@ -283,6 +287,18 @@ return (
              </div>
              <div className='flex gap-2 mt-3'>
               <button
+              onClick={() => openEdit(book)}
+              className='flex-1 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50'
+              >
+                Edit
+              </button>
+              <button
+              onClick={() => openHistory(book)}
+              className='flex-1 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50'
+              >
+                History
+              </button>
+              <button
               onClick={() => setDeleteConfirm(book.id)}
               className='flex-1 py-1.5 rounded-lg border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50'
               >
@@ -339,6 +355,18 @@ return (
                 </td>
                 <td className='px-4 py-4'>
                   <div className='flex gap-2'>
+                    <button
+                    onClick={() => openEdit(book)}
+                    className='px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors'
+                    >
+                      Edit
+                    </button>
+                    <button
+                    onClick={() => openHistory(book)}
+                    className='px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 text-xs font-medium hover:bg-slate-50 transition-colors'
+                    >
+                      History
+                    </button>
                     <button
                     onClick={() => setDeleteConfirm(book.id)}
                     className='px-3 py-1.5 rounded-lg border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors'
@@ -432,6 +460,154 @@ return (
         )}
         </div>
         </div>
+  )}
+
+  {/* EDIT MODAL */}
+  {editingBook && (
+    <div className='fixed inset-0 z-50 flex items-center justify-center px-6 py-10 overflow-y-auto'>
+      <div className='absolute inset-0 bg-black/40' onClick={closeEdit} />
+      <div className='relative bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto'>
+        <h3 className='font-bold text-slate-900 text-lg mb-4'>Edit Book</h3>
+
+        {editError && (
+          <div className='mb-4 px-4 py-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl'>
+            {editError}
+          </div>
+        )}
+
+        <form onSubmit={handleUpdate} className='space-y-4'>
+          <div className='grid sm:grid-cols-2 gap-4'>
+            <div>
+              <label className='block text-sm font-medium text-slate-700 mb-1'>Book Title</label>
+              <input
+                name='title'
+                value={editForm.title}
+                onChange={handleEditFormChange}
+                className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+              />
+            </div>
+            <div>
+              <label className='block text-sm font-medium text-slate-700 mb-1'>Author Name</label>
+              <input
+                name='author'
+                value={editForm.author}
+                onChange={handleEditFormChange}
+                className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-slate-700 mb-1'>Language</label>
+            <select
+              name='language'
+              value={editForm.language}
+              onChange={handleEditFormChange}
+              className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+            >
+              {LANGUAGES.map(l => <option key={l}>{l}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-slate-700 mb-1'>Reading Level</label>
+            <select
+              name='level'
+              value={editForm.level}
+              onChange={handleEditFormChange}
+              className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+            >
+              {LEVELS.map(l => <option key={l}>{l}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-slate-700 mb-1'>Category</label>
+            <select
+              name='category'
+              value={editForm.category}
+              onChange={handleEditFormChange}
+              className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+            >
+              {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className='block text-sm font-medium text-slate-700 mb-1'>Book Content</label>
+            <textarea
+              name='content'
+              value={editForm.content}
+              onChange={handleEditFormChange}
+              rows={5}
+              className='w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:ring-teal-500'
+            />
+          </div>
+
+          <div className='flex gap-3'>
+            <button
+              type='button'
+              onClick={closeEdit}
+              className='flex-1 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50'
+            >
+              Cancel
+            </button>
+            <button
+              type='submit'
+              className='flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2.5 rounded-xl transition-colors'
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )}
+
+  {/* VERSION HISTORY MODAL */}
+  {historyBook && (
+    <div className='fixed inset-0 z-50 flex items-center justify-center px-6 py-10 overflow-y-auto'>
+      <div className='absolute inset-0 bg-black/40' onClick={closeHistory} />
+      <div className='relative bg-white rounded-2xl p-6 w-full max-w-lg shadow-xl my-auto'>
+        <h3 className='font-bold text-slate-900 text-lg mb-1'>Version History</h3>
+        <p className='text-sm text-slate-500 mb-4'>{historyBook.title}</p>
+
+        {loadingVersions ? (
+          <p className='text-sm text-slate-400 py-6 text-center'>Loading versions…</p>
+        ) : versions.length === 0 ? (
+          <p className='text-sm text-slate-400 py-6 text-center'>
+            No past versions yet — a version is recorded the next time this book is edited.
+          </p>
+        ) : (
+          <div className='divide-y divide-slate-100 max-h-96 overflow-y-auto'>
+            {versions.map((v) => (
+              <div key={v.id} className='py-3 flex items-center justify-between gap-3'>
+                <div className='min-w-0'>
+                  <p className='text-sm font-medium text-slate-900 truncate'>
+                    v{v.versionNumber} — {v.title}
+                  </p>
+                  <p className='text-xs text-slate-500 mt-0.5'>{new Date(v.createdAt).toLocaleString()}</p>
+                </div>
+                <button
+                  onClick={() => handleRestore(v.versionNumber)}
+                  disabled={restoring}
+                  className='shrink-0 px-3 py-1.5 rounded-lg border border-teal-200 text-teal-600 text-xs font-medium hover:bg-teal-50 disabled:opacity-50 transition-colors'
+                >
+                  {restoring ? 'Restoring…' : 'Restore'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <button
+          onClick={closeHistory}
+          className='w-full mt-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-sm font-medium hover:bg-slate-50'
+        >
+          Close
+        </button>
+      </div>
+    </div>
   )}
   </div>
 );
