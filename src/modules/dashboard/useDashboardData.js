@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import * as booksService from '../books/booksService';
 import * as userService from '../../services/userService';
 import * as settingsService from '../settings/settingsService';
+import * as notificationsService from '../notifications/notificationsService';
 import useContinueReading from '../reading/useContinueReading';
 import { computeAchievements, computeReaderLevel } from './achievements';
 import { computeGenreBreakdown } from './genreBreakdown';
@@ -64,6 +65,36 @@ export default function useDashboardData() {
 
   const readerLevel = useMemo(() => computeReaderLevel(progress), [progress]);
 
+  // Real notifications, fetched fresh on mount rather than cached at boot —
+  // see notificationsService.js for why. `realNotifications` stays null
+  // until (if) the API call resolves, so the count/list below can keep
+  // falling back to the live "count of in-progress books" stand-in
+  // (continueReading.length, recomputed every render from `progress`) for
+  // as long as the flag's off, there's no token, or the request fails —
+  // rather than freezing that fallback at whatever it was on first mount.
+  const [realNotifications, setRealNotifications] = useState(null);
+  const notifications = realNotifications ? realNotifications.notifications : [];
+  const notificationCount = realNotifications ? realNotifications.unreadCount : continueReading.length;
+
+  useEffect(() => {
+    let cancelled = false;
+    notificationsService.fetchNotifications().then((result) => {
+      // null = not enabled (flag off / signed out) — keep the
+      // in-progress-books fallback above.
+      if (cancelled || !result) return;
+      setRealNotifications(result);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function markAllNotificationsRead() {
+    await notificationsService.markAllAsRead();
+    setRealNotifications((prev) => (prev ? { notifications: prev.notifications.map((n) => ({ ...n, isRead: true })), unreadCount: 0 } : prev));
+  }
+
   return {
     books,
     continueReading,
@@ -77,6 +108,8 @@ export default function useDashboardData() {
     weeklyActivity,
     stats,
     readerLevel,
-    notificationCount: continueReading.length,
+    notifications,
+    notificationCount,
+    onMarkAllNotificationsRead: markAllNotificationsRead,
   };
 }

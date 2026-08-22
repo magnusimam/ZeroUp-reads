@@ -49,6 +49,7 @@ const TRACKED_EVENTS = [
   'sync.completed',
   'note.added',
   'note.deleted',
+  'notifications.read_all',
 ];
 
 TRACKED_EVENTS.forEach((eventName) => {

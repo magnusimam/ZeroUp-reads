@@ -5,14 +5,20 @@ import { getAvatarColor } from '../../../utils/avatarColor';
 
 const DEFAULT_AVATAR_URL = '/images/reader-avatar-default.jpg';
 
-function NotificationBell({ count }) {
+// `notifications` is undefined/empty when realNotificationsApi isn't wired
+// up (flag off, signed out, or the fetch failed) — in that case `count` is
+// still the old "books in progress" stand-in and the dropdown shows the
+// original single sentence, so the bell degrades to exactly its previous
+// behavior instead of showing an empty list.
+function NotificationBell({ notifications, count, onMarkAllRead }) {
   const [open, setOpen] = useState(false);
+  const hasRealNotifications = Boolean(notifications && notifications.length > 0);
 
   return (
     <div style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label={count > 0 ? `${count} books waiting to continue` : 'Notifications'}
+        aria-label={count > 0 ? `${count} unread notifications` : 'Notifications'}
         style={{
           width: 40, height: 40, borderRadius: 12, position: 'relative',
           border: '1.5px solid var(--hero-border)', background: 'white', cursor: 'pointer',
@@ -34,14 +40,44 @@ function NotificationBell({ count }) {
         <>
           <div style={{ position: 'fixed', inset: 0, zIndex: 90 }} onClick={() => setOpen(false)} />
           <div style={{
-            position: 'absolute', right: 0, top: '120%', background: 'white', width: 240,
+            position: 'absolute', right: 0, top: '120%', background: 'white', width: 300,
             borderRadius: 14, boxShadow: '0 8px 32px rgba(58,26,16,0.15)', padding: 14, zIndex: 100,
           }}>
-            <p style={{ margin: 0, fontFamily: 'Nunito Sans', fontSize: 13, color: 'var(--hero-gray)' }}>
-              {count > 0
-                ? `You have ${count} ${count === 1 ? 'story' : 'stories'} in progress — pick one up!`
-                : "You're all caught up. 🎉"}
-            </p>
+            {hasRealNotifications ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 13, color: 'var(--hero-ink)' }}>Notifications</span>
+                  {count > 0 && (
+                    <button
+                      onClick={() => onMarkAllRead?.()}
+                      style={{ background: 'none', border: 'none', color: 'var(--hero-orange)', fontFamily: 'Nunito Sans', fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: 0 }}
+                    >
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 260, overflowY: 'auto' }}>
+                  {notifications.map((n) => (
+                    <div key={n.id} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                      <span style={{
+                        width: 7, height: 7, borderRadius: 999, marginTop: 5, flexShrink: 0,
+                        background: n.isRead ? 'transparent' : 'var(--hero-orange)',
+                      }} />
+                      <div>
+                        <p style={{ margin: 0, fontFamily: 'Nunito', fontWeight: 700, fontSize: 13, color: 'var(--hero-ink)' }}>{n.title}</p>
+                        <p style={{ margin: 0, fontFamily: 'Nunito Sans', fontSize: 12, color: 'var(--hero-gray)' }}>{n.message}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <p style={{ margin: 0, fontFamily: 'Nunito Sans', fontSize: 13, color: 'var(--hero-gray)' }}>
+                {count > 0
+                  ? `You have ${count} ${count === 1 ? 'story' : 'stories'} in progress — pick one up!`
+                  : "You're all caught up. 🎉"}
+              </p>
+            )}
           </div>
         </>
       )}
@@ -104,7 +140,7 @@ function AccountMenu({ user, readerLevel }) {
   );
 }
 
-export default function DashboardTopBar({ search, onSearchChange, preferredLanguage, user, notificationCount, readerLevel }) {
+export default function DashboardTopBar({ search, onSearchChange, preferredLanguage, user, notifications, notificationCount, onMarkAllNotificationsRead, readerLevel }) {
   const newStoryLink = preferredLanguage
     ? `/library?language=${encodeURIComponent(preferredLanguage)}`
     : '/library';
@@ -137,7 +173,7 @@ export default function DashboardTopBar({ search, onSearchChange, preferredLangu
         fontFamily: 'Nunito', fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap',
       }}>＋ New Story</Link>
 
-      <NotificationBell count={notificationCount} />
+      <NotificationBell notifications={notifications} count={notificationCount} onMarkAllRead={onMarkAllNotificationsRead} />
       <AccountMenu user={user} readerLevel={readerLevel} />
     </div>
   );

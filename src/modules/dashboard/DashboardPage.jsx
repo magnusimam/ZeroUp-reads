@@ -39,7 +39,8 @@ export default function DashboardPage() {
 
   const {
     continueReading, search, setSearch, preferredLanguage,
-    recentlyRead, genreBreakdown, weeklyActivity, stats, readerLevel, notificationCount,
+    recentlyRead, genreBreakdown, weeklyActivity, stats, readerLevel,
+    notifications, notificationCount, onMarkAllNotificationsRead,
   } = useDashboardData();
 
   if (!user) return null;
@@ -53,7 +54,9 @@ export default function DashboardPage() {
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <DashboardTopBar
           search={search} onSearchChange={setSearch} preferredLanguage={preferredLanguage}
-          user={user} notificationCount={notificationCount} readerLevel={readerLevel}
+          user={user} readerLevel={readerLevel}
+          notifications={notifications} notificationCount={notificationCount}
+          onMarkAllNotificationsRead={onMarkAllNotificationsRead}
         />
 
         <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 320px', gap: 24, alignItems: 'start' }}>
