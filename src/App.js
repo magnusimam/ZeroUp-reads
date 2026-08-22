@@ -48,6 +48,8 @@ import TranslationWorkspacePage from './modules/translation/TranslationWorkspace
 import DownloadsPage from './modules/reading/DownloadsPage';
 import AuthorPage from './modules/books/AuthorPage';
 import IllustratorPage from './modules/books/IllustratorPage';
+import CollectionsPage from './modules/library/CollectionsPage';
+import CollectionDetailPage from './modules/library/CollectionDetailPage';
 
 function App() {
   return (
@@ -71,6 +73,8 @@ function App() {
               <Route path="/downloads"         element={<DownloadsPage />} />
               <Route path="/authors/:id"       element={<AuthorPage />} />
               <Route path="/illustrators/:id"  element={<IllustratorPage />} />
+              <Route path="/collections"       element={<CollectionsPage />} />
+              <Route path="/collections/:id"   element={<CollectionDetailPage />} />
               <Route path="/profile"           element={<ProfilePage />} />
               <Route path="/dashboard"         element={<DashboardPage />} />
               <Route path="/settings"          element={<SettingsPage />} />

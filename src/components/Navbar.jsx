@@ -97,6 +97,11 @@ function AvatarDropdown({ user, logout }) {
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >📥 My Downloads</Link>
+            <Link to="/collections" onClick={() => setOpen(false)}
+              style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
+              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >📚 My Collections</Link>
             <Link to="/help" onClick={() => setOpen(false)}
               style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
@@ -298,6 +303,7 @@ export default function Navbar() {
             <>
               <Link to="/dashboard" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Dashboard</Link>
               <Link to="/profile" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Profile</Link>
+              <Link to="/collections" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Collections</Link>
               <button onClick={() => { logout(); setMenuOpen(false); }} style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--coral)', background: 'none', border: 'none', cursor: 'pointer' }}>Log out</button>
             </>
           ) : (
