@@ -17,6 +17,7 @@ import illustrators from "./illustrators/routes";
 import ratings from "./ratings/routes";
 import reviews from "./reviews/routes";
 import collections from "./collections/routes";
+import downloads from "./downloads/routes";
 import { logEvent } from "./utils/logger";
 
 export type { Env };
@@ -65,6 +66,7 @@ app.route("/illustrators", illustrators);
 app.route("/ratings", ratings);
 app.route("/reviews", reviews);
 app.route("/collections", collections);
+app.route("/downloads", downloads);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 
