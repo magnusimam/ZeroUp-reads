@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../auth/AuthContext';
@@ -22,11 +22,39 @@ export default function SubmissionDetailPage() {
   const { user } = useAuth();
   const toast = useToast();
 
-  const [submission, setSubmission] = useState(() => publishingService.getSubmission(id));
+  // publishingService.getSubmission() is async (Stage 12: calls the real
+  // API when enabled) — loaded via effect. `loading` distinguishes "still
+  // fetching" from a genuine 404 so the "not found" screen doesn't flash
+  // during the initial fetch.
+  const [submission, setSubmission] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [changeComment, setChangeComment] = useState('');
   const [showChangeBox, setShowChangeBox] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    publishingService.getSubmission(id).then((s) => {
+      if (!cancelled) {
+        setSubmission(s);
+        setLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="bg-slate-50 min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <span className="w-6 h-6 border-2 border-teal-200 border-t-teal-600 rounded-full animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   if (!submission) {
     return (
@@ -52,7 +80,7 @@ export default function SubmissionDetailPage() {
     return roleOk && ownerOk;
   });
 
-  function runAction(action) {
+  async function runAction(action) {
     if (action.needsComment && !showChangeBox) {
       setShowChangeBox(true);
       return;
@@ -63,32 +91,34 @@ export default function SubmissionDetailPage() {
     }
 
     setBusy(true);
-    setTimeout(() => {
-      let updated = null;
-      if (action.key === 'submit') updated = publishingService.submitForReview(submission.id, actor);
-      if (action.key === 'startReview') updated = publishingService.startReview(submission.id, actor);
-      if (action.key === 'requestChanges') updated = publishingService.requestChanges(submission.id, actor, changeComment.trim());
-      if (action.key === 'approve') updated = publishingService.approve(submission.id, actor);
-      if (action.key === 'publish') updated = publishingService.publish(submission.id, actor);
+    let result = null;
+    if (action.key === 'submit') result = await publishingService.submitForReview(submission.id, actor);
+    if (action.key === 'startReview') result = await publishingService.startReview(submission.id, actor);
+    if (action.key === 'requestChanges') result = await publishingService.requestChanges(submission.id, actor, changeComment.trim());
+    if (action.key === 'approve') result = await publishingService.approve(submission.id, actor);
+    if (action.key === 'publish') result = await publishingService.publish(submission.id, actor);
 
-      setBusy(false);
-      setShowChangeBox(false);
-      setChangeComment('');
+    setBusy(false);
+    setShowChangeBox(false);
+    setChangeComment('');
 
-      if (updated) {
-        setSubmission(updated);
-        toast?.addToast(`"${updated.title}" is now ${STATUS_LABELS[updated.status]}.`, 'success');
-      }
-    }, 350);
+    if (result?.success) {
+      setSubmission(result.submission);
+      toast?.addToast(`"${result.submission.title}" is now ${STATUS_LABELS[result.submission.status]}.`, 'success');
+    } else if (result) {
+      toast?.addToast(result.message || 'Something went wrong. Please try again.', 'error');
+    }
   }
 
-  function handleAddComment(e) {
+  async function handleAddComment(e) {
     e.preventDefault();
     if (!commentText.trim()) return;
-    const updated = publishingService.addComment(submission.id, actor, commentText);
-    if (updated) {
-      setSubmission(updated);
+    const result = await publishingService.addComment(submission.id, actor, commentText);
+    if (result.success) {
+      setSubmission(result.submission);
       setCommentText('');
+    } else {
+      toast?.addToast(result.message || 'Could not post the comment. Please try again.', 'error');
     }
   }
 

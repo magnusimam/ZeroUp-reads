@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../auth/AuthContext';
@@ -48,7 +48,13 @@ function SubmissionList({ title, subtitle, submissions, emptyText }) {
 
 export default function PublishingDashboardPage() {
   const { user } = useAuth();
-  const [submissions] = useState(() => publishingService.getSubmissions());
+  // publishingService.getSubmissions() is async (Stage 12: calls the real
+  // API when enabled) — loaded via effect rather than a useState
+  // initializer, same pattern useUserManagement.js already uses.
+  const [submissions, setSubmissions] = useState([]);
+  useEffect(() => {
+    publishingService.getSubmissions().then(setSubmissions);
+  }, []);
 
   const isReviewer = hasRole(user, [ROLES.EDITOR, ROLES.ADMINISTRATOR]);
   const isPublisher = hasRole(user, [ROLES.PUBLISHER, ROLES.ADMINISTRATOR]);

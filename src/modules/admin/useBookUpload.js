@@ -14,6 +14,10 @@ const EMPTY_FORM = {
 // Upload/delete/translate state, validation, and the translate stub —
 // extracted out of AdminCMSPage's JSX so the page stays presentational
 // (mirrors how useLibraryFilters extracted LibraryPage's filter logic).
+// Create/update/delete route through booksService's real-API-aware
+// createBookAsAdmin/deleteBookAsAdmin (Stage 12) when realBooksApi + a
+// signed-in Administrator token are both present, falling back to the local
+// mock otherwise — this hook doesn't need to know which.
 export default function useBookUpload() {
   const [books, setBooks] = useState(() => booksService.getBooks());
   const [showForm, setShowForm] = useState(false);
@@ -29,7 +33,7 @@ export default function useBookUpload() {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleUpload(e) {
+  async function handleUpload(e) {
     e.preventDefault();
     setFormError("");
 
@@ -38,7 +42,7 @@ export default function useBookUpload() {
       return;
     }
 
-    booksService.createBook({
+    const result = await booksService.createBookAsAdmin({
       title: form.title,
       author: form.author,
       language: form.language,
@@ -46,6 +50,12 @@ export default function useBookUpload() {
       category: form.category,
       content: [form.content],
     });
+
+    if (!result.success) {
+      setFormError(result.message || "Could not upload the book. Please try again.");
+      return;
+    }
+
     setBooks(booksService.getBooks());
     setForm(EMPTY_FORM);
     setShowForm(false);
@@ -53,9 +63,16 @@ export default function useBookUpload() {
     setTimeout(() => setSuccessMSG(""), 3000);
   }
 
-  function handleDelete(id) {
-    setBooks(booksService.deleteBook(id));
+  async function handleDelete(id) {
+    const result = await booksService.deleteBookAsAdmin(id);
     setDeleteConfirm(null);
+
+    if (!result.success) {
+      setFormError(result.message || "Could not delete the book. Please try again.");
+      return;
+    }
+
+    setBooks(result.books);
     setSuccessMSG("Book deleted successfully!");
     setTimeout(() => setSuccessMSG(""), 3000);
   }

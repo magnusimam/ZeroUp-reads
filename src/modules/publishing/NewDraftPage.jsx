@@ -23,7 +23,7 @@ export default function NewDraftPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setError('');
 
@@ -32,11 +32,16 @@ export default function NewDraftPage() {
       return;
     }
 
-    const submission = publishingService.createDraft(
+    const result = await publishingService.createDraft(
       { title: form.title, category: form.category, language: form.language, level: form.level, content: [form.content] },
       { id: user.id, name: user.name }
     );
-    navigate(`/publishing/${submission.id}`);
+
+    if (!result.success) {
+      setError(result.message || 'Could not save the draft. Please try again.');
+      return;
+    }
+    navigate(`/publishing/${result.submission.id}`);
   }
 
   return (

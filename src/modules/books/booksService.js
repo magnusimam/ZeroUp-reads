@@ -1,5 +1,6 @@
 import { MOCK_BOOKS } from '../../utils/mockData';
 import * as eventBus from '../../utils/eventBus';
+import { getToken } from '../auth/authService';
 import { WORDS_PER_PAGE } from '../../config/rules';
 import { isFeatureEnabled } from '../../config/featureFlags';
 
@@ -8,6 +9,24 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 function realApiEnabled() {
   return isFeatureEnabled('realBooksApi') && Boolean(API_BASE_URL);
+}
+
+// Admin CRUD (createBookAsAdmin/updateBookAsAdmin/deleteBookAsAdmin below)
+// additionally needs a signed-in Administrator's token, since POST/PATCH/
+// DELETE /books are Administrator-only on the backend — unlike the public
+// GET /books syncBooksFromApi() reads.
+function realAdminApiEnabled() {
+  return realApiEnabled() && Boolean(getToken());
+}
+
+async function adminApiRequest(path, options = {}) {
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}`, ...options.headers },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `${options.method || 'GET'} ${path} failed: ${res.status}`);
+  return data;
 }
 
 function readAll() {
@@ -126,4 +145,55 @@ export function translateBook(id, language) {
   writeAll([...books, translated]);
   eventBus.emit('translation.completed', { originalId: id, newId: translated.id, language });
   return translated;
+}
+
+// Admin CMS (useBookUpload.js) — real-API-aware create/update/delete,
+// separate from the plain createBook/updateBook/deleteBook above (which
+// stay local-only and are shared with publishingService.js/
+// translationService.js's own, not-yet-wired publish/approve flows — those
+// get their own dedicated backend integration later, not this generic
+// admin-books endpoint, since a Publisher/Translator/Editor calling it would
+// get a real 403 from POST/PATCH/DELETE /books, which is Administrator-only).
+// All three fall back to the local mock when the flag/URL/token aren't set,
+// same { success, ... } result shape as authService.js's register()/login().
+export async function createBookAsAdmin(payload) {
+  if (realAdminApiEnabled()) {
+    try {
+      const { book } = await adminApiRequest('/books', { method: 'POST', body: JSON.stringify(payload) });
+      writeAll([book, ...readAll()]);
+      eventBus.emit('book.uploaded', { id: book.id, title: book.title });
+      return { success: true, book };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not reach the server. Please check your connection and try again.' };
+    }
+  }
+  return { success: true, book: createBook(payload) };
+}
+
+export async function updateBookAsAdmin(id, patch) {
+  if (realAdminApiEnabled()) {
+    try {
+      const { book } = await adminApiRequest(`/books/${id}`, { method: 'PATCH', body: JSON.stringify(patch) });
+      writeAll(readAll().map((existing) => (existing.id === id ? book : existing)));
+      return { success: true, book };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not reach the server. Please check your connection and try again.' };
+    }
+  }
+  return { success: true, book: updateBook(id, patch) };
+}
+
+export async function deleteBookAsAdmin(id) {
+  if (realAdminApiEnabled()) {
+    try {
+      await adminApiRequest(`/books/${id}`, { method: 'DELETE' });
+      const remaining = readAll().filter((book) => book.id !== id);
+      writeAll(remaining);
+      eventBus.emit('book.deleted', { id });
+      return { success: true, books: remaining };
+    } catch (err) {
+      return { success: false, message: err.message || 'Could not reach the server. Please check your connection and try again.' };
+    }
+  }
+  return { success: true, books: deleteBook(id) };
 }
