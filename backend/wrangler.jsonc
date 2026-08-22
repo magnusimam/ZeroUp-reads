@@ -11,18 +11,15 @@
   "vars": {
     "ENVIRONMENT": "production"
   },
-  // database_id is a placeholder: no real remote D1 database exists yet.
-  // Local dev/tests (`--local`, vitest-pool-workers) don't need it to be
-  // real. Before any real deploy, whoever controls the project's Cloudflare
-  // account must run `wrangler d1 create zeroup-reads-db` and replace this
-  // with the real ID here and in the "staging" env block below — same
-  // account-level, deferred-until-owner pattern already used for the
-  // Cloudflare Pages project (see ../wrangler.toml / ENGINEERING_PRINCIPLES_TRACKER.md).
+  // Real D1 database, created under the zeroupacademy@gmail.com Cloudflare
+  // account via `wrangler d1 create zeroup-reads-db` (region WEUR). Schema
+  // still needs to be applied with `wrangler d1 migrations apply
+  // zeroup-reads-db --remote` before this is queryable.
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "zeroup-reads-db",
-      "database_id": "00000000-0000-0000-0000-000000000000"
+      "database_id": "48e57c0b-7bd0-4a01-afe2-c0416bd62701"
     }
   ],
   "env": {
@@ -30,6 +27,9 @@
       "vars": {
         "ENVIRONMENT": "staging"
       },
+      // Still a placeholder — no separate staging database exists yet.
+      // Run `wrangler d1 create zeroup-reads-db-staging` and drop its real
+      // id here if/when a staging environment is actually needed.
       "d1_databases": [
         {
           "binding": "DB",

@@ -36,6 +36,8 @@ npm run deploy      # deploy to Cloudflare
 - `POST /bookmarks/:bookId/toggle` → `200 { bookmarked, bookmarks }` (`404` unknown book)
 - `GET /bookmarks/:bookId/page` → `200 { pageIndex: number | null }`
 - `PUT /bookmarks/:bookId/page` → `{ pageIndex }` → `200 { pageIndex }` (`404` unknown book) — sending the same `pageIndex` again clears it
+- `GET /users` → **Administrator only** → `200 { users: [...] }` (password stripped)
+- `PATCH /users/:id/role` → **Administrator only** → `{ systemRole }` → `200 { user }` (`404` unknown id, `400` invalid role). The promoted/demoted user's *existing* token still carries the old role until they log in again — roles are a JWT claim, not re-checked against the DB per-request.
 
 ## Auth
 
@@ -91,8 +93,18 @@ Tests apply migrations automatically before each run, via `test/apply-migrations
 
 **Before any real deploy:** whoever controls the project's Cloudflare account needs to run `wrangler d1 create zeroup-reads-db` and replace the placeholder `database_id` in `wrangler.jsonc` (both the top-level and `env.staging` blocks) with the real one — the same account-level, deferred-until-owner step already used for the Cloudflare Pages project (see `../wrangler.toml`).
 
+## User & Role Management
+
+There is no self-serve path to becoming an Administrator — every registration (`POST /auth/register`) always creates a `reader`, and `system_role` is otherwise only ever changed by `PATCH /users/:id/role`, which itself requires an existing Administrator's token. The **first** admin on any given database has to be created manually:
+
+```bash
+npx wrangler d1 execute zeroup-reads-db --local --command="UPDATE users SET system_role='administrator' WHERE email='you@example.com'"
+```
+
+After that, every additional admin is a normal `PATCH /users/:id/role` call from the UI — no more manual DB edits.
+
 ## Stage status
 
-Stage 9 (Reading progress & bookmarks) of the backend build. `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap: translation workflow, search, and beyond.
+Stage 10 (User & Role Management) of the backend build. `POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), not admin CRUD. See the plan in the project's engineering tracker for the full stage roadmap: translation workflow, search, and beyond.
 
-None of the frontend's `userService.js`/`bookmarksService.js` are wired to these new endpoints yet (they're still `localStorage`-only) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6 closed for auth/books.
+None of the frontend's `userService.js`/`bookmarksService.js`/`authService.js`'s `getAllUsers()`/`setUserRole()` are wired to these new endpoints yet (they're still `localStorage`-only) — that's the next integration stage, the same "API exists, frontend swap is a separate stage" gap Stage 4/6 closed for auth/books.

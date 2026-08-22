@@ -7,35 +7,7 @@ import { MIN_PASSWORD_LENGTH } from "../config/rules";
 import { hashPassword, verifyPassword } from "./password";
 import { issueToken } from "./jwt";
 import { authMiddleware, type AuthVariables } from "./middleware";
-
-type UserRow = {
-  id: string;
-  name: string;
-  email: string;
-  password_hash: string;
-  persona: string | null;
-  org_name: string | null;
-  system_role: string;
-  preferred_language: string | null;
-  created_at: string;
-  updated_at: string;
-};
-
-// Maps the DB row (snake_case, includes password_hash) to the shape the API
-// returns (camelCase, password stripped) — mirrors the frontend authService's
-// withoutPassword() convention.
-function toSafeUser(row: UserRow) {
-  return {
-    id: row.id,
-    name: row.name,
-    email: row.email,
-    persona: row.persona,
-    orgName: row.org_name,
-    systemRole: row.system_role,
-    preferredLanguage: row.preferred_language,
-    createdAt: row.created_at,
-  };
-}
+import { toSafeUser, type UserRow } from "../users/service";
 
 const registerSchema = z.object({
   name: z.string().trim().min(1, "Name is required."),
