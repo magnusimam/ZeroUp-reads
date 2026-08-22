@@ -288,6 +288,178 @@ describe("PATCH /books/:id", () => {
   });
 });
 
+describe("author/illustrator linking", () => {
+  it("find-or-creates an authors row on create and links author_id", async () => {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Linked Author Book",
+          author: "A Brand New Author",
+          illustrator: "A Brand New Illustrator",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["A page."],
+        }),
+      },
+      env
+    );
+    const { book } = await json(res);
+    expect(book.authorId).toBeTruthy();
+    expect(book.illustratorId).toBeTruthy();
+
+    const authorRes = await app.request(`/authors/${book.authorId}`, {}, env);
+    expect((await json(authorRes)).author.name).toBe("A Brand New Author");
+
+    const illustratorRes = await app.request(`/illustrators/${book.illustratorId}`, {}, env);
+    expect((await json(illustratorRes)).illustrator.name).toBe("A Brand New Illustrator");
+  });
+
+  it("reuses the same authors row for a second book by the same author", async () => {
+    const first = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Shared Author Book One",
+          author: "Shared Author",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["A page."],
+        }),
+      },
+      env
+    );
+    const second = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Shared Author Book Two",
+          author: "Shared Author",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["A page."],
+        }),
+      },
+      env
+    );
+    const firstBook = (await json(first)).book;
+    const secondBook = (await json(second)).book;
+    expect(firstBook.authorId).toBe(secondBook.authorId);
+  });
+});
+
+describe("PATCH /books/:id — version history", () => {
+  async function createTestBook() {
+    const res = await app.request(
+      "/books",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({
+          title: "Version Target",
+          author: "Original Author",
+          language: "English",
+          level: "Beginner",
+          category: "Storybooks",
+          content: ["Version one content."],
+        }),
+      },
+      env
+    );
+    return ((await json(res)).book.id) as string;
+  }
+
+  it("snapshots the pre-edit state on every PATCH", async () => {
+    const id = await createTestBook();
+
+    await app.request(
+      `/books/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ title: "Version Target — Edited" }),
+      },
+      env
+    );
+
+    const res = await app.request(`/books/${id}/versions`, { headers: await adminAuthHeader() }, env);
+    expect(res.status).toBe(200);
+    const body = await json(res);
+    expect(body.versions).toHaveLength(1);
+    expect(body.versions[0].versionNumber).toBe(1);
+    expect(body.versions[0].title).toBe("Version Target"); // pre-edit snapshot, not the new title
+  });
+
+  it("accumulates a new version per PATCH, most recent first", async () => {
+    const id = await createTestBook();
+    await app.request(
+      `/books/${id}`,
+      { method: "PATCH", headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) }, body: JSON.stringify({ title: "Edit One" }) },
+      env
+    );
+    await app.request(
+      `/books/${id}`,
+      { method: "PATCH", headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) }, body: JSON.stringify({ title: "Edit Two" }) },
+      env
+    );
+
+    const res = await app.request(`/books/${id}/versions`, { headers: await adminAuthHeader() }, env);
+    const body = await json(res);
+    expect(body.versions.map((v: { versionNumber: number }) => v.versionNumber)).toEqual([2, 1]);
+    expect(body.versions[1].title).toBe("Version Target");
+    expect(body.versions[0].title).toBe("Edit One");
+  });
+
+  it("rejects a reader token on GET /books/:id/versions with 403", async () => {
+    const id = await createTestBook();
+    const res = await app.request(`/books/${id}/versions`, { headers: await readerAuthHeader() }, env);
+    expect(res.status).toBe(403);
+  });
+
+  it("404s GET /books/:id/versions/:versionNumber for an unknown version", async () => {
+    const id = await createTestBook();
+    const res = await app.request(`/books/${id}/versions/99`, { headers: await adminAuthHeader() }, env);
+    expect(res.status).toBe(404);
+  });
+
+  it("restores an earlier version's fields and content, snapshotting the current state first", async () => {
+    const id = await createTestBook();
+    await app.request(
+      `/books/${id}`,
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json", ...(await adminAuthHeader()) },
+        body: JSON.stringify({ title: "Edited Title", content: ["Edited content."] }),
+      },
+      env
+    );
+
+    const restoreRes = await app.request(
+      `/books/${id}/versions/1/restore`,
+      { method: "POST", headers: await adminAuthHeader() },
+      env
+    );
+    expect(restoreRes.status).toBe(200);
+    const restored = await json(restoreRes);
+    expect(restored.book.title).toBe("Version Target");
+    expect(restored.book.content).toEqual(["Version one content."]);
+
+    // Restoring itself was snapshotted as version 2 (the pre-restore state).
+    const versionsRes = await app.request(`/books/${id}/versions`, { headers: await adminAuthHeader() }, env);
+    const versionsBody = await json(versionsRes);
+    expect(versionsBody.versions).toHaveLength(2);
+  });
+});
+
 describe("DELETE /books/:id", () => {
   it("deletes a book as an administrator", async () => {
     const createRes = await app.request(

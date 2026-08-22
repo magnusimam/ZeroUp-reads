@@ -12,6 +12,8 @@ import recommendations from "./recommendations/routes";
 import analytics from "./analytics/routes";
 import notifications from "./notifications/routes";
 import audit from "./audit/routes";
+import authors from "./authors/routes";
+import illustrators from "./illustrators/routes";
 import { logEvent } from "./utils/logger";
 
 export type { Env };
@@ -55,6 +57,8 @@ app.route("/recommendations", recommendations);
 app.route("/analytics", analytics);
 app.route("/notifications", notifications);
 app.route("/audit-log", audit);
+app.route("/authors", authors);
+app.route("/illustrators", illustrators);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 

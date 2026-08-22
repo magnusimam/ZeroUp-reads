@@ -6,15 +6,19 @@ import { authMiddleware, requireRole, type AuthVariables } from "../auth/middlew
 import { ROLES } from "../config/roles";
 import {
   type BookRow,
+  type BookVersionRow,
   toApiBook,
+  toApiBookVersion,
   toContentArray,
   estimatePages,
   getPageContent,
   replacePages,
   createBookRecord,
+  snapshotBookVersion,
 } from "./service";
 import { writeAuditLog } from "../audit/service";
 import { getActorName } from "../users/service";
+import { findOrCreatePerson } from "../people/service";
 
 const listQuerySchema = z.object({
   category: z.string().trim().min(1).optional(),
@@ -39,6 +43,10 @@ const contentSchema = z.union([z.string().min(1), z.array(z.string().min(1)).min
 const createSchema = z.object({
   title: z.string().trim().min(1),
   author: z.string().trim().min(1),
+  // Optional — most books today have no recorded illustrator (see
+  // migrations/0009_authors_illustrators.sql). When given, find-or-creates
+  // an illustrators row the same way `author` always does.
+  illustrator: z.string().trim().min(1).optional(),
   language: z.string().trim().min(1),
   level: z.enum(["Beginner", "Intermediate", "Advanced"]),
   category: z.string().trim().min(1),
@@ -52,6 +60,7 @@ const createSchema = z.object({
 const updateSchema = z.object({
   title: z.string().trim().min(1).optional(),
   author: z.string().trim().min(1).optional(),
+  illustrator: z.string().trim().min(1).optional(),
   language: z.string().trim().min(1).optional(),
   level: z.enum(["Beginner", "Intermediate", "Advanced"]).optional(),
   category: z.string().trim().min(1).optional(),
@@ -149,11 +158,16 @@ books.patch(
   async (c) => {
     const id = c.req.param("id");
     const body = c.req.valid("json");
+    const authUser = c.get("authUser");
 
     const existing = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
     if (!existing) {
       return c.json({ error: "Book not found." }, 404);
     }
+
+    // Snapshot the pre-edit state (BookVersions, migrations/0008) before any
+    // field changes — every PATCH is now recoverable, not a silent overwrite.
+    await snapshotBookVersion(c.env.DB, existing, authUser.sub);
 
     const mergedAttributes = body.attributes
       ? { ...JSON.parse(existing.attributes), ...body.attributes }
@@ -162,9 +176,17 @@ books.patch(
     const pages = body.content ? toContentArray(body.content) : null;
     const totalPages = pages ? estimatePages(pages) : existing.total_pages;
 
+    // Re-resolves author_id/illustrator_id whenever the corresponding name
+    // changes, same find-or-create as createBookRecord() — otherwise a
+    // renamed author would keep pointing at the old authors row.
+    const authorId = body.author ? await findOrCreatePerson(c.env.DB, "authors", body.author) : existing.author_id;
+    const illustratorId = body.illustrator
+      ? await findOrCreatePerson(c.env.DB, "illustrators", body.illustrator)
+      : existing.illustrator_id;
+
     try {
       await c.env.DB.prepare(
-        `UPDATE books SET title = ?, author = ?, language = ?, level = ?, category = ?, age_group = ?, description = ?, is_educational = ?, attributes = ?, total_pages = ?, updated_at = CURRENT_TIMESTAMP
+        `UPDATE books SET title = ?, author = ?, language = ?, level = ?, category = ?, age_group = ?, description = ?, is_educational = ?, attributes = ?, total_pages = ?, author_id = ?, illustrator_id = ?, updated_at = CURRENT_TIMESTAMP
          WHERE id = ?`
       )
         .bind(
@@ -178,6 +200,8 @@ books.patch(
           (body.isEducational ?? Boolean(existing.is_educational)) ? 1 : 0,
           JSON.stringify(mergedAttributes),
           totalPages,
+          authorId,
+          illustratorId,
           id
         )
         .run();
@@ -188,6 +212,84 @@ books.patch(
     if (pages) {
       await replacePages(c.env.DB, id, pages);
     }
+
+    const updatedRow = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
+    const content = await getPageContent(c.env.DB, id);
+    return c.json({ book: { ...toApiBook(updatedRow as BookRow), content } });
+  }
+);
+
+// BookVersions (migrations/0008) — Administrator only, same gate as the
+// write endpoints above (a version is an edit-history detail of an admin
+// action, not reader-facing content).
+books.get("/:id/versions", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
+  const id = c.req.param("id");
+  const { results } = await c.env.DB.prepare(
+    "SELECT * FROM book_versions WHERE book_id = ? ORDER BY version_number DESC"
+  )
+    .bind(id)
+    .all<BookVersionRow>();
+  return c.json({ versions: results.map(toApiBookVersion) });
+});
+
+books.get("/:id/versions/:versionNumber", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
+  const id = c.req.param("id");
+  const versionNumber = Number(c.req.param("versionNumber"));
+  const row = await c.env.DB.prepare("SELECT * FROM book_versions WHERE book_id = ? AND version_number = ?")
+    .bind(id, versionNumber)
+    .first<BookVersionRow>();
+  if (!row) {
+    return c.json({ error: "Version not found." }, 404);
+  }
+  return c.json({ version: toApiBookVersion(row) });
+});
+
+// Restores a book's fields/content to an earlier version — snapshots the
+// current state first (via snapshotBookVersion), so restoring is itself
+// just another recoverable edit, not a one-way door.
+books.post(
+  "/:id/versions/:versionNumber/restore",
+  authMiddleware,
+  requireRole(ROLES.ADMINISTRATOR),
+  async (c) => {
+    const id = c.req.param("id");
+    const versionNumber = Number(c.req.param("versionNumber"));
+    const authUser = c.get("authUser");
+
+    const existing = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
+    if (!existing) {
+      return c.json({ error: "Book not found." }, 404);
+    }
+
+    const version = await c.env.DB.prepare("SELECT * FROM book_versions WHERE book_id = ? AND version_number = ?")
+      .bind(id, versionNumber)
+      .first<BookVersionRow>();
+    if (!version) {
+      return c.json({ error: "Version not found." }, 404);
+    }
+
+    await snapshotBookVersion(c.env.DB, existing, authUser.sub);
+
+    const restoredPages: string[] = JSON.parse(version.content);
+    await c.env.DB.prepare(
+      `UPDATE books SET title = ?, author = ?, language = ?, level = ?, category = ?, age_group = ?, description = ?, is_educational = ?, attributes = ?, total_pages = ?, updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`
+    )
+      .bind(
+        version.title,
+        version.author,
+        version.language,
+        version.level,
+        version.category,
+        version.age_group,
+        version.description,
+        version.is_educational,
+        version.attributes,
+        estimatePages(restoredPages),
+        id
+      )
+      .run();
+    await replacePages(c.env.DB, id, restoredPages);
 
     const updatedRow = await c.env.DB.prepare("SELECT * FROM books WHERE id = ?").bind(id).first<BookRow>();
     const content = await getPageContent(c.env.DB, id);

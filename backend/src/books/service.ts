@@ -1,4 +1,5 @@
 import { WORDS_PER_PAGE } from "../config/rules";
+import { findOrCreatePerson } from "../people/service";
 
 export type BookRow = {
   id: string;
@@ -14,6 +15,8 @@ export type BookRow = {
   description: string | null;
   is_educational: number;
   attributes: string;
+  author_id: string | null;
+  illustrator_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -37,6 +40,8 @@ export function toApiBook(row: BookRow) {
     description: row.description,
     isEducational: Boolean(row.is_educational),
     attributes: JSON.parse(row.attributes),
+    authorId: row.author_id,
+    illustratorId: row.illustrator_id,
   };
 }
 
@@ -71,6 +76,7 @@ export async function replacePages(db: D1Database, bookId: string, pages: string
 export type CreateBookInput = {
   title: string;
   author: string;
+  illustrator?: string | null;
   language: string;
   level: string;
   category: string;
@@ -88,10 +94,16 @@ export async function createBookRecord(db: D1Database, input: CreateBookInput): 
   const pages = toContentArray(input.content);
   const id = crypto.randomUUID();
 
+  // Keeps books.author_id linked for every new book, not just the ones
+  // migrations/0009's backfill covered — same find-or-create idiom that
+  // migration used, just from app code instead of a one-time SQL backfill.
+  const authorId = await findOrCreatePerson(db, "authors", input.author);
+  const illustratorId = input.illustrator ? await findOrCreatePerson(db, "illustrators", input.illustrator) : null;
+
   await db
     .prepare(
-      `INSERT INTO books (id, title, author, language, level, total_pages, category, age_group, description, is_educational, attributes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO books (id, title, author, language, level, total_pages, category, age_group, description, is_educational, attributes, author_id, illustrator_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .bind(
       id,
@@ -104,10 +116,85 @@ export async function createBookRecord(db: D1Database, input: CreateBookInput): 
       input.ageGroup ?? null,
       input.description ?? null,
       input.isEducational ? 1 : 0,
-      JSON.stringify(input.attributes ?? {})
+      JSON.stringify(input.attributes ?? {}),
+      authorId,
+      illustratorId
     )
     .run();
 
   await replacePages(db, id, pages);
   return id;
+}
+
+export type BookVersionRow = {
+  id: number;
+  book_id: string;
+  version_number: number;
+  title: string;
+  author: string;
+  language: string;
+  level: string;
+  category: string;
+  age_group: string | null;
+  description: string | null;
+  is_educational: number;
+  attributes: string;
+  content: string;
+  edited_by: string | null;
+  created_at: string;
+};
+
+export function toApiBookVersion(row: BookVersionRow) {
+  return {
+    id: row.id,
+    versionNumber: row.version_number,
+    title: row.title,
+    author: row.author,
+    language: row.language,
+    level: row.level,
+    category: row.category,
+    ageGroup: row.age_group,
+    description: row.description,
+    isEducational: Boolean(row.is_educational),
+    attributes: JSON.parse(row.attributes),
+    content: JSON.parse(row.content),
+    editedBy: row.edited_by,
+    createdAt: row.created_at,
+  };
+}
+
+// Snapshots a book's current state (its fields as they stand right before an
+// edit, plus its current page content) into book_versions — called from
+// PATCH /books/:id before applying the update, and from the restore route
+// before overwriting current state with an older version (so restoring is
+// itself undoable). version_number is per-book, starting at 1.
+export async function snapshotBookVersion(db: D1Database, book: BookRow, editedBy: string | null): Promise<void> {
+  const content = await getPageContent(db, book.id);
+  const nextVersionRow = await db
+    .prepare("SELECT COALESCE(MAX(version_number), 0) + 1 as next FROM book_versions WHERE book_id = ?")
+    .bind(book.id)
+    .first<{ next: number }>();
+  const versionNumber = nextVersionRow?.next ?? 1;
+
+  await db
+    .prepare(
+      `INSERT INTO book_versions (book_id, version_number, title, author, language, level, category, age_group, description, is_educational, attributes, content, edited_by)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .bind(
+      book.id,
+      versionNumber,
+      book.title,
+      book.author,
+      book.language,
+      book.level,
+      book.category,
+      book.age_group,
+      book.description,
+      book.is_educational,
+      book.attributes,
+      JSON.stringify(content),
+      editedBy
+    )
+    .run();
 }
