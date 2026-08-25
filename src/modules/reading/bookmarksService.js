@@ -8,9 +8,7 @@ const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 // Bookmarks are per-account — without this, every signed-in user reads and
 // writes the exact same localStorage bucket, so Account B logging in sees
 // (and can overwrite) Account A's bookmarks. 'guest' is the bucket for a
-// browser session with nobody signed in; the dev role-switcher
-// (AuthContext.js's loginAsReader/loginAsAdmin/loginAs) already assigns
-// fixed per-role ids, so those get naturally separated too.
+// browser session with nobody signed in.
 function storageScope() {
   return getSession()?.id || 'guest';
 }

@@ -11,8 +11,6 @@ export interface AuthContextValue {
   user: AuthUser | null;
   login: (userData: AuthUser) => void;
   logout: () => void;
-  loginAsReader: () => void;
-  loginAsAdmin: () => void;
 }
 
 export function AuthProvider(props: { children: ReactNode }): JSX.Element;

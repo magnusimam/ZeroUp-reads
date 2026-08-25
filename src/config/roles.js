@@ -32,11 +32,10 @@ export const PUBLISHING_ROLES = [ROLES.AUTHOR, ROLES.TRANSLATOR, ROLES.EDITOR, R
 export const TRANSLATION_ROLES = [ROLES.TRANSLATOR, ROLES.EDITOR, ROLES.ADMINISTRATOR];
 
 // Resolves a user's real permission level, tolerating accounts created before
-// `systemRole` existed: the pre-existing dev test helpers / any legacy session
-// set a bare `role: 'admin'` string (see AuthContext.js's loginAsAdmin) — that
-// still resolves to full administrator access instead of silently locking
-// existing admins out, the same "missing field degrades gracefully" pattern
-// userService.js already uses for streak fields.
+// `systemRole` existed: a legacy session with only a bare `role: 'admin'`
+// string still resolves to full administrator access instead of silently
+// locking existing admins out, the same "missing field degrades gracefully"
+// pattern userService.js already uses for streak fields.
 export function effectiveRole(user) {
   if (!user) return null;
   if (user.systemRole) return user.systemRole;
