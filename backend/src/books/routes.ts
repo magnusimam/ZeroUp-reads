@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
-import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
+import { authMiddleware, requireRole, requirePermission, type AuthVariables } from "../auth/middleware";
 import { ROLES } from "../config/roles";
 import {
   type BookRow,
@@ -132,7 +132,7 @@ books.get("/:id", async (c) => {
 books.post(
   "/",
   authMiddleware,
-  requireRole(ROLES.ADMINISTRATOR),
+  requirePermission("books.write"),
   zValidator("json", createSchema),
   async (c) => {
     const body = c.req.valid("json");
@@ -153,7 +153,7 @@ books.post(
 books.patch(
   "/:id",
   authMiddleware,
-  requireRole(ROLES.ADMINISTRATOR),
+  requirePermission("books.write"),
   zValidator("json", updateSchema),
   async (c) => {
     const id = c.req.param("id");
@@ -221,7 +221,9 @@ books.patch(
 
 // BookVersions (migrations/0008) — Administrator only, same gate as the
 // write endpoints above (a version is an edit-history detail of an admin
-// action, not reader-facing content).
+// action, not reader-facing content). Still requireRole, not
+// requirePermission: migrations/0013_permissions.sql's seed never gave this
+// its own permission_key (see auth/middleware.ts's requireRole doc comment).
 books.get("/:id/versions", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
   const id = c.req.param("id");
   const { results } = await c.env.DB.prepare(
@@ -297,7 +299,7 @@ books.post(
   }
 );
 
-books.delete("/:id", authMiddleware, requireRole(ROLES.ADMINISTRATOR), async (c) => {
+books.delete("/:id", authMiddleware, requirePermission("books.delete"), async (c) => {
   const id = c.req.param("id");
   const authUser = c.get("authUser");
 

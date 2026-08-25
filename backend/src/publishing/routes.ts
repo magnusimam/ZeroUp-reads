@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
-import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
-import { ROLES, PUBLISHING_ROLES, REVIEWER_ROLES, PUBLISHER_ROLES } from "../config/roles";
+import { authMiddleware, requirePermission, type AuthVariables } from "../auth/middleware";
+import { ROLES } from "../config/roles";
 import { toApiBook, getPageContent, createBookRecord, type BookRow } from "../books/service";
 import { createNotification } from "../notifications/service";
 import { getActorName } from "../users/service";
@@ -160,7 +160,7 @@ function isOwnerOrAdmin(authUser: { sub: string; role: string }, submission: Sub
 
 const publishing = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
-publishing.use("*", authMiddleware, requireRole(...PUBLISHING_ROLES));
+publishing.use("*", authMiddleware, requirePermission("submissions.access"));
 
 publishing.get("/", async (c) => {
   const { results } = await c.env.DB.prepare(
@@ -230,7 +230,7 @@ publishing.patch("/:id", zValidator("json", updateSchema), async (c) => {
   return c.json({ submission: await toApiDetail(c.env.DB, updated as SubmissionRow) });
 });
 
-publishing.post("/:id/submit", requireRole(ROLES.AUTHOR, ROLES.TRANSLATOR, ROLES.ADMINISTRATOR), async (c) => {
+publishing.post("/:id/submit", requirePermission("submissions.submit"), async (c) => {
   const id = c.req.param("id");
   const authUser = c.get("authUser");
 
@@ -248,7 +248,7 @@ publishing.post("/:id/submit", requireRole(ROLES.AUTHOR, ROLES.TRANSLATOR, ROLES
   return c.json({ submission: await toApiDetail(c.env.DB, updated as SubmissionRow) });
 });
 
-publishing.post("/:id/start-review", requireRole(...REVIEWER_ROLES), async (c) => {
+publishing.post("/:id/start-review", requirePermission("submissions.review"), async (c) => {
   const id = c.req.param("id");
   const authUser = c.get("authUser");
 
@@ -267,7 +267,7 @@ publishing.post("/:id/start-review", requireRole(...REVIEWER_ROLES), async (c) =
 
 publishing.post(
   "/:id/request-changes",
-  requireRole(...REVIEWER_ROLES),
+  requirePermission("submissions.review"),
   zValidator("json", requestChangesSchema),
   async (c) => {
     const id = c.req.param("id");
@@ -296,7 +296,7 @@ publishing.post(
   }
 );
 
-publishing.post("/:id/approve", requireRole(...REVIEWER_ROLES), async (c) => {
+publishing.post("/:id/approve", requirePermission("submissions.review"), async (c) => {
   const id = c.req.param("id");
   const authUser = c.get("authUser");
 
@@ -324,7 +324,7 @@ publishing.post("/:id/approve", requireRole(...REVIEWER_ROLES), async (c) => {
 // The only step that creates a real, live library book — mirrors
 // publishingService.js's publish(): nothing a reader can see exists until
 // this runs.
-publishing.post("/:id/publish", requireRole(...PUBLISHER_ROLES), async (c) => {
+publishing.post("/:id/publish", requirePermission("submissions.publish"), async (c) => {
   const id = c.req.param("id");
   const authUser = c.get("authUser");
 

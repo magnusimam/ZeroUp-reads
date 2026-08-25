@@ -17,9 +17,11 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
 
 export const ALL_ROLES = Object.values(ROLES) as Role[];
 
-// Publishing Pipeline access — mirrors the frontend's roles.js
-// PUBLISHING_ROLES. "Reviewer" from the publishing workflow brief is
-// performed by Editor/Administrator rather than a 7th distinct role.
-export const PUBLISHING_ROLES: Role[] = [ROLES.AUTHOR, ROLES.TRANSLATOR, ROLES.EDITOR, ROLES.PUBLISHER, ROLES.ADMINISTRATOR];
-export const REVIEWER_ROLES: Role[] = [ROLES.EDITOR, ROLES.ADMINISTRATOR];
-export const PUBLISHER_ROLES: Role[] = [ROLES.PUBLISHER, ROLES.ADMINISTRATOR];
+// Publishing Pipeline access used to be enumerated here as PUBLISHING_ROLES/
+// REVIEWER_ROLES/PUBLISHER_ROLES ("Reviewer" from the publishing workflow
+// brief is performed by Editor/Administrator rather than a 7th distinct
+// role) — publishing/routes.ts's requireRole(...) call sites read those
+// directly. As of migrations/0013_permissions.sql + auth/middleware.ts's
+// requirePermission(), which role can submit/review/publish is data in
+// role_permissions (see GET /permissions/roles) instead, so those groupings
+// no longer need a code-level definition here.

@@ -37,7 +37,7 @@ npm run deploy      # deploy to Cloudflare
 - `GET /bookmarks/:bookId/page` → `200 { pageIndex: number | null }`
 - `PUT /bookmarks/:bookId/page` → `{ pageIndex }` → `200 { pageIndex }` (`404` unknown book) — sending the same `pageIndex` again clears it
 - `GET /users` → **Administrator only** → `200 { users: [...] }` (password stripped)
-- `PATCH /users/:id/role` → **Administrator only** → `{ systemRole }` → `200 { user }` (`404` unknown id, `400` invalid role). The promoted/demoted user's *existing* token still carries the old role until they log in again — roles are a JWT claim, not re-checked against the DB per-request.
+- `PATCH /users/:id/role` → **Administrator only** → `{ systemRole }` → `200 { user }` (`404` unknown id, `400` invalid role). The promoted/demoted user's *existing* token is revoked immediately — see **Token revocation** below.
 - `GET /languages` → public → `200 { languages: [{ code, name }] }`
 - `GET /recommendations` → requires `Authorization: Bearer <token>` → `200 { books: [...] }` — see **Recommendations** below.
 - `GET /analytics` → **Administrator only** → `200 { totalUsers, totalBooks, booksReadThisWeek, completionsThisWeek, topBooks, byLanguage, byLevel, libraryReads, libraryTitles }` — see **Analytics** below.
@@ -54,11 +54,12 @@ npm run deploy      # deploy to Cloudflare
 - `GET /collections`, `GET /collections/:id` → public/optional auth; `POST /collections`, `PATCH /collections/:id`, `DELETE /collections/:id`, `POST /collections/:id/books`, `DELETE /collections/:id/books/:bookId` → requires auth, owner or Administrator — see **Collections** below.
 - `GET /downloads` → requires auth → `200 { downloads: [...] }`; `POST /downloads/:bookId` → `201 { success: true }` (`404` unknown book) — see **Downloads** below.
 - `GET /permissions`, `GET /permissions/roles` → **Administrator only** — see **Permissions** below.
+- `GET /testimonials` → public → `200 { testimonials: [{ id, name, role, quote, bookId }] }` — see **Testimonials** below.
 
 ## Auth
 
 - Passwords are hashed with PBKDF2 (Web Crypto `crypto.subtle`, 100k iterations, per-password random salt) — see `src/auth/password.ts`. No native bcrypt/scrypt in the Workers runtime without a WASM dependency, and this needs zero extra packages.
-- Tokens are HS256 JWTs (`hono/jwt`), 7-day expiry, payload `{ sub: userId, role, exp }`.
+- Tokens are HS256 JWTs (`hono/jwt`), 7-day expiry, payload `{ sub: userId, role, tv: tokenVersion, exp }` — see **Token revocation** below for what `tv` is for.
 - `src/auth/middleware.ts` exports `authMiddleware` (verifies the bearer token, attaches `c.get('authUser')`) and `requireRole(...roles)` (composes after it) — the RBAC building block future write endpoints (books admin, publishing) will reuse.
 - **Local dev:** copy `.dev.vars.example` to `.dev.vars` (gitignored) and set `JWT_SECRET` to any long random string. Wrangler loads it automatically for `wrangler dev`.
 - **Real deploy:** set the real secret with `wrangler secret put JWT_SECRET` — never put it in `wrangler.jsonc`'s `vars` (that file is committed).
@@ -66,6 +67,10 @@ npm run deploy      # deploy to Cloudflare
 - **Known local quirk:** on this project's pinned `wrangler@3.114.17`, the *very first* `wrangler dev` boot in a session can start before `.dev.vars` finishes loading — `/auth/register` will 500 with `JWT_SECRET` reading as `undefined` even though the startup banner lists it. If you hit this, save any file (or just Ctrl+S `wrangler.jsonc`) to trigger a reload — it resolves immediately and doesn't recur for the rest of that `wrangler dev` session. Worth re-checking once the project upgrades to `wrangler@4` (already flagged as a to-do from Stage 1).
 - **Rate limiting:** `src/auth/rateLimit.ts` blunts brute-force/mass-signup attempts against `/auth/login` (5 failed attempts per email per 15 minutes → `429`, checked *before* the password comparison) and `/auth/register` (10 attempts per `CF-Connecting-IP` per hour → `429`) — a D1-backed counter (`auth_attempts` table, `migrations/0006_security_hardening.sql`) rather than a Cloudflare Rate Limiting binding, so it needs no extra provisioning/plan. The register limiter is skipped when `CF-Connecting-IP` isn't present (local dev outside Cloudflare's edge, or tests) — real deployed traffic always has that header, so this never opens a gap in production.
 - **Audit log:** sensitive admin actions (`PATCH /users/:id/role`, `DELETE /books/:id`, and denied attempts to change the Owner's role) write to `audit_log` — see **Audit log** below.
+
+## Token revocation
+
+`users.token_version` (`migrations/0015_token_versioning.sql`) is embedded in every JWT as the `tv` claim at issue time and checked against the user's current row on every authenticated request (`auth/middleware.ts`'s `isTokenRevoked()`) — a mismatch, or the user row no longer existing, 401s exactly like an invalid signature. `PATCH /users/:id/role` bumps `token_version` alongside `system_role`, so a promoted/demoted user's old token is revoked outright on their very next request rather than merely carrying a stale role claim until it naturally expires. This is a real, if minimal, revocation mechanism — no blocklist table, no per-token tracking — trading "revoke a single token" (not supported) for "revoke every token a user currently holds" (all that's needed here, since nothing else mints more than one live token per user today). Nothing else bumps `token_version` yet — a future "log out everywhere" button or a password-change endpoint would reuse the exact same bump.
 
 ## OAuth (Google)
 
@@ -77,7 +82,7 @@ Scaffolded but **non-functional as committed** — `GOOGLE_OAUTH_CLIENT_ID`/`GOO
 
 Flow: `GET /auth/oauth/google/start` mints a one-time `state` (`oauth_states` table, `migrations/0007_oauth.sql`, redeemed and deleted on use — a replayed callback URL `400`s) and redirects to Google's consent screen. `GET /auth/oauth/google/callback` exchanges the code, fetches the profile, finds-or-creates a `users` row by email (linking `oauth_provider`/`oauth_subject` onto an existing password-based account if the email already exists, rather than duplicating it), and redirects to `OAUTH_FRONTEND_REDIRECT_URL?token=...`. An OAuth-created account gets a random, never-disclosed `password_hash` (via the same `hashPassword()` as normal registration) so the column stays `NOT NULL` without a schema change — that account can only ever sign in via Google.
 
-**Not built here:** the frontend catch-page at `OAUTH_FRONTEND_REDIRECT_URL` that reads `?token=` off the URL and stores the session — separate frontend-integration work, same pattern as every other domain's frontend wiring.
+The frontend catch-page at `OAUTH_FRONTEND_REDIRECT_URL` (`src/modules/auth/OAuthCallbackPage.jsx`, route `/oauth/callback`) reads `?token=` off the URL, calls `authService.completeOAuthLogin(token)` (stores the token, fetches `GET /auth/me` for the user it belongs to), and reuses the same `AuthContext.login()` seam every other sign-in path already goes through. `LoginPage.jsx`'s "Sign in with Google" button redirects to `GET /auth/oauth/google/start` when a backend is configured (`authService.googleOAuthAvailable()`), falling back to its old "coming soon" no-op otherwise. **Still not built:** an equivalent Google button on `RegisterPage.jsx` — only `LoginPage.jsx` had the placeholder to wire up.
 
 ## Publishing workflow
 
@@ -147,7 +152,11 @@ Curated reading lists (`collections`/`collection_books`, `migrations/0010_collec
 
 ## Permissions
 
-`permissions`/`role_permissions` (`migrations/0013_permissions.sql`) is a read-only, Administrator-only mirror of exactly what `requireRole(...)` already enforces across `books`/`users`/`publishing`/`analytics`/`audit` routes — a granular breakdown for an admin UI to display "what can an Editor do", not a new enforcement mechanism. `requireRole(...)` itself still checks a hardcoded role list; wiring it to read this table instead is a separate follow-up, not done here.
+`permissions`/`role_permissions` (`migrations/0013_permissions.sql`) is a read-only, Administrator-only reference for "what can an Editor do" — **and**, as of Stage 16, the actual enforcement source for every route whose capability it seeds: `auth/middleware.ts`'s `requirePermission(key)` checks `role_permissions` directly, replacing the `requireRole(...)` hardcoded role list on `books.write`/`books.delete` (`POST`/`PATCH`/`DELETE /books`), `users.manage` (`/users`), `analytics.view`, `audit_log.view`, and all four `submissions.*` publishing-workflow gates. Granting a role a new capability there is now a `role_permissions` INSERT, not a code change. A handful of Administrator-only routes migrations/0013's seed never gave a `permission_key` (Authors/Illustrators `PATCH`, BookVersions `GET`, the Permissions routes themselves) still use `requireRole(ROLES.ADMINISTRATOR)` directly — there's nothing in `role_permissions` yet for `requirePermission` to check for those.
+
+## Testimonials
+
+`testimonials` (`migrations/0014_testimonials.sql`) is a straight seed of the frontend's old `MOCK_TESTIMONIALS` array — read-only, like Languages: no create/update/delete route exists, since nothing writes a testimonial today. `book_id` is nullable with `ON DELETE SET NULL` rather than `CASCADE`, so a testimonial outlives the book it references (it just loses its "View Details" link) instead of disappearing if that book is ever deleted.
 
 ## Database (D1)
 
@@ -179,8 +188,8 @@ After that, every additional admin is a normal `PATCH /users/:id/role` call from
 
 ## Stage status
 
-Through Stage 14 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, Search/Recommendations/Analytics/Notifications/Languages + security hardening (13, backend and frontend both), and BookVersions/Authors/Illustrators/Ratings/Reviews/Collections/Downloads/Permissions (14, backend and frontend both) are all done. Every domain's frontend service calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set.
+Through Stage 16 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, Search/Recommendations/Analytics/Notifications/Languages + security hardening (13, backend and frontend both), BookVersions/Authors/Illustrators/Ratings/Reviews/Collections/Downloads/Permissions (14, backend and frontend both), Testimonials (15, backend and frontend both), and JWT token-version revocation + the OAuth frontend catch-page + wiring `requireRole` to `role_permissions` (16) are all done. Every domain's frontend service calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set. There is no longer any frontend service still `localStorage`-only.
 
 OAuth (Google) is the one exception, gated on registering a real client — see **OAuth (Google)** above — and its frontend catch-page (`?token=` off the redirect) still doesn't exist.
 
-`POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), deliberately out of scope. Also deliberately out of scope: Audio/TTS, a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS), and JWT revocation/token-versioning (a real gap — a role change doesn't invalidate an already-issued token until it expires — but a separate feature from what Stage 13 covers).
+`POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), deliberately out of scope. Also deliberately out of scope: Audio/TTS and a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS). JWT revocation/token-versioning, once a real gap, closed in Stage 16 — see **Token revocation** above.

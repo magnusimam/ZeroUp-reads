@@ -2,8 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
-import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
-import { ROLES } from "../config/roles";
+import { authMiddleware, requirePermission, type AuthVariables } from "../auth/middleware";
 import { AUDIT_LOG_PAGE_SIZE } from "../config/rules";
 import { type AuditLogRow, toApiAuditLogEntry } from "./service";
 
@@ -13,7 +12,7 @@ const querySchema = z.object({
 
 const audit = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
-audit.use("*", authMiddleware, requireRole(ROLES.ADMINISTRATOR));
+audit.use("*", authMiddleware, requirePermission("audit_log.view"));
 
 audit.get("/", zValidator("query", querySchema), async (c) => {
   const { limit } = c.req.valid("query");

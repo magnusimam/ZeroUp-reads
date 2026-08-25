@@ -2,8 +2,8 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
-import { authMiddleware, requireRole, type AuthVariables } from "../auth/middleware";
-import { ROLES, ALL_ROLES } from "../config/roles";
+import { authMiddleware, requirePermission, type AuthVariables } from "../auth/middleware";
+import { ALL_ROLES } from "../config/roles";
 import { toSafeUser, getActorName, type UserRow } from "./service";
 import { writeAuditLog } from "../audit/service";
 import { logEvent } from "../utils/logger";
@@ -14,7 +14,7 @@ const roleSchema = z.object({
 
 const users = new Hono<{ Bindings: Env; Variables: AuthVariables }>();
 
-users.use("*", authMiddleware, requireRole(ROLES.ADMINISTRATOR));
+users.use("*", authMiddleware, requirePermission("users.manage"));
 
 // Mirrors the pre-existing frontend UserManagementPage's "All Users" table —
 // Administrator-only, matching /admin/users' RequireRole gate.
@@ -58,7 +58,12 @@ users.patch("/:id/role", zValidator("json", roleSchema), async (c) => {
     return c.json({ error: "The Owner account's role cannot be changed." }, 403);
   }
 
-  await c.env.DB.prepare("UPDATE users SET system_role = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
+  // Bumping token_version alongside system_role is what actually revokes
+  // every token issued before this change (see auth/middleware.ts's
+  // isTokenRevoked()) — the promoted/demoted user's next authenticated
+  // request 401s and forces a fresh login, rather than carrying the old
+  // role claim until natural JWT expiry.
+  await c.env.DB.prepare("UPDATE users SET system_role = ?, token_version = token_version + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
     .bind(systemRole, id)
     .run();
 
