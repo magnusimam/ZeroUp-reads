@@ -8,6 +8,7 @@ import { syncProgressFromApi } from './services/userService'; // also registers 
 import { syncBookmarksFromApi } from './modules/reading/bookmarksService';
 import { syncBooksFromApi } from './modules/books/booksService';
 import { syncLanguagesFromApi } from './modules/books/languagesService';
+import { syncTestimonialsFromApi } from './modules/library/testimonialsService';
 import { getSession } from './modules/auth/authService';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -23,7 +24,7 @@ root.render(
 );
 
 async function bootstrap() {
-  await Promise.all([syncBooksFromApi(), syncLanguagesFromApi()]);
+  await Promise.all([syncBooksFromApi(), syncLanguagesFromApi(), syncTestimonialsFromApi()]);
   // Only meaningful for a reader reloading with an existing session — both
   // are per-user/authenticated (unlike the public book catalogue above) and
   // no-op instantly if there's no session, matching the token-gated

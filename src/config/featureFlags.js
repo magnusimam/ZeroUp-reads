@@ -118,6 +118,15 @@ const FLAGS = {
   // the real backend/ Permissions API. Same default-false,
   // instantly-reversible posture as the other realXApi flags.
   realPermissionsApi: true,
+  // Stage 15 frontend integration: routes testimonialsService's
+  // getTestimonials() (LibraryPage's "Parent & Teacher Picks" section) to
+  // the real backend/ Testimonials API instead of the hardcoded
+  // MOCK_TESTIMONIALS array. Public read, hydrated once at app boot (see
+  // src/index.js's bootstrap()) into the same localStorage cache pattern as
+  // realLanguagesApi, falling back to MOCK_TESTIMONIALS if unreachable.
+  // Same default-false, instantly-reversible posture as the other realXApi
+  // flags.
+  realTestimonialsApi: true,
 };
 
 export function isFeatureEnabled(flagName) {
