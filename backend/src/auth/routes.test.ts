@@ -159,7 +159,11 @@ describe("requireRole middleware", () => {
 
   it("allows an administrator token through", async () => {
     const { issueToken } = await import("./jwt");
-    const adminToken = await issueToken("admin-1", ROLES.ADMINISTRATOR, env.JWT_SECRET);
+    // A real registered user, not a fabricated id — migrations/0015_token_versioning.sql
+    // means authMiddleware now 401s a token whose user id doesn't exist in `users`.
+    const registerRes = await registerUser({ email: "role-admin@example.com" });
+    const { user } = await json(registerRes);
+    const adminToken = await issueToken(user.id, ROLES.ADMINISTRATOR, env.JWT_SECRET);
     const res = await scratch.request(
       "/admin-only",
       { headers: { Authorization: `Bearer ${adminToken}` } },

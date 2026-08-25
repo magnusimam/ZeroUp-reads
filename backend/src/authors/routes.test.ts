@@ -2,21 +2,35 @@ import { env } from "cloudflare:test";
 import { describe, expect, it } from "vitest";
 import app from "../index";
 import { issueToken } from "../auth/jwt";
-import { ROLES } from "../config/roles";
+import { ROLES, type Role } from "../config/roles";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function json(res: Response): Promise<any> {
   return res.json();
 }
 
-async function adminAuthHeader() {
-  const token = await issueToken("admin-test-user", ROLES.ADMINISTRATOR, env.JWT_SECRET);
+// A real registered user, not a fabricated id — migrations/0015_token_versioning.sql
+// means authMiddleware now 401s a token whose user id doesn't exist in `users`.
+let userCounter = 0;
+async function authHeader(role: Role) {
+  userCounter += 1;
+  const email = `authors-test-${userCounter}@example.com`;
+  const res = await app.request(
+    "/auth/register",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: `Test ${userCounter}`, email, password: "correcthorse" }) },
+    env
+  );
+  const { user } = await json(res);
+  const token = await issueToken(user.id, role, env.JWT_SECRET);
   return { Authorization: `Bearer ${token}` };
 }
 
+async function adminAuthHeader() {
+  return authHeader(ROLES.ADMINISTRATOR);
+}
+
 async function readerAuthHeader() {
-  const token = await issueToken("reader-test-user", ROLES.READER, env.JWT_SECRET);
-  return { Authorization: `Bearer ${token}` };
+  return authHeader(ROLES.READER);
 }
 
 describe("GET /authors", () => {

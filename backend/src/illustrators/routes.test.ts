@@ -9,8 +9,19 @@ async function json(res: Response): Promise<any> {
   return res.json();
 }
 
+// A real registered user, not a fabricated id — migrations/0015_token_versioning.sql
+// means authMiddleware now 401s a token whose user id doesn't exist in `users`.
+let userCounter = 0;
 async function adminAuthHeader() {
-  const token = await issueToken("admin-test-user", ROLES.ADMINISTRATOR, env.JWT_SECRET);
+  userCounter += 1;
+  const email = `illustrators-test-${userCounter}@example.com`;
+  const res = await app.request(
+    "/auth/register",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: `Test ${userCounter}`, email, password: "correcthorse" }) },
+    env
+  );
+  const { user } = await json(res);
+  const token = await issueToken(user.id, ROLES.ADMINISTRATOR, env.JWT_SECRET);
   return { Authorization: `Bearer ${token}` };
 }
 

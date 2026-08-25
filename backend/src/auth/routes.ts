@@ -57,7 +57,7 @@ auth.post("/register", zValidator("json", registerSchema), async (c) => {
   await recordAuthAttempt(c.env.DB, "register", normalizedEmail, ip, true);
 
   const row = await c.env.DB.prepare("SELECT * FROM users WHERE id = ?").bind(id).first<UserRow>();
-  const token = await issueToken(id, ROLES.READER, c.env.JWT_SECRET);
+  const token = await issueToken(id, ROLES.READER, c.env.JWT_SECRET, (row as UserRow).token_version);
 
   return c.json({ user: toSafeUser(row as UserRow), token }, 201);
 });
@@ -85,7 +85,7 @@ auth.post("/login", zValidator("json", loginSchema), async (c) => {
   }
   await recordAuthAttempt(c.env.DB, "login", normalizedEmail, ip, true);
 
-  const token = await issueToken(row.id, row.system_role as import("../config/roles").Role, c.env.JWT_SECRET);
+  const token = await issueToken(row.id, row.system_role as import("../config/roles").Role, c.env.JWT_SECRET, row.token_version);
   return c.json({ user: toSafeUser(row), token });
 });
 

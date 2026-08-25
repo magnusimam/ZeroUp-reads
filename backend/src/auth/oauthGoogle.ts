@@ -99,7 +99,7 @@ google.get("/callback", async (c) => {
   }
 
   const user = row as UserRow;
-  const token = await issueToken(user.id, user.system_role as Role, c.env.JWT_SECRET);
+  const token = await issueToken(user.id, user.system_role as Role, c.env.JWT_SECRET, user.token_version);
   return c.redirect(`${c.env.OAUTH_FRONTEND_REDIRECT_URL}?token=${encodeURIComponent(token)}`, 302);
 });
 

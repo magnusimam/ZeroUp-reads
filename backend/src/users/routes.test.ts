@@ -106,7 +106,7 @@ describe("PATCH /users/:id/role", () => {
     expect(persisted.systemRole).toBe("administrator");
   });
 
-  it("a promoted user's OLD token still carries the old role until they log in again", async () => {
+  it("revokes a promoted user's OLD token immediately (migrations/0015_token_versioning.sql)", async () => {
     const admin = await registerAndToken(ROLES.ADMINISTRATOR);
     const target = await registerAndToken(ROLES.READER);
     await app.request(
@@ -115,9 +115,12 @@ describe("PATCH /users/:id/role", () => {
       env
     );
 
-    // target.header's JWT was issued before the promotion and still claims reader.
+    // target.header's JWT was issued before the promotion, at token_version
+    // 0 — the role change bumped the row to 1, so this token is now
+    // rejected outright (401) rather than merely under-permissioned (403)
+    // by its stale "reader" claim.
     const res = await app.request("/users", { headers: target.header }, env);
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(401);
   });
 
   describe("Owner protection", () => {
@@ -168,7 +171,11 @@ describe("PATCH /users/:id/role", () => {
       // see registerAndToken()'s comment) doesn't matter here: requireRole
       // only needs SOME administrator-claiming token to reach the route, and
       // the is_owner check on the target id is what's actually under test.
-      const ownerAdminToken = await issueToken(owner.userId, ROLES.ADMINISTRATOR, env.JWT_SECRET);
+      // Minted at the row's REAL current token_version (bumped once already
+      // by makeAdministratorOwner's promotion) — a stale version 401s before
+      // reaching that check, per migrations/0015_token_versioning.sql.
+      const ownerRow = await env.DB.prepare("SELECT token_version FROM users WHERE id = ?").bind(owner.userId).first<{ token_version: number }>();
+      const ownerAdminToken = await issueToken(owner.userId, ROLES.ADMINISTRATOR, env.JWT_SECRET, ownerRow?.token_version ?? 0);
 
       const res = await app.request(
         `/users/${owner.userId}/role`,

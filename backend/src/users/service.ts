@@ -9,6 +9,7 @@ export type UserRow = {
   preferred_language: string | null;
   is_owner: number;
   oauth_provider: string | null;
+  token_version: number;
   created_at: string;
   updated_at: string;
 };
