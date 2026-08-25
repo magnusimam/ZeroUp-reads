@@ -56,6 +56,38 @@ export function clearToken() {
   localStorage.removeItem(TOKEN_KEY);
 }
 
+// Whether a real backend is configured at all — LoginPage's "Sign in with
+// Google" button falls back to a "coming soon" no-op when this is false
+// (local dev without backend/ running, or no REACT_APP_API_BASE_URL set),
+// same posture as every other realXApi-gated feature.
+export function googleOAuthAvailable() {
+  return Boolean(API_BASE_URL);
+}
+
+// GET /auth/oauth/google/start is a real page navigation (it 302s to
+// Google's consent screen), not a fetch — LoginPage just sets
+// window.location.href to this.
+export function googleOAuthStartUrl() {
+  return `${API_BASE_URL}/auth/oauth/google/start`;
+}
+
+// The Google OAuth catch-page's job (see backend/README.md's OAuth section
+// and OAuthCallbackPage.jsx): the backend redirect already minted a real
+// JWT, so this just stores it and fetches the user it belongs to via
+// GET /auth/me — no password step, unlike realLogin()/realRegister() above.
+export async function completeOAuthLogin(token) {
+  setToken(token);
+  try {
+    const { user } = await authedApiRequest('/auth/me');
+    const appUser = fromApiUser(user);
+    eventBus.emit('user.login.success', { id: appUser.id, email: appUser.email });
+    return { success: true, user: appUser };
+  } catch (err) {
+    clearToken();
+    return { success: false, message: err.message || 'Could not complete Google sign-in. Please try again.' };
+  }
+}
+
 // Backend's `persona`/`systemRole` naming maps onto this app's existing
 // `role`/`systemRole` user shape, so every current reader of a session user
 // object (ProfilePage, roles.js's effectiveRole, logger) keeps working

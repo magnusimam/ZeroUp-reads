@@ -36,8 +36,13 @@ export default function LoginPage() {
   }
     
   function handleGoogleLogIn() {
-    // Google sign in - coming when cloudflare API is ready
-    console.log('Google sign-in coming soon');
+    if (authService.googleOAuthAvailable()) {
+      window.location.href = authService.googleOAuthStartUrl();
+    } else {
+      // No backend configured (local dev without backend/ running) — same
+      // "coming soon" no-op as before.
+      console.log('Google sign-in coming soon');
+    }
   }
   
   return (

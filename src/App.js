@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import RegisterPage from './modules/auth/RegisterPage';
 import LoginPage from './modules/auth/LoginPage';
 import ForgotPasswordPage from './modules/auth/ForgotPasswordPage';
+import OAuthCallbackPage from './modules/auth/OAuthCallbackPage';
 import CheckEmailPage from './modules/auth/CheckEmailPage';
 import ResetPasswordPage from './modules/auth/ResetPasswordPage';
 import PasswordResetSuccessPage from './modules/auth/PasswordResetSuccessPage';
@@ -64,6 +65,7 @@ function App() {
               <Route path="/register"          element={<RegisterPage />} />
               <Route path="/login"             element={<LoginPage />} />
               <Route path="/forgot-password"   element={<ForgotPasswordPage />} />
+              <Route path="/oauth/callback"    element={<OAuthCallbackPage />} />
               <Route path="/check-email"       element={<CheckEmailPage />} />
               <Route path="/reset-password/success" element={<PasswordResetSuccessPage />} />
               <Route path="/reset-password/:token"  element={<ResetPasswordPage />} />
