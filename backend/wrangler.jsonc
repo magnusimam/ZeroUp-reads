@@ -9,7 +9,14 @@
     "head_sampling_rate": 1
   },
   "vars": {
-    "ENVIRONMENT": "production"
+    "ENVIRONMENT": "production",
+    // Real Google OAuth client (console.cloud.google.com/apis/credentials) -
+    // GOOGLE_OAUTH_CLIENT_SECRET is set separately via `wrangler secret put`,
+    // never here, since this file is committed. See backend/README.md's
+    // OAuth (Google) section.
+    "GOOGLE_OAUTH_CLIENT_ID": "525728563081-n4qfg8k28kl6j050eaos6ji6orjhnp2f.apps.googleusercontent.com",
+    "OAUTH_REDIRECT_BASE_URL": "https://zeroup-reads-api.bridegai.workers.dev",
+    "OAUTH_FRONTEND_REDIRECT_URL": "https://zeroup-reads.pages.dev/oauth/callback"
   },
   // Real D1 database, created under the zeroupacademy@gmail.com Cloudflare
   // account via `wrangler d1 create zeroup-reads-db` (region WEUR). Schema
