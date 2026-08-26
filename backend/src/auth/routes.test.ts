@@ -137,6 +137,111 @@ describe("GET /auth/me", () => {
   });
 });
 
+describe("password reset", () => {
+  async function requestReset(email: string) {
+    return app.request(
+      "/auth/password-reset/request",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email }) },
+      env
+    );
+  }
+
+  it("POST /password-reset/request returns success:true without a token for an unknown email", async () => {
+    const res = await requestReset("nobody-reset@example.com");
+    expect(res.status).toBe(200);
+    const body = await json(res);
+    expect(body).toEqual({ success: true });
+  });
+
+  it("POST /password-reset/request returns a token for a real email", async () => {
+    await registerUser({ email: "reset-me@example.com" });
+    const res = await requestReset("reset-me@example.com");
+    expect(res.status).toBe(200);
+    const body = await json(res);
+    expect(body.success).toBe(true);
+    expect(typeof body.token).toBe("string");
+  });
+
+  it("a second request for the same user invalidates the first token (one live token per user)", async () => {
+    await registerUser({ email: "reset-twice@example.com" });
+    const first = await json(await requestReset("reset-twice@example.com"));
+    await requestReset("reset-twice@example.com");
+
+    const res = await app.request(`/auth/password-reset/${first.token}`, {}, env);
+    const body = await json(res);
+    expect(body.valid).toBe(false);
+  });
+
+  it("GET /password-reset/:token validates a fresh token", async () => {
+    await registerUser({ email: "reset-validate@example.com" });
+    const { token } = await json(await requestReset("reset-validate@example.com"));
+
+    const res = await app.request(`/auth/password-reset/${token}`, {}, env);
+    expect(res.status).toBe(200);
+    const body = await json(res);
+    expect(body).toEqual({ valid: true, email: "reset-validate@example.com" });
+  });
+
+  it("GET /password-reset/:token reports an unknown token as invalid", async () => {
+    const res = await app.request("/auth/password-reset/not-a-real-token", {}, env);
+    const body = await json(res);
+    expect(body.valid).toBe(false);
+  });
+
+  it("POST /password-reset/:token sets the new password and consumes the token", async () => {
+    await registerUser({ email: "reset-complete@example.com", password: "old-password" });
+    const { token } = await json(await requestReset("reset-complete@example.com"));
+
+    const res = await app.request(
+      `/auth/password-reset/${token}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "new-password" }) },
+      env
+    );
+    expect(res.status).toBe(200);
+    expect((await json(res)).success).toBe(true);
+
+    // The new password works...
+    const loginRes = await app.request(
+      "/auth/login",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email: "reset-complete@example.com", password: "new-password" }) },
+      env
+    );
+    expect(loginRes.status).toBe(200);
+
+    // ...and the token can't be replayed.
+    const replay = await app.request(
+      `/auth/password-reset/${token}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "another-password" }) },
+      env
+    );
+    expect(replay.status).toBe(400);
+  });
+
+  it("resetting the password revokes any already-issued session token", async () => {
+    const registerRes = await registerUser({ email: "reset-revokes@example.com", password: "old-password" });
+    const { token: sessionToken } = await json(registerRes);
+    const { token: resetToken } = await json(await requestReset("reset-revokes@example.com"));
+
+    await app.request(
+      `/auth/password-reset/${resetToken}`,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "new-password" }) },
+      env
+    );
+
+    const res = await app.request("/auth/me", { headers: { Authorization: `Bearer ${sessionToken}` } }, env);
+    expect(res.status).toBe(401);
+  });
+
+  it("400s completing a reset with an expired/unknown token", async () => {
+    const res = await app.request(
+      "/auth/password-reset/not-a-real-token",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: "whatever1" }) },
+      env
+    );
+    expect(res.status).toBe(400);
+  });
+});
+
 describe("requireRole middleware", () => {
   // Self-contained scratch app so this doesn't require a real protected
   // production route to exist yet — exercises the same authMiddleware +

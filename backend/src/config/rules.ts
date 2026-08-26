@@ -46,3 +46,6 @@ export const OAUTH_STATE_TTL_MINUTES = 10;
 // Bounds for POST /ratings/:bookId's body — a star rating, not a free number.
 export const MIN_RATING = 1;
 export const MAX_RATING = 5;
+
+// Mirrors the frontend's src/config/rules.js PASSWORD_RESET_TOKEN_TTL_MINUTES.
+export const PASSWORD_RESET_TOKEN_TTL_MINUTES = 30;

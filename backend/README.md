@@ -23,6 +23,9 @@ npm run deploy      # deploy to Cloudflare
 - `POST /auth/register` → `{ name, email, password, persona?, orgName? }` → `201 { user, token }` (or `409` if the email's taken, `400` on validation failure)
 - `POST /auth/login` → `{ email, password }` → `200 { user, token }` (or `401 { error: "Invalid email or password." }` — same message whether the email doesn't exist or the password is wrong)
 - `GET /auth/me` → requires `Authorization: Bearer <token>` → `200 { user }`
+- `POST /auth/password-reset/request` → `{ email }` → always `200 { success: true }` (`{ success: true, token }` if the email exists) — see **Password reset** below.
+- `GET /auth/password-reset/:token` → `200 { valid: true, email }` or `200 { valid: false, reason }`
+- `POST /auth/password-reset/:token` → `{ password }` → `200 { success: true }` (`400` invalid/expired/already-used token)
 - `GET /books` → optional query params `category`, `language`, `level`, `isEducational` (`true`/`false`), `q` (free-text, matched against title/author/description), combined with AND → `200 { books: [...] }` (summaries — no page content)
 - `GET /books/:id` → `200 { book: { ...summary, content: string[] } }` (full detail, ordered pages) or `404` if the id doesn't exist
 - `POST /books` → **Administrator only** (`Authorization: Bearer <token>`) → `{ title, author, language, level, category, content, ageGroup?, description?, isEducational?, attributes? }` → `201 { book }` (`401` no token, `403` wrong role, `400` invalid language/missing field)
@@ -83,6 +86,10 @@ Scaffolded but **non-functional as committed** — `GOOGLE_OAUTH_CLIENT_ID`/`GOO
 Flow: `GET /auth/oauth/google/start` mints a one-time `state` (`oauth_states` table, `migrations/0007_oauth.sql`, redeemed and deleted on use — a replayed callback URL `400`s) and redirects to Google's consent screen. `GET /auth/oauth/google/callback` exchanges the code, fetches the profile, finds-or-creates a `users` row by email (linking `oauth_provider`/`oauth_subject` onto an existing password-based account if the email already exists, rather than duplicating it), and redirects to `OAUTH_FRONTEND_REDIRECT_URL?token=...`. An OAuth-created account gets a random, never-disclosed `password_hash` (via the same `hashPassword()` as normal registration) so the column stays `NOT NULL` without a schema change — that account can only ever sign in via Google.
 
 The frontend catch-page at `OAUTH_FRONTEND_REDIRECT_URL` (`src/modules/auth/OAuthCallbackPage.jsx`, route `/oauth/callback`) reads `?token=` off the URL, calls `authService.completeOAuthLogin(token)` (stores the token, fetches `GET /auth/me` for the user it belongs to), and reuses the same `AuthContext.login()` seam every other sign-in path already goes through. `LoginPage.jsx`'s "Sign in with Google" button redirects to `GET /auth/oauth/google/start` when a backend is configured (`authService.googleOAuthAvailable()`), falling back to its old "coming soon" no-op otherwise. **Still not built:** an equivalent Google button on `RegisterPage.jsx` — only `LoginPage.jsx` had the placeholder to wire up.
+
+## Password reset
+
+`password_resets` (`migrations/0016_password_resets.sql`) is the real backend for the frontend's `authService.js` mock (`requestPasswordReset`/`validateResetToken`/`resetPassword`) — same shape, one live token per user (a second request deletes the first before inserting a new one), same `PASSWORD_RESET_TOKEN_TTL_MINUTES` (30) expiry. `POST /password-reset/request` returns `200 { success: true }` for an unknown email too — the same anti-enumeration posture as `/auth/login` — and only includes the actual `token` in the response **because no real email-sending backend exists yet**; once one does, this stops returning it and the frontend's `CheckEmailPage` demo-link shortcut (which reads the token off this response) disappears on its own, same as the OAuth section's forward-looking note. Completing a reset (`POST /password-reset/:token`) bumps the user's `token_version` (migrations/0015), revoking every session already signed in on that account — the same posture as a role change.
 
 ## Publishing workflow
 
