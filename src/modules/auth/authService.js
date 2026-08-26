@@ -27,6 +27,15 @@ function realUserManagementApiEnabled() {
   return isFeatureEnabled('realUserManagementApi') && Boolean(API_BASE_URL) && Boolean(getToken());
 }
 
+// Stage 17 (frontend integration): requestPasswordReset()/validateResetToken()/
+// resetPassword() route to the real backend/ Password Reset API. Same
+// default-false, instantly-reversible posture as the other realXApi flags —
+// separate from realApiEnabled() above so this one capability can be killed
+// independently of register/login if it misbehaves.
+function realPasswordResetApiEnabled() {
+  return isFeatureEnabled('realPasswordResetApi') && Boolean(API_BASE_URL);
+}
+
 function getStoredUsers() {
   const raw = localStorage.getItem(USERS_KEY);
   return raw ? JSON.parse(raw) : [];
@@ -294,7 +303,7 @@ function generateToken() {
 // exists yet; once one does, this function stops returning it (the email is
 // the only place the token would appear) and CheckEmailPage's demo shortcut
 // link disappears on its own since it reads the response, not a hardcoded UI.
-export function requestPasswordReset(email) {
+function mockRequestPasswordReset(email) {
   const normalizedEmail = email.trim().toLowerCase();
   const user = getStoredUsers().find((u) => u.email.toLowerCase() === normalizedEmail);
   if (!user) {
@@ -317,7 +326,32 @@ export function requestPasswordReset(email) {
   return { success: true, token };
 }
 
-export function validateResetToken(token) {
+// Stage 17: routes to the real backend/ Password Reset API (same
+// realApiEnabled() gate as register/login — password reset is the same auth
+// domain) — same shape as the mock above, including the token-in-response
+// stopgap (see backend/README.md's Password reset section for why).
+async function realRequestPasswordReset(email) {
+  const normalizedEmail = email.trim().toLowerCase();
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/password-reset/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: normalizedEmail }),
+    });
+    const data = await res.json().catch(() => ({}));
+    eventBus.emit('user.password_reset.requested', { email: normalizedEmail, found: Boolean(data.token) });
+    return data.token ? { success: true, token: data.token } : { success: true };
+  } catch {
+    return { success: false, message: 'Could not reach the server. Please check your connection and try again.' };
+  }
+}
+
+export async function requestPasswordReset(email) {
+  if (realPasswordResetApiEnabled()) return realRequestPasswordReset(email);
+  return mockRequestPasswordReset(email);
+}
+
+function mockValidateResetToken(token) {
   const reset = getResets().find((r) => r.token === token);
   if (!reset) return { valid: false, reason: 'This link is invalid.' };
   if (new Date(reset.expiresAt).getTime() < Date.now()) {
@@ -326,8 +360,22 @@ export function validateResetToken(token) {
   return { valid: true, email: reset.email };
 }
 
-export function resetPassword(token, newPassword) {
-  const validation = validateResetToken(token);
+async function realValidateResetToken(token) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/password-reset/${encodeURIComponent(token)}`);
+    return await res.json();
+  } catch {
+    return { valid: false, reason: 'Could not reach the server. Please check your connection and try again.' };
+  }
+}
+
+export async function validateResetToken(token) {
+  if (realPasswordResetApiEnabled()) return realValidateResetToken(token);
+  return mockValidateResetToken(token);
+}
+
+function mockResetPassword(token, newPassword) {
+  const validation = mockValidateResetToken(token);
   if (!validation.valid) {
     return { success: false, message: validation.reason };
   }
@@ -344,4 +392,27 @@ export function resetPassword(token, newPassword) {
 
   eventBus.emit('user.password_reset.completed', { email: validation.email });
   return { success: true };
+}
+
+async function realResetPassword(token, newPassword) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/auth/password-reset/${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: newPassword }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return { success: false, message: data.message || 'Something went wrong. Please try again.' };
+    }
+    eventBus.emit('user.password_reset.completed', {});
+    return { success: true };
+  } catch {
+    return { success: false, message: 'Could not reach the server. Please check your connection and try again.' };
+  }
+}
+
+export async function resetPassword(token, newPassword) {
+  if (realPasswordResetApiEnabled()) return realResetPassword(token, newPassword);
+  return mockResetPassword(token, newPassword);
 }

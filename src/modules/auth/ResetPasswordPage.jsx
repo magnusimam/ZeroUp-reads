@@ -16,11 +16,17 @@ export default function ResetPasswordPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    const result = authService.validateResetToken(token);
-    if (!result.valid) {
-      setTokenError(result.reason || 'This link is invalid.');
-    }
-    setChecking(false);
+    let cancelled = false;
+    authService.validateResetToken(token).then((result) => {
+      if (cancelled) return;
+      if (!result.valid) {
+        setTokenError(result.reason || 'This link is invalid.');
+      }
+      setChecking(false);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [token]);
 
   function handleSubmit(e) {
@@ -41,8 +47,8 @@ export default function ResetPasswordPage() {
     }
 
     setSubmitting(true);
-    setTimeout(() => {
-      const result = authService.resetPassword(token, password);
+    setTimeout(async () => {
+      const result = await authService.resetPassword(token, password);
       setSubmitting(false);
       if (result.success) {
         navigate('/reset-password/success');

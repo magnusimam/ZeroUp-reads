@@ -28,10 +28,8 @@ export default function ForgotPasswordPage() {
     }
 
     setLoading(true);
-    // No real network exists yet, but this stays async-shaped so swapping in
-    // a real API call later doesn't change this handler at all.
-    setTimeout(() => {
-      const result = authService.requestPasswordReset(email);
+    setTimeout(async () => {
+      const result = await authService.requestPasswordReset(email);
       setLoading(false);
       if (result.success) {
         navigate('/check-email', { state: { email, token: result.token } });

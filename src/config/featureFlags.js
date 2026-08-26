@@ -127,6 +127,11 @@ const FLAGS = {
   // Same default-false, instantly-reversible posture as the other realXApi
   // flags.
   realTestimonialsApi: true,
+  // Stage 17 frontend integration: routes authService's requestPasswordReset()/
+  // validateResetToken()/resetPassword() (ForgotPasswordPage/CheckEmailPage/
+  // ResetPasswordPage) to the real backend/ Password Reset API. Same
+  // default-false, instantly-reversible posture as the other realXApi flags.
+  realPasswordResetApi: true,
 };
 
 export function isFeatureEnabled(flagName) {
