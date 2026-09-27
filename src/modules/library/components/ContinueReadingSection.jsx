@@ -1,6 +1,5 @@
 import React from 'react';
 import BookCard from '../../books/BookCard';
-import AmbientDecor from '../../../components/home/AmbientDecor';
 
 // Only rendered when a logged-in reader actually has books in progress —
 // LibraryPage decides that, this component just renders the row. Uses
@@ -12,20 +11,18 @@ export default function ContinueReadingSection({ userName, books, onTranslateReq
   const firstName = userName ? userName.split(' ')[0] : 'friend';
 
   return (
-    <section className="relative w-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #FFF3D6 0%, #FFE9B8 100%)' }}>
-      <AmbientDecor count={5} offset={4} />
-
+    <section className="relative w-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #FFE9C7 0%, #FFD9A0 100%)' }}>
       <div className="relative z-10 max-w-content mx-auto w-full px-4 sm:px-6 py-10">
         <div className="flex items-center gap-3 mb-1">
           <span className="text-3xl animate-[float_3s_ease-in-out_infinite]" aria-hidden="true">📖</span>
-          <h2 className="font-playfair font-extrabold text-2xl sm:text-3xl text-cocoa">
+          <h2 className="font-nunito font-extrabold text-2xl sm:text-3xl" style={{ color: 'var(--hero-ink)' }}>
             Keep Going, {firstName}!
           </h2>
-          <span className="hidden sm:inline-block bg-coral text-white text-xs font-nunito font-extrabold px-3 py-1 rounded-full shadow-card">
+          <span className="hidden sm:inline-block text-white text-xs font-nunito font-extrabold px-3 py-1 rounded-full shadow-card" style={{ background: 'var(--hero-orange)' }}>
             {books.length} in progress
           </span>
         </div>
-        <p className="font-nunito-sans text-charcoal/60 text-sm sm:text-base mb-6 ml-11">
+        <p className="font-nunito-sans text-sm sm:text-base mb-6 ml-11" style={{ color: 'var(--hero-gray)' }}>
           You're doing great — pick up right where you left off. 🌟
         </p>
 

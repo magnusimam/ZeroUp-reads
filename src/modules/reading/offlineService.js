@@ -54,10 +54,18 @@ export function getStorageUsedBytes() {
   return Object.values(readAll()).reduce((sum, entry) => sum + (entry.sizeBytes || 0), 0);
 }
 
-export function getStorageUsedLabel() {
-  const bytes = getStorageUsedBytes();
+// Shared by getStorageUsedLabel() below and the Downloads page's storage
+// quota (a fixed byte count in config/rules.js, not something this service
+// tracks) — same formatting rule for both sides of the "X used of Y" label.
+export function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   const kb = bytes / 1024;
   if (kb < 1024) return `${kb.toFixed(1)} KB`;
-  return `${(kb / 1024).toFixed(2)} MB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(2)} MB`;
+  return `${(mb / 1024).toFixed(2)} GB`;
+}
+
+export function getStorageUsedLabel() {
+  return formatBytes(getStorageUsedBytes());
 }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BookCoverArt from './BookCoverArt';
 import DownloadButton from '../reading/components/DownloadButton';
+import { getCategoryTileTheme, getTileColorClasses } from './categoryTheme';
 
 const langBadgeStyle = {
   english:  { background: 'var(--navy)',     color: 'white' },
@@ -48,13 +49,112 @@ function StarRating({ rating }) {
   );
 }
 
-export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'View Details', shelf = false, onTranslateRequest = null }) {
+export default function BookCard({ book, compact = false, variant = 'light', bottomBadge = null, ctaLabel = 'View Details', shelf = false, onTranslateRequest = null, showCta = false, badge = null }) {
   const navigate = useNavigate();
   const [bookmarked, setBookmarked] = useState(book.bookmarked || false);
 
   const lang = (book.language || '').toLowerCase();
   const level = (book.level || '').toLowerCase();
   const isLuxury = variant === 'luxury';
+
+  // Flat, colorful card — Library's "Featured Books" side cards and the
+  // "All Books" grid. A different visual language from the dark illustrated
+  // `portrait`/default variants above (matches the bright reference design
+  // those don't), so it's its own branch rather than a reskin of either.
+  if (variant === 'tile') {
+    const theme = getCategoryTileTheme(book.category);
+    const cls = getTileColorClasses(book.category);
+
+    // A real cover photo already has the title, age range and tagline
+    // baked into the artwork — showing it small (cropped to a landscape
+    // strip) with a second, plain text block underneath just hid it.
+    // Let the cover fill the whole card instead, book-jacket style.
+    if (book.coverUrl) {
+      return (
+        <div
+          className="relative rounded-2xl overflow-hidden bg-white border border-black/5 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all cursor-pointer aspect-[3/4]"
+          onClick={() => navigate(`/book/${book.id}`)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={e => e.key === 'Enter' && navigate(`/book/${book.id}`)}
+          aria-label={`View details for ${book.title}`}
+        >
+          <img src={book.coverUrl} alt={`${book.title} cover`} className="absolute inset-0 w-full h-full object-cover" />
+
+          {badge && (
+            <span className={`absolute top-2 left-2 ${cls.chip} text-[11px] font-nunito font-extrabold px-2.5 py-1 rounded-full shadow`}>
+              {badge}
+            </span>
+          )}
+          {onTranslateRequest && (
+            <button
+              onClick={e => { e.stopPropagation(); onTranslateRequest(book); }}
+              aria-label={`Request a translation of ${book.title}`}
+              title="Request a translation"
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-xs shadow"
+            >🌍</button>
+          )}
+          {book.rating && (
+            <span className="absolute bottom-2 right-2 flex items-center gap-1 bg-white/95 text-[11px] font-nunito font-bold text-charcoal px-2 py-1 rounded-full shadow">
+              <span className="text-amber" aria-hidden="true">★</span>{book.rating.toFixed(1)}
+            </span>
+          )}
+          {showCta && (
+            <button
+              onClick={e => { e.stopPropagation(); navigate(`/book/${book.id}`); }}
+              className={`absolute bottom-2 left-2 right-2 text-white text-xs font-nunito font-bold rounded-full py-2 transition-colors shadow ${cls.btn}`}
+            >{ctaLabel}</button>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className="flex flex-col h-full rounded-2xl overflow-hidden bg-white border border-black/5 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all cursor-pointer"
+        onClick={() => navigate(`/book/${book.id}`)}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => e.key === 'Enter' && navigate(`/book/${book.id}`)}
+        aria-label={`View details for ${book.title}`}
+      >
+        <div className={`relative ${cls.block} aspect-[4/3] flex items-center justify-center overflow-hidden`}>
+          <span className="text-4xl opacity-90 drop-shadow" aria-hidden="true">{theme.icon}</span>
+          <span className={`absolute top-2 left-2 ${cls.chip} text-[11px] font-nunito font-extrabold px-2.5 py-1 rounded-full`}>
+            {badge || book.category}
+          </span>
+          {onTranslateRequest && (
+            <button
+              onClick={e => { e.stopPropagation(); onTranslateRequest(book); }}
+              aria-label={`Request a translation of ${book.title}`}
+              title="Request a translation"
+              className="absolute top-2 right-2 w-7 h-7 rounded-full bg-white/90 flex items-center justify-center text-xs"
+            >🌍</button>
+          )}
+        </div>
+        <div className="p-3 flex flex-col gap-1 flex-1">
+          <h3 className="font-nunito font-bold text-[13px] sm:text-sm text-charcoal leading-snug overflow-hidden [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical]">
+            {book.title}
+          </h3>
+          <p className="text-[12px] text-charcoal/50 font-nunito-sans">
+            {book.language}{book.ageGroup ? ` · ${book.ageGroup}` : ''}
+          </p>
+          {book.rating && (
+            <div className="flex items-center gap-1 mt-auto pt-1">
+              <span className="text-amber text-xs" aria-hidden="true">★</span>
+              <span className="text-xs font-nunito font-bold text-charcoal/70">{book.rating.toFixed(1)}</span>
+            </div>
+          )}
+          {showCta && (
+            <button
+              onClick={e => { e.stopPropagation(); navigate(`/book/${book.id}`); }}
+              className={`mt-2 w-full text-white text-xs font-nunito font-bold rounded-full py-2 transition-colors ${cls.btn}`}
+            >{ctaLabel}</button>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   if (variant === 'portrait') {
     return (
@@ -77,7 +177,23 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
           transition: 'border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease',
         }}
       >
-        <BookCoverArt category={book.category} className="absolute-fill" style={{ position: 'absolute', inset: 0 }} />
+        {book.coverUrl ? (
+          <>
+            <img
+              src={book.coverUrl} alt=""
+              aria-hidden="true"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+            {/* Vignette so the bottom title/author stay legible over a photo cover
+                — BookCoverArt bakes this in itself; a real photo needs it added back. */}
+            <div style={{
+              position: 'absolute', inset: 0,
+              background: 'linear-gradient(0deg, rgba(10,10,15,0.75) 0%, rgba(10,10,15,0.15) 45%, rgba(10,10,15,0) 65%)',
+            }} />
+          </>
+        ) : (
+          <BookCoverArt category={book.category} className="absolute-fill" style={{ position: 'absolute', inset: 0 }} />
+        )}
 
         {/* Age-group / category badge */}
         {book.ageGroup && (

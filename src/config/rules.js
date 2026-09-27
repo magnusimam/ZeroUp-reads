@@ -83,3 +83,13 @@ export const READING_POINTS_PER_PAGE = 5;
 // get highlighted with a tap-to-define popover on a single page, so a dense
 // page of text doesn't turn into a wall of underlines.
 export const MAX_VOCABULARY_WORDS_PER_PAGE = 3;
+
+// My Downloads page (src/pages/OfflinePage.jsx) — the free on-device storage
+// allowance its usage bar measures against. offlineService.js already tracks
+// real bytes used (getStorageUsedBytes); this is just the ceiling that turns
+// that number into a percentage, since no account/plan system exists yet to
+// vary it per reader.
+export const OFFLINE_STORAGE_QUOTA_BYTES = 2 * 1024 * 1024 * 1024;
+
+// My Downloads' "Popular Downloads" row — how many titles it suggests.
+export const POPULAR_DOWNLOADS_COUNT = 6;

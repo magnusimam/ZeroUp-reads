@@ -10,6 +10,10 @@ module.exports = {
         green: "#3DBE8A",
         coral: "#FF6B6B",
         gold: "#D4AF37",
+        // Flat "tile" card palette addition for Technology/AI/Arts categories —
+        // the existing set (navy/amber/sky-blue/green/coral) reused for
+        // everything else already covers the rest without a new token.
+        violet: "#6C5FBC",
         cream: "#FFFBF0",
         charcoal: "#2D2D2D",
         // Warm dark accent for headings/labels that used to render as gold
@@ -43,6 +47,7 @@ module.exports = {
         "nunito-sans": ["Nunito Sans", "sans-serif"],
         cinzel: ["Cinzel", "serif"],
         playfair: ["Playfair Display", "serif"],
+        handwriting: ["Caveat", "cursive"],
       },
       borderRadius: {
         card: "16px",

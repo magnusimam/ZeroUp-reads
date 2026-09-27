@@ -10,10 +10,10 @@ export default function TestimonialsSection({ testimonials, books }) {
 
   return (
     <section className="max-w-content mx-auto w-full px-4 sm:px-6 py-12">
-      <h2 className="font-playfair font-bold text-2xl sm:text-3xl text-cocoa text-center mb-2">
+      <h2 className="font-nunito font-extrabold text-2xl sm:text-3xl text-center mb-2" style={{ color: 'var(--hero-ink)' }}>
         💛 Parent &amp; Teacher Picks
       </h2>
-      <p className="font-nunito-sans text-charcoal/50 text-sm text-center mb-10">
+      <p className="font-nunito-sans text-sm text-center mb-10" style={{ color: 'var(--hero-gray)' }}>
         Real words from the grown-ups who read along.
       </p>
 
@@ -26,7 +26,7 @@ export default function TestimonialsSection({ testimonials, books }) {
           return (
             <div
               key={t.id}
-              className={`rounded-3xl bg-white border-l-[6px] ${borderClass} border border-gold/15 p-6 flex flex-col gap-5 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all`}
+              className={`rounded-3xl bg-white border-l-[6px] ${borderClass} border-t border-r border-b border-black/5 p-6 flex flex-col gap-5 shadow-card hover:shadow-card-hover hover:-translate-y-1 transition-all`}
             >
               <div className="flex items-center gap-3">
                 <div
@@ -41,21 +41,22 @@ export default function TestimonialsSection({ testimonials, books }) {
                 </div>
               </div>
 
-              <p className="font-nunito-sans italic text-charcoal/75 text-sm leading-relaxed">
+              <p className="font-nunito-sans italic text-sm leading-relaxed" style={{ color: 'var(--hero-ink)', opacity: 0.85 }}>
                 <span aria-hidden="true">💬</span> “{t.quote}”
               </p>
 
               {book && (
                 <button
                   onClick={() => navigate(`/book/${book.id}`)}
-                  className="flex items-center gap-3 pt-4 border-t border-gold/15 text-left"
+                  className="flex items-center gap-3 pt-4 border-t text-left"
+                  style={{ borderColor: 'var(--hero-border)' }}
                 >
                   <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0">
                     <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-nunito font-semibold text-xs text-charcoal truncate">{book.title}</p>
-                    <span className="text-cocoa text-xs font-nunito font-bold">View Details</span>
+                    <p className="font-nunito font-semibold text-xs truncate" style={{ color: 'var(--hero-ink)' }}>{book.title}</p>
+                    <span className="text-xs font-nunito font-bold" style={{ color: 'var(--hero-orange)' }}>View Details</span>
                   </div>
                 </button>
               )}

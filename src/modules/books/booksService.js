@@ -7,6 +7,18 @@ import { isFeatureEnabled } from '../../config/featureFlags';
 const BOOKS_KEY = 'zeroup_books';
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
+// readAll() below caches the catalogue in localStorage so admin CRUD
+// (create/update/delete) persists across reloads. That means every browser
+// that ever called getBooks() once is now permanently stuck on whatever
+// MOCK_BOOKS looked like at that moment — edits to mockData.js (new books,
+// new coverUrl fields) silently never reach it. Bumping this version string
+// forces a one-time reseed from the current MOCK_BOOKS the next time this
+// loads; bump it again whenever mockData.js's seed content meaningfully
+// changes. (A real backend wouldn't need this — it's purely a side effect
+// of the mock catalogue's local-cache-first design.)
+const BOOKS_SEED_VERSION_KEY = 'zeroup_books_seed_version';
+const BOOKS_SEED_VERSION = '2025-09-27-cover-images-2';
+
 function realApiEnabled() {
   return isFeatureEnabled('realBooksApi') && Boolean(API_BASE_URL);
 }
@@ -30,6 +42,11 @@ async function adminApiRequest(path, options = {}) {
 }
 
 function readAll() {
+  if (localStorage.getItem(BOOKS_SEED_VERSION_KEY) !== BOOKS_SEED_VERSION) {
+    localStorage.setItem(BOOKS_KEY, JSON.stringify(MOCK_BOOKS));
+    localStorage.setItem(BOOKS_SEED_VERSION_KEY, BOOKS_SEED_VERSION);
+    return MOCK_BOOKS;
+  }
   const raw = localStorage.getItem(BOOKS_KEY);
   if (raw) return JSON.parse(raw);
   localStorage.setItem(BOOKS_KEY, JSON.stringify(MOCK_BOOKS));

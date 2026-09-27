@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 
-const TABS = ['Language', 'Level', 'Sort'];
+const TABS = ['Language', 'Age Group', 'Level', 'Sort'];
 
 function ChipOption({ label, active, onClick }) {
   return (
@@ -21,6 +21,9 @@ export default function FilterPanel({
   isOpen, onClose, initialTab = 'Language',
   language, setLanguage, languageOptions,
   level, setLevel, levelOptions,
+  ageGroup, setAgeGroup, ageGroupOptions,
+  offlineOnly, setOfflineOnly,
+  translatedOnly, setTranslatedOnly,
   sort, setSort, sortOptions,
   onClear,
 }) {
@@ -86,6 +89,19 @@ export default function FilterPanel({
           </div>
         )}
 
+        {activeTab === 'Age Group' && (
+          <div className="flex flex-wrap gap-2">
+            {ageGroupOptions.map(a => (
+              <ChipOption
+                key={a}
+                label={a}
+                active={ageGroup === a}
+                onClick={() => setAgeGroup(ageGroup === a ? null : a)}
+              />
+            ))}
+          </div>
+        )}
+
         {activeTab === 'Sort' && (
           <div className="flex flex-col gap-2">
             {sortOptions.map(opt => (
@@ -105,7 +121,18 @@ export default function FilterPanel({
           </div>
         )}
 
-        <div className="flex gap-3 mt-6 pt-5 border-t border-gold/15">
+        <div className="flex flex-col gap-3 mt-6 pt-5 border-t border-gold/15">
+          <label className="flex items-center justify-between text-sm font-nunito-sans text-charcoal/70">
+            ⬇️ Offline Available
+            <input type="checkbox" checked={offlineOnly} onChange={e => setOfflineOnly(e.target.checked)} className="w-4 h-4 accent-gold" />
+          </label>
+          <label className="flex items-center justify-between text-sm font-nunito-sans text-charcoal/70">
+            🌍 Translated Version
+            <input type="checkbox" checked={translatedOnly} onChange={e => setTranslatedOnly(e.target.checked)} className="w-4 h-4 accent-gold" />
+          </label>
+        </div>
+
+        <div className="flex gap-3 mt-4 pt-5 border-t border-gold/15">
           <button
             onClick={onClear}
             className="flex-1 py-3 rounded-xl border border-charcoal/15 text-charcoal/70 text-sm font-nunito font-semibold hover:border-gold/40 hover:text-cocoa transition-colors"

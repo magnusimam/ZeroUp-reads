@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import Navbar from '../../components/Navbar';
 import useLibraryFilters from './useLibraryFilters';
+import { preferCoveredBooks } from './libraryConfig';
 import useTranslateRequest from './useTranslateRequest';
 import * as booksService from '../books/booksService';
 import * as testimonialsService from './testimonialsService';
@@ -8,8 +10,8 @@ import * as recommendationsService from './recommendationsService';
 import { useAuth } from '../auth/AuthContext';
 import useContinueReading from '../reading/useContinueReading';
 
-import LibraryHeader from './components/LibraryHeader';
 import LibraryHero from './components/LibraryHero';
+import LibrarySidebar from './components/LibrarySidebar';
 import ContinueReadingSection from './components/ContinueReadingSection';
 import BestForYouCarousel from './components/BestForYouCarousel';
 import StoryBooksSection from './components/StoryBooksSection';
@@ -17,6 +19,7 @@ import EducationalBooksSection from './components/EducationalBooksSection';
 import EmptySearchState from './components/EmptySearchState';
 import TestimonialsSection from './components/TestimonialsSection';
 import OrderCTA from './components/OrderCTA';
+import LibraryFeatureHighlights from './components/LibraryFeatureHighlights';
 import LibraryFooter from './components/LibraryFooter';
 import TranslateRequestModal from './components/TranslateRequestModal';
 
@@ -56,6 +59,9 @@ export default function LibraryPage() {
     activeCategory, toggleCategory,
     language, setLanguage, languageOptions,
     level, setLevel, levelOptions,
+    ageGroup, setAgeGroup, ageGroupOptions,
+    offlineOnly, setOfflineOnly,
+    translatedOnly, setTranslatedOnly,
     sort, setSort,
     clearFilters,
     filtered,
@@ -91,9 +97,19 @@ export default function LibraryPage() {
   const educationalBooks = filtered.filter(b => b.isEducational);
   const noSearchResults = Boolean(search.trim()) && filtered.length === 0;
 
+  // Featured Books, Story Books and Educational Books all prefer titles with
+  // a real cover photo over the plain color+icon placeholder — most of the
+  // catalogue has no cover art yet, and these are the sections readers see
+  // by default. Skipped once a search/filter is active (hasActiveFilters),
+  // since a reader filtering wants the true matching results, not a
+  // cover-biased subset — same reasoning Featured Books already used.
+  const featuredBooks = preferCoveredBooks(recommendedBooks || books);
+  const storyBooksForDisplay = hasActiveFilters ? storyBooks : preferCoveredBooks(storyBooks);
+  const educationalBooksForDisplay = hasActiveFilters ? educationalBooks : preferCoveredBooks(educationalBooks);
+
   return (
-    <div className="min-h-screen flex flex-col bg-cream font-nunito-sans">
-      <LibraryHeader />
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--hero-cream)' }}>
+      <Navbar />
 
       <LibraryHero
         activeCategory={activeCategory}
@@ -106,35 +122,56 @@ export default function LibraryPage() {
         level={level}
         setLevel={setLevel}
         levelOptions={levelOptions}
+        ageGroup={ageGroup}
+        setAgeGroup={setAgeGroup}
+        ageGroupOptions={ageGroupOptions}
+        offlineOnly={offlineOnly}
+        setOfflineOnly={setOfflineOnly}
+        translatedOnly={translatedOnly}
+        setTranslatedOnly={setTranslatedOnly}
         sort={sort}
         setSort={setSort}
         onClearFilters={clearFilters}
       />
 
-      {!hasActiveFilters && (
-        <BestForYouCarousel
-          key={recommendedBooks ? 'recommended' : 'catalogue'}
-          books={recommendedBooks || books}
+      <div className="max-w-content mx-auto w-full px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-8 items-start">
+        <LibrarySidebar
+          language={language} setLanguage={setLanguage} languageOptions={languageOptions}
+          ageGroup={ageGroup} setAgeGroup={setAgeGroup} ageGroupOptions={ageGroupOptions}
+          activeCategory={activeCategory} onSelectCategory={toggleCategory}
+          level={level} setLevel={setLevel} levelOptions={levelOptions}
+          offlineOnly={offlineOnly} setOfflineOnly={setOfflineOnly}
+          translatedOnly={translatedOnly} setTranslatedOnly={setTranslatedOnly}
+          onClear={clearFilters}
         />
-      )}
 
-      {noSearchResults ? (
-        <EmptySearchState />
-      ) : (
-        <>
-          <StoryBooksSection
-            books={storyBooks}
-            viewAll={hasActiveFilters || typeFilter === 'story'}
-            onTranslateRequest={translateRequest.open}
-          />
+        <div className="flex-1 min-w-0 flex flex-col">
+          {!hasActiveFilters && (
+            <BestForYouCarousel
+              key={recommendedBooks ? 'recommended' : 'catalogue'}
+              books={featuredBooks}
+            />
+          )}
 
-          <EducationalBooksSection
-            books={educationalBooks}
-            viewAll={hasActiveFilters || typeFilter === 'educational'}
-            onTranslateRequest={translateRequest.open}
-          />
-        </>
-      )}
+          {noSearchResults ? (
+            <EmptySearchState />
+          ) : (
+            <>
+              <StoryBooksSection
+                books={storyBooksForDisplay}
+                viewAll={hasActiveFilters || typeFilter === 'story'}
+                onTranslateRequest={translateRequest.open}
+              />
+
+              <EducationalBooksSection
+                books={educationalBooksForDisplay}
+                viewAll={hasActiveFilters || typeFilter === 'educational'}
+                onTranslateRequest={translateRequest.open}
+              />
+            </>
+          )}
+        </div>
+      </div>
 
       <TestimonialsSection testimonials={testimonials} books={books} />
 
@@ -147,6 +184,8 @@ export default function LibraryPage() {
       )}
 
       <OrderCTA />
+
+      <LibraryFeatureHighlights />
 
       <LibraryFooter />
 
