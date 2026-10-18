@@ -30,7 +30,16 @@ export default function useReadingPage(bookId) {
   const book = (!online && offlineBook) ? offlineBook : (liveBook || offlineBook);
   const readingOffline = !online && Boolean(offlineBook);
 
-  const [pageIndex, setPageIndex] = useState(0);
+  // Resume where the reader left off — inProgress.currentPage is the
+  // 1-indexed page number recordProgress() below persists, so it needs -1 to
+  // become this 0-indexed pageIndex. Clamped in case the book's content
+  // length changed since that progress was recorded.
+  const [pageIndex, setPageIndex] = useState(() => {
+    const inProgress = book && userService.getProgress().inProgress?.[book.id];
+    if (!inProgress) return 0;
+    const lastPageIndex = Math.max((book.content?.length || 1) - 1, 0);
+    return Math.min(Math.max(inProgress.currentPage - 1, 0), lastPageIndex);
+  });
   const [fontSize, setFontSize] = useState(() => settingsService.getSettings().readerFontSize);
   const [nightMode, setNightMode] = useState(() => settingsService.getSettings().readerNightMode);
   const [saved, setSaved] = useState(() => bookmarksService.isBookmarked(bookId));
