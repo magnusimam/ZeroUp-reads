@@ -30,6 +30,16 @@ export default function RegisterPage() {
 
   const selectedRole = roles.find((r) => r.id === role);
 
+  function handleGoogleSignUp() {
+    if (authService.googleOAuthAvailable()) {
+      window.location.href = authService.googleOAuthStartUrl();
+    } else {
+      // No backend configured (local dev without backend/ running) — same
+      // "coming soon" no-op as LoginPage's Google button.
+      console.log('Google sign-in coming soon');
+    }
+  }
+
   function handleDetailsSubmit(e) {
     e.preventDefault();
     setError('');
@@ -138,6 +148,22 @@ export default function RegisterPage() {
                   Continue
                 </button>
               </form>
+
+              {/*--DIVIDER--*/}
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px bg-slate-200" />
+                <span className="text-xs text-slate-400">OR</span>
+                <div className="flex-1 h-px bg-slate-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGoogleSignUp}
+                className="w-full flex items-center justify-center gap-2 border border-slate-300 hover:bg-slate-50 text-slate-700 font-medium py-2.5 rounded-lg transition-colors"
+              >
+                <span className="text-lg">G</span>
+                Sign up with Google
+              </button>
 
               <p className="text-sm text-slate-500 text-center mt-6">
                 Already have an account?{' '}
