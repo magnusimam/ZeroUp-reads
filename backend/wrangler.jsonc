@@ -20,8 +20,8 @@
   },
   // Real D1 database, created under the zeroupacademy@gmail.com Cloudflare
   // account via `wrangler d1 create zeroup-reads-db` (region WEUR). Schema
-  // still needs to be applied with `wrangler d1 migrations apply
-  // zeroup-reads-db --remote` before this is queryable.
+  // is applied remotely — `wrangler d1 migrations apply zeroup-reads-db
+  // --remote` (no --env flag; that targets this top-level/production db).
   "d1_databases": [
     {
       "binding": "DB",
@@ -31,17 +31,27 @@
   ],
   "env": {
     "staging": {
+      // Named environments don't inherit top-level "vars" (wrangler warns on
+      // this) — GOOGLE_OAUTH_CLIENT_ID/OAUTH_REDIRECT_BASE_URL/
+      // OAUTH_FRONTEND_REDIRECT_URL are intentionally left off here rather
+      // than copied from production: this environment has no deployed
+      // Worker/redirect URI of its own registered with Google yet, so OAuth
+      // isn't wired for staging. `wrangler dev --env staging` and the D1
+      // database below work today; OAuth needs its own follow-up once a
+      // staging Worker is actually deployed.
       "vars": {
         "ENVIRONMENT": "staging"
       },
-      // Still a placeholder — no separate staging database exists yet.
-      // Run `wrangler d1 create zeroup-reads-db-staging` and drop its real
-      // id here if/when a staging environment is actually needed.
+      // Real staging D1 database (Stage 18), created via
+      // `wrangler d1 create zeroup-reads-db-staging` (region WEUR) —
+      // a separate database from production, same schema. Apply/update
+      // migrations here with `wrangler d1 migrations apply
+      // zeroup-reads-db-staging --remote --env staging`.
       "d1_databases": [
         {
           "binding": "DB",
           "database_name": "zeroup-reads-db-staging",
-          "database_id": "00000000-0000-0000-0000-000000000000"
+          "database_id": "5c5a262d-1229-4075-a621-d487b34dbec8"
         }
       ]
     }
