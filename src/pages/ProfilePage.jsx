@@ -1,150 +1,80 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../modules/auth/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
-import { getBookmarks } from '../modules/reading/bookmarksService';
-import * as booksService from '../modules/books/booksService';
-import * as userService from '../services/userService';
+import useProfileData from '../modules/profile/useProfileData';
+import ProfileHero from '../modules/profile/components/ProfileHero';
+import ProfileCard from '../modules/profile/components/ProfileCard';
+import ProfileTabs from '../modules/profile/components/ProfileTabs';
+import OverviewTab from '../modules/profile/components/OverviewTab';
+import MyBooksTab from '../modules/profile/components/MyBooksTab';
+import BookmarksTab from '../modules/profile/components/BookmarksTab';
+import ActivityTab from '../modules/profile/components/ActivityTab';
+import AchievementsTab from '../modules/profile/components/AchievementsTab';
+import SettingsTab from '../modules/profile/components/SettingsTab';
+import ProfileCTA from '../modules/profile/components/ProfileCTA';
 
 export default function ProfilePage() {
-  const { user, logout} = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  //Protect this page - if no user, redirect to login
   useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  } , [user, navigate]);
+    if (!user) navigate('/login');
+  }, [user, navigate]);
 
-  // Lets the Reader Dashboard's "Favourites" and "Recently Read" links jump
-  // straight to /profile#bookmarks / /profile#completed instead of
-  // duplicating either list on a second page (Modular Architecture — each
-  // lives in one place).
-  useEffect(() => {
-    if (window.location.hash) {
-      document.getElementById(window.location.hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, []);
+  const {
+    activeTab, setActiveTab,
+    progress, achievements,
+    continueReadingBooks, bookmarkedBooks, completedBooks,
+    genreBreakdown, weeklyActivity,
+    settings, updateSettings,
+    onboardingPrefs, currentTier,
+    nextBookAchievement, booksToNextAchievement,
+  } = useProfileData();
 
-  // don't render anything while redirecting
   if (!user) return null;
 
-  const initial = user.name.charAt(0).toUpperCase();
-
-  const books = booksService.getBooks();
-  const progress = userService.getProgress();
-  const bookmarkedBooks = books.filter(b => getBookmarks().includes(b.id));
-  const completedBooks = books.filter(b => progress.completedBookIds.includes(b.id));
-
-  const stats = [
-    { label: "Books completed", value: progress.booksCompleted },
-    { label: "Bookmarks", value: bookmarkedBooks.length },
-    { label: "Pages read", value: progress.pagesRead },
-  ];
-
+  function handleLogout() {
+    logout();
+    navigate('/');
+  }
 
   return (
-    <div className="bg-slate-50 min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--hero-cream)' }}>
       <Navbar />
 
-      <div className="flex-1 max-w-2xl mx-auto w-full px-6 py-12">
-        {/*-- PROFILE HEADER---*/}
-        <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
-          <div className="w-20 h-20 mx-auto rounded-full bg-teal-600 text-white text-2xl font-bold flex items-center justify-center">
-            {initial}
-          </div>
+      <ProfileHero />
+      <ProfileCard user={user} progress={progress} bookmarkCount={bookmarkedBooks.length} />
+      <ProfileTabs activeTab={activeTab} onChange={setActiveTab} />
 
-          <h1 className="text-xl font-bold text-slate-900 mt-4">
-            {user.name}
-          </h1>
-          <p className="text-sm text-slate-500">{user.email}</p>
-            {/* role badge */}
-            {user.role && (
-          <span className="inline-block mt-3 text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-full font-medium">
-            {user.role}
-          </span>
-            )}
-            {/* -- ORG NAME  IF EDUCATIONAL ORGANISATION */}
-            {user.orgName && (
-              <p className="text-sm text-slate-500 mt-1">
-                {user.orgName}
-              </p>
-            )}
+      <main className="max-w-content mx-auto w-full px-4 sm:px-6 py-6">
+        {activeTab === 'overview' && (
+          <OverviewTab
+            progress={progress}
+            currentTier={currentTier}
+            nextBookAchievement={nextBookAchievement}
+            booksToNextAchievement={booksToNextAchievement}
+            continueReadingBooks={continueReadingBooks}
+            achievements={achievements}
+            bookmarkedBooks={bookmarkedBooks}
+            settings={settings}
+            onboardingPrefs={onboardingPrefs}
+            onSwitchTab={setActiveTab}
+          />
+        )}
+        {activeTab === 'books' && (
+          <MyBooksTab continueReadingBooks={continueReadingBooks} completedBooks={completedBooks} />
+        )}
+        {activeTab === 'bookmarks' && <BookmarksTab bookmarkedBooks={bookmarkedBooks} />}
+        {activeTab === 'activity' && <ActivityTab weeklyActivity={weeklyActivity} genreBreakdown={genreBreakdown} />}
+        {activeTab === 'achievements' && <AchievementsTab achievements={achievements} />}
+        {activeTab === 'settings' && (
+          <SettingsTab settings={settings} updateSettings={updateSettings} onboardingPrefs={onboardingPrefs} onLogout={handleLogout} />
+        )}
+      </main>
 
-          <button 
-           onClick={() => {
-            logout();
-            navigate("/");
-           }}
-           className='mt-6 px-5 py-2 rounded-lg border border-red-200 text-sm font-medium text-red-500 hover:bg-red-50 transition-colors'>
-            Log Out
-           </button>
-           </div>
-
-        {/*-- STATS SECTION---*/}
-        <div className="grid grid-cols-3  gap-4 mt-6">
-          {stats.map((stat) =>(
-            <div
-            key={stat.label}
-            className="bg-white rounded-xl border border-slate-200 p-4 text-center"
-            >
-              <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-              <p className="text-xs text-slate-500 mt-1">{stat.label}</p>
-              </div>
-          ))}
-        </div>
-
-        {/*-- BOOKMARKS SECTION--*/}
-        <div id="bookmarks" className="mt-6">
-          <h2 className="text-lg font-bold text-slate-900 mb-3">My Bookmarks</h2>
-          {bookmarkedBooks.length === 0 ? (
-           <div className="bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400">
-              No bookmarks yet - books you save will show up here.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {bookmarkedBooks.map((book) => (
-                <Link
-                 key={book.id}
-                 to={`/read/${book.id}`}
-                   className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                  <p className="font-medium text-sm text-slate-900 truncate">{book.title}</p>
-                  <p className="text-xs text-slate-500 mt-1">{book.author}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-          </div>
-
-        {/*--- completed books ---*/}
-        <div id="completed" className='mt-6'>
-          <h2 className='text-lg font-bold text-slate-900 mb-3'>
-            Completed Books
-          </h2>
-          {completedBooks.length === 0 ? (
-            <div className='bg-white rounded-xl border border-slate-200 p-8 text-center text-sm text-slate-400'>
-              No reading history yet - finish a book and it will appear here.
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {completedBooks.map((book) => (
-                <Link
-                 key={book.id}
-                 to={`/read/${book.id}`}
-                   className="bg-white rounded-xl border border-slate-200 p-3 hover:shadow-md transition-shadow">
-                  <p className="font-medium text-sm text-slate-900 truncate">{book.title}</p>
-                  <p className="text-xs text-slate-500 mt-1">{book.author}</p>
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
-
-
-
-      </div>
+      <ProfileCTA />
 
       <Footer />
     </div>
