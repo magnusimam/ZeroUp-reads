@@ -3,7 +3,7 @@ import { PROFILE_TABS } from '../useProfileData';
 
 export default function ProfileTabs({ activeTab, onChange }) {
   return (
-    <div className="max-w-content mx-auto w-full px-4 sm:px-6 mt-6 flex flex-wrap gap-2 overflow-x-auto">
+    <div className="max-w-content mx-auto w-full px-4 sm:px-6 mt-6 flex flex-wrap gap-2 overflow-x-auto mobile-scroll-row">
       {PROFILE_TABS.map(tab => {
         const active = activeTab === tab.id;
         return (

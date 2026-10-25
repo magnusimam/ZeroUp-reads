@@ -9,10 +9,9 @@ export default function ExploreLanguages() {
       <h2 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', margin: '0 0 14px' }}>
         Explore in your language
       </h2>
-      {/* Mobile: clipped to 2 rows (max-height + overflow hidden) instead of
-          wrapping to a tall stack of lines; the "More" chip is pinned to the
-          front on mobile (CSS order) so it stays reachable even though most
-          language chips get clipped below the fold. */}
+      {/* Mobile: one swipeable line instead of wrapping to a tall stack (or
+          clipping chips); the "View all" chip is pinned to the front (CSS
+          order) so it's always the first thing in reach. */}
       <div className="explore-langs-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {POPULAR_LANGUAGES.map(({ name, color, flag }, i) => (
           <Link
@@ -63,7 +62,10 @@ export default function ExploreLanguages() {
 
       <style>{`
         @media (max-width: 640px) {
-          .explore-langs-row { max-height: 96px; overflow: hidden; }
+          /* one swipeable line: every chip reachable, none cut in half */
+          .explore-langs-row { flex-wrap: nowrap !important; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+          .explore-langs-row::-webkit-scrollbar { display: none; }
+          .explore-langs-row > a { flex-shrink: 0; white-space: nowrap; }
           .explore-langs-row .chip-pin-first { order: -1; }
         }
       `}</style>

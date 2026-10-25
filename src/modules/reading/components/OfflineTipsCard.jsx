@@ -11,26 +11,30 @@ const TIPS = [
 
 export default function OfflineTipsCard() {
   return (
-    <div className="rounded-3xl p-6 flex flex-col gap-4 h-full" style={{ background: '#EAF7EF' }}>
-      <h3 className="flex items-center gap-2 font-nunito font-extrabold text-base" style={{ color: 'var(--hero-ink)' }}>
-        <span aria-hidden="true">💡</span> Tips for Offline Reading
+    <div
+      className="rounded-3xl border border-[#E3EAF6] px-6 pt-5 flex flex-col gap-4 h-full overflow-hidden"
+      style={{ background: '#F5F8FF' }}
+    >
+      <h3 className="flex items-center gap-2 font-nunito font-extrabold text-lg" style={{ color: '#0B1F4D' }}>
+        <span className="text-2xl" aria-hidden="true">💡</span> Tips for Offline Reading
       </h3>
 
       <ul className="flex flex-col gap-2.5">
         {TIPS.map(tip => (
-          <li key={tip} className="flex items-start gap-2 font-nunito-sans text-sm" style={{ color: 'var(--hero-ink)' }}>
-            <CheckCircle2 size={16} className="shrink-0 mt-0.5" style={{ color: 'var(--hero-green)' }} />
+          <li key={tip} className="flex items-center gap-2.5 font-nunito-sans text-sm" style={{ color: '#2D3748' }}>
+            <CheckCircle2 size={19} className="shrink-0" fill="#05A75B" color="#fff" />
             {tip}
           </li>
         ))}
       </ul>
 
-      <div className="mt-auto pt-2 flex items-end justify-between gap-3">
-        <span className="text-3xl" aria-hidden="true">📚</span>
-        <p className="font-handwriting text-lg leading-tight text-right" style={{ color: 'var(--hero-ink)' }}>
-          Learn<br />anywhere! ♥
-        </p>
-      </div>
+      {/* Book stack + plant + "Learn anywhere!" note, from the design mockup. */}
+      <img
+        src="/images/downloads/downloads-tips-books.jpg"
+        alt=""
+        aria-hidden="true"
+        className="mt-auto -mx-6 w-[calc(100%+3rem)] max-w-none h-auto"
+      />
     </div>
   );
 }

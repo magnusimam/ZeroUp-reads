@@ -1,86 +1,63 @@
 import React from 'react';
-import { WifiOff, Library, Smartphone, ShieldCheck } from 'lucide-react';
+import { WifiOff, Library, TabletSmartphone, ShieldCheck } from 'lucide-react';
 
 const FEATURES = [
-  { icon: WifiOff, bg: '#FFE9E4', color: '#FF6B6B', label: 'Read Offline', desc: 'Anytime, anywhere' },
-  { icon: Library, bg: '#E7F9EF', color: '#2F7A26', label: 'Save for Later', desc: 'Build your library' },
-  { icon: Smartphone, bg: '#E8F2FF', color: '#2D6BE4', label: 'On Any Device', desc: 'Phone, tablet or computer' },
-  { icon: ShieldCheck, bg: '#E7F9EF', color: '#2F7A26', label: 'No Data Needed', desc: 'Keep learning always' },
+  { icon: WifiOff, bg: '#FFE9E4', color: '#F25C3B', label: 'Read Offline', desc: 'Anytime, anywhere' },
+  { icon: Library, bg: '#E3F6EC', color: '#2F9E5B', label: 'Save for Later', desc: 'Build your library' },
+  { icon: TabletSmartphone, bg: '#E6F0FF', color: '#1466E6', label: 'On Any Device', desc: 'Phone, tablet or computer' },
+  { icon: ShieldCheck, bg: '#E3F6EC', color: '#05A75B', label: 'No Data Needed', desc: 'Keep learning always' },
 ];
 
-// Reuses the Library page's hero photo — no dedicated "downloads" illustration
-// has been supplied yet, and this keeps the same reading-under-the-tree scene
-// as a stand-in rather than a mismatched placeholder.
+// The boy-with-tablet scene (incl. the "Good stories go everywhere!" note,
+// the bird and the DOWNLOAD/READ/LEARN/ANYWHERE signpost) is one illustration
+// cropped from the approved design mockup; its left edge is masked so it
+// melts into the hero's light background behind the copy.
 export default function DownloadsHero() {
   return (
-    <section className="relative w-full overflow-hidden">
-      <div className="relative w-full h-[300px] sm:h-[340px] lg:h-[380px]">
-        <img
-          src="/images/library-hero-reading.jpg"
-          alt="A child reading under a tree beside a friendly robot, with a village in the distance"
-          className="absolute inset-0 w-full h-full object-cover"
-          style={{ objectPosition: '62% center' }}
-        />
-        <div
-          className="absolute inset-0"
-          style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.65) 0%, rgba(255,255,255,0.35) 36%, rgba(255,255,255,0) 62%)' }}
-          aria-hidden="true"
-        />
+    <section
+      className="relative w-full overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #F3F8F1 0%, #FAFCF7 100%)' }}
+    >
+      <img
+        src="/images/downloads/downloads-hero-boy.jpg"
+        alt="A smiling boy reading on a tablet under a tree, beside a signpost reading Download, Read, Learn, Anywhere"
+        className="absolute inset-y-0 right-0 h-full w-full md:w-[62%] object-cover opacity-30 md:opacity-100"
+        style={{
+          objectPosition: 'right center',
+          WebkitMaskImage: 'linear-gradient(90deg, transparent 0%, #000 22%)',
+          maskImage: 'linear-gradient(90deg, transparent 0%, #000 22%)',
+        }}
+      />
 
-        <div
-          className="hidden sm:block absolute left-[36%] top-6 font-handwriting text-xl sm:text-2xl leading-tight"
-          style={{ color: 'var(--navy)', transform: 'rotate(-6deg)' }}
-          aria-hidden="true"
-        >
-          Good stories<br />go everywhere! <span style={{ color: 'var(--coral, #FF6B6B)' }}>♥</span>
-        </div>
+      <div className="relative max-w-content mx-auto w-full px-4 sm:px-6 py-10 md:py-0 md:h-[280px] flex items-center">
+        <div className="max-w-xl">
+          <h1 className="flex items-center gap-3 font-nunito font-extrabold text-4xl sm:text-[44px] leading-none">
+            <span className="text-4xl sm:text-[42px]" aria-hidden="true">📖</span>
+            <span style={{ color: '#0B1F4D' }}>My</span>
+            <span style={{ color: '#F26A1B' }}>Downloads</span>
+          </h1>
+          <p className="font-nunito-sans mt-3 text-[15px]" style={{ color: '#3B4660' }}>
+            Read your favourite books anytime, even without an internet connection.
+          </p>
 
-        {/* Wooden-sign flourish, standing in for the reference's carved plank
-            stack — CSS bars rather than a supplied illustration asset. */}
-        <div className="hidden md:flex flex-col gap-1.5 absolute right-4 lg:right-8 top-1/2 -translate-y-1/2">
-          {['DOWNLOAD', 'READ', 'LEARN', 'ANYWHERE'].map(word => (
-            <span
-              key={word}
-              className="font-nunito font-extrabold text-xs lg:text-sm text-center px-3 py-1.5 rounded shadow"
-              style={{ background: '#8A5A2F', color: '#FFF3E0', letterSpacing: '0.04em' }}
-            >
-              {word}
-            </span>
-          ))}
-        </div>
-
-        <div className="absolute inset-0 flex items-center">
-          <div className="max-w-content mx-auto w-full px-4 sm:px-6">
-            <div className="max-w-lg">
-              <h1 className="flex items-center gap-2 font-nunito font-extrabold text-4xl sm:text-5xl drop-shadow-sm">
-                <span aria-hidden="true">📥</span>
-                <span style={{ color: 'var(--navy)' }}>My</span>{' '}
-                <span style={{ color: 'var(--hero-orange)' }}>Downloads</span>
-              </h1>
-              <p className="font-nunito-sans mt-3 text-base drop-shadow-sm" style={{ color: 'var(--hero-gray)' }}>
-                Read your favourite books anytime, even without an internet connection.
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-7 max-w-xl">
-                {FEATURES.map(f => {
-                  const Icon = f.icon;
-                  return (
-                    <div key={f.label} className="bg-white/90 backdrop-blur rounded-2xl p-3 flex flex-col items-center text-center gap-1.5 shadow-card">
-                      <span
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
-                        style={{ background: f.bg, color: f.color }}
-                        aria-hidden="true"
-                      >
-                        <Icon size={18} />
-                      </span>
-                      <p className="font-nunito font-extrabold text-xs" style={{ color: 'var(--hero-ink)' }}>{f.label}</p>
-                      <p className="font-nunito-sans text-[11px]" style={{ color: 'var(--hero-gray)' }}>{f.desc}</p>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <ul className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 mt-6">
+            {FEATURES.map(f => {
+              const Icon = f.icon;
+              return (
+                <li key={f.label} className="flex flex-col items-start gap-1.5">
+                  <span
+                    className="w-[52px] h-[52px] rounded-full flex items-center justify-center shadow-[0_4px_12px_rgba(16,40,90,0.10)] ring-4 ring-white"
+                    style={{ background: f.bg, color: f.color }}
+                    aria-hidden="true"
+                  >
+                    <Icon size={24} strokeWidth={2.2} />
+                  </span>
+                  <p className="font-nunito font-extrabold text-[13px] mt-1" style={{ color: '#0B1F4D' }}>{f.label}</p>
+                  <p className="font-nunito-sans text-xs -mt-1" style={{ color: '#4A5568' }}>{f.desc}</p>
+                </li>
+              );
+            })}
+          </ul>
         </div>
       </div>
     </section>

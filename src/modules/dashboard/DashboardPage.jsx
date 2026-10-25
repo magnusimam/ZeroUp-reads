@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import useDashboardData from './useDashboardData';
-import DashboardSidebar from './components/DashboardSidebar';
+import DashboardSidebar, { DashboardMobileNav } from './components/DashboardSidebar';
 import DashboardTopBar from './components/DashboardTopBar';
 import DashboardHero from './components/DashboardHero';
 import StatsGrid from './components/StatsGrid';
@@ -52,6 +52,7 @@ export default function DashboardPage() {
       <DashboardSidebar streak={stats.streak} />
 
       <main style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <DashboardMobileNav />
         <DashboardTopBar
           search={search} onSearchChange={setSearch} preferredLanguage={preferredLanguage}
           user={user} readerLevel={readerLevel}
@@ -85,7 +86,10 @@ export default function DashboardPage() {
         }
         @media (max-width: 900px) {
           .dashboard-shell { flex-direction: column; padding: 16px !important; }
-          .dashboard-sidebar { width: 100% !important; position: static !important; }
+          /* !important: the sidebar's inline display:flex would otherwise win */
+          .dashboard-sidebar { display: none !important; }
+          .dashboard-mobile-nav { display: flex !important; }
+          .dashboard-mobile-nav::-webkit-scrollbar { display: none; }
           .hidden-mobile-account { display: none !important; }
         }
       `}</style>

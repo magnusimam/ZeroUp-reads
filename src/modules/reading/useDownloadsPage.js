@@ -3,23 +3,23 @@ import * as offlineService from './offlineService';
 import * as booksService from '../books/booksService';
 import * as eventBus from '../../utils/eventBus';
 import { sortBooks, preferCoveredBooks } from '../library/libraryConfig';
-import { OFFLINE_STORAGE_QUOTA_BYTES, POPULAR_DOWNLOADS_COUNT } from '../../config/rules';
+import { OFFLINE_STORAGE_QUOTA_BYTES, POPULAR_DOWNLOADS_COUNT, POPULAR_DOWNLOADS_FEATURED_SLOT } from '../../config/rules';
 
 export const DOWNLOAD_TABS = [
-  { id: 'all', label: 'All Downloads', icon: '▦' },
-  { id: 'books', label: 'Books', icon: '📖' },
+  { id: 'all', label: 'All Downloads' },
+  { id: 'books', label: 'Books' },
   // Audio narration, printable activity sheets and saved web articles aren't
   // real features yet (no data model backs any of them) — kept as visible,
   // clearly-empty tabs rather than pretending they work.
-  { id: 'audio', label: 'Audio Stories', icon: '🎧' },
-  { id: 'activities', label: 'Activity Sheets', icon: '📄' },
-  { id: 'articles', label: 'Saved Articles', icon: '🔖' },
+  { id: 'audio', label: 'Audio Stories' },
+  { id: 'activities', label: 'Activity Sheets' },
+  { id: 'articles', label: 'Saved Articles' },
 ];
 
 // Downloads page state: what's actually saved offline (real, per-device data
 // from offlineService), storage usage against the fixed quota, and a
 // "Popular Downloads" row to help an empty-handed reader start (Separation
-// of Concerns — OfflinePage stays presentational).
+// of Concerns — DownloadsPage stays presentational).
 export default function useDownloadsPage() {
   const [activeTab, setActiveTab] = useState('all');
   const [refreshTick, setRefreshTick] = useState(0);
@@ -53,6 +53,16 @@ export default function useDownloadsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshTick]);
 
+  // The top-rated title is the "Recommended" one; move it into the featured
+  // slot so the row reads like the design (it's no longer first).
+  const recommendedBookId = popularBooks[0]?.id ?? null;
+  const popularRow = useMemo(() => {
+    if (popularBooks.length < 2) return popularBooks;
+    const [top, ...rest] = popularBooks;
+    const slot = Math.min(POPULAR_DOWNLOADS_FEATURED_SLOT, rest.length);
+    return [...rest.slice(0, slot), top, ...rest.slice(slot)];
+  }, [popularBooks]);
+
   // "Books" and "All Downloads" both show the real downloaded list — books
   // are the only downloadable content type this app has today. The other
   // tabs stay genuinely empty rather than silently reusing the books list.
@@ -64,6 +74,6 @@ export default function useDownloadsPage() {
     activeTab, setActiveTab,
     downloadedEntries, downloadedBooks, visibleBooks,
     usedBytes, usedLabel, quotaLabel, usedPercent,
-    popularBooks,
+    popularBooks: popularRow, recommendedBookId,
   };
 }

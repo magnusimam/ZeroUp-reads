@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -14,11 +14,15 @@ import DiscoverSection from '../components/home/discover/DiscoverSection';
 import AiPoweredSection from '../components/home/aiPowered/AiPoweredSection';
 import PreservingWordsSection from '../components/home/preservingWords/PreservingWordsSection';
 
+// Minimum horizontal finger travel that counts as a hero-slider swipe.
+const SWIPE_THRESHOLD_PX = 40;
+
 export default function HomePage() {
   const { user } = useAuth();
   const [books] = useState(() => booksService.getBooks());
   const [heroLoaded, setHeroLoaded] = useState(false);
   const [activeSlide, setActiveSlide] = useState(0);
+  const touchStartX = useRef(null);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroLoaded(true), 50);
@@ -37,7 +41,9 @@ export default function HomePage() {
       subtext: 'Discover beautiful books written in African languages and made for every young reader.',
       buttons: [
         { label: '📖 Start Reading', to: '/library', variant: 'primary' },
-        { label: '🔍 Explore Library', to: '/library', variant: 'secondary' },
+        // Different job from "Start Reading": this slide's promise is "in
+        // their own language", so its second button opens Translate a Story.
+        { label: '🌍 Read in Your Language', to: '/translate', variant: 'secondary' },
       ],
     },
     {
@@ -61,8 +67,6 @@ export default function HomePage() {
     { icon: '💬', value: '500+',       label: 'Languages' },
     { icon: '📚', value: 'Thousands',  label: 'of Stories' },
     { icon: '🌍', value: 'Across',     label: 'Africa' },
-    { icon: '🤖', value: 'AI',         label: 'Powered' },
-    { icon: '🎁', value: 'Free',       label: "Children's Books" },
   ];
 
   return (
@@ -72,7 +76,17 @@ export default function HomePage() {
         <Navbar />
 
         <section className="hero2-section" style={{ background: 'var(--hero-cream)', padding: 0 }}>
-          <div className="hero2-stage" style={{
+          <div
+            className="hero2-stage"
+            onTouchStart={e => { touchStartX.current = e.touches[0].clientX; }}
+            onTouchEnd={e => {
+              if (touchStartX.current === null) return;
+              const dx = e.changedTouches[0].clientX - touchStartX.current;
+              touchStartX.current = null;
+              if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return;
+              setActiveSlide(s => (s + (dx < 0 ? 1 : heroSlides.length - 1)) % heroSlides.length);
+            }}
+            style={{
             position: 'relative',
             aspectRatio: '21 / 9',
             backgroundColor: 'var(--hero-cream)',
@@ -199,11 +213,11 @@ export default function HomePage() {
         </section>
       </div>
 
+      {/* ── WELCOME BACK / CONTINUE READING (logged-in only, real progress only) ── */}
+      {user && inProgressBooks.length > 0 && <ContinueReadingBanner user={user} books={inProgressBooks} />}
+
       {/* ── SEARCH BAR / EXPLORE LANGUAGES / READING LEVEL ──── */}
       <DiscoverSection />
-
-      {/* ── CONTINUE READING (logged-in only, real progress only) ───── */}
-      {user && inProgressBooks.length > 0 && <ContinueReadingBanner user={user} books={inProgressBooks} />}
 
       {/* ── HIGHLIGHTS (why we exist / languages map) ── */}
       <HighlightsSection />
@@ -267,7 +281,7 @@ export default function HomePage() {
           /* Taller (less cinematic) crop than desktop's 21/9 so the slide
              illustration and headline stay legible instead of being
              squeezed into a thin strip. */
-          .hero2-stage { aspect-ratio: 4 / 3 !important; }
+          .hero2-stage { aspect-ratio: auto !important; min-height: 440px; }
           /* Centered mobile text needs a scrim that's strong in the middle
              band (behind the text) and fades top/bottom, instead of the
              desktop left-to-right fade that leaves centered text exposed
@@ -281,11 +295,18 @@ export default function HomePage() {
               rgba(255,251,240,0.35) 100%
             ) !important;
           }
-          .hero2-row { padding: 32px 24px; }
+          /* Height follows the content (headline + text + buttons) instead of a
+             fixed crop that cut the buttons off; bottom padding leaves room for
+             the dots and the stat bar that overlaps the hero's bottom edge. */
+          .hero2-row { padding: 36px 20px 72px !important; height: auto !important; }
           .hero2-text { max-width: 100% !important; text-align: center; }
+          .hero2-text h1 { font-size: 27px !important; margin-bottom: 12px !important; }
+          .hero2-text p { font-size: 15px !important; margin-bottom: 20px !important; }
           .hero2-text > div { justify-content: center; }
-          .hero2-arrow { width: 36px; height: 36px; font-size: 16px; }
-          .hero2-dots { bottom: 60px; }
+          .hero2-text a { height: 44px !important; font-size: 15px !important; padding: 0 20px !important; }
+          /* Arrows sat on top of the headline on a phone — swipe + dots instead. */
+          .hero2-arrow { display: none !important; }
+          .hero2-dots { bottom: 36px; }
 
           /* Stat bar: one compact, horizontally-scrollable line instead of
              wrapping to several rows and pushing the slider down. */

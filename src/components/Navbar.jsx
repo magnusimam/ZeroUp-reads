@@ -4,6 +4,9 @@ import { useAuth } from '../modules/auth/AuthContext';
 import ExploreMegaMenu from './ExploreMegaMenu';
 import { getAvatarColor } from '../utils/avatarColor';
 import { effectiveRole, hasRole, ROLES, PUBLISHING_ROLES, TRANSLATION_ROLES } from '../config/roles';
+import { isFeatureEnabled } from '../config/featureFlags';
+import SiteLanguageSelector from '../modules/languages/SiteLanguageSelector';
+import TranslateStoryLink from '../modules/translation/components/TranslateStoryLink';
 
 // Open-book logo icon — blue pages, orange/red cover, matches the source design
 function BookLogoIcon() {
@@ -20,7 +23,7 @@ function BookLogoIcon() {
 
 function Logo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+    <div className="notranslate" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
       <BookLogoIcon />
       <div>
         <div style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 22, letterSpacing: '-0.3px', lineHeight: 1.1 }}>
@@ -97,11 +100,6 @@ function AvatarDropdown({ user, logout }) {
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
               onMouseLeave={e => e.currentTarget.style.background = 'none'}
             >📥 My Downloads</Link>
-            <Link to="/collections" onClick={() => setOpen(false)}
-              style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
-              onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
-              onMouseLeave={e => e.currentTarget.style.background = 'none'}
-            >📚 My Collections</Link>
             <Link to="/help" onClick={() => setOpen(false)}
               style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
               onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
@@ -115,7 +113,7 @@ function AvatarDropdown({ user, logout }) {
               >📝 Publishing Studio</Link>
             )}
             {hasRole(user, TRANSLATION_ROLES) && (
-              <Link to="/translate" onClick={() => setOpen(false)}
+              <Link to="/translator" onClick={() => setOpen(false)}
                 style={{ display: 'block', padding: '12px 16px', color: 'var(--charcoal)', textDecoration: 'none', fontSize: 15, fontFamily: 'Nunito Sans' }}
                 onMouseEnter={e => e.currentTarget.style.background = '#f5f5f5'}
                 onMouseLeave={e => e.currentTarget.style.background = 'none'}
@@ -169,8 +167,7 @@ export default function Navbar() {
   const navLinks = [
     { to: '/',                     label: 'Home',      icon: '🏠' },
     { to: '/library',              label: 'Explore',   icon: '🔍', mega: true },
-    { to: '/library',              label: 'Languages', icon: '🌐' },
-    { to: '/library?type=story',   label: 'Stories',   icon: '📖' },
+    { to: '/library?type=all',   label: 'Stories',   icon: '📖' },
     { to: '/about',                label: 'About',     icon: '❓' },
   ];
 
@@ -215,12 +212,8 @@ export default function Navbar() {
 
           {/* Right side — desktop */}
           <div style={{ display: 'flex', gap: 10, alignItems: 'center' }} className="hidden-mobile">
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              background: 'white', border: '1.5px solid var(--hero-border)',
-              borderRadius: 999, padding: '9px 14px',
-              fontFamily: 'Nunito', fontWeight: 700, fontSize: 15, color: 'var(--hero-ink)',
-            }}>🌐 EN <span style={{ fontSize: 11, color: 'var(--hero-gray)' }}>▾</span></div>
+            {isFeatureEnabled('bookMachineTranslation') && <TranslateStoryLink />}
+            {isFeatureEnabled('siteTranslation') && <SiteLanguageSelector />}
 
             {user ? (
               <AvatarDropdown user={user} logout={logout} />
@@ -299,11 +292,12 @@ export default function Navbar() {
             ><span aria-hidden="true">{link.icon}</span>{link.label}</Link>
           ))}
           <div style={{ height: 1, width: 60, background: 'var(--hero-border)' }} />
+          {isFeatureEnabled('bookMachineTranslation') && <TranslateStoryLink variant="mobile" />}
+          {isFeatureEnabled('siteTranslation') && <SiteLanguageSelector variant="mobile" />}
           {user ? (
             <>
               <Link to="/dashboard" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Dashboard</Link>
               <Link to="/profile" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Profile</Link>
-              <Link to="/collections" style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--hero-ink)', textDecoration: 'none' }}>My Collections</Link>
               <button onClick={() => { logout(); setMenuOpen(false); }} style={{ fontFamily: 'Nunito', fontWeight: 700, fontSize: 20, color: 'var(--coral)', background: 'none', border: 'none', cursor: 'pointer' }}>Log out</button>
             </>
           ) : (

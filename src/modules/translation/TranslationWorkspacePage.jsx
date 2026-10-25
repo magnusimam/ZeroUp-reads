@@ -45,7 +45,7 @@ export default function TranslationWorkspacePage() {
           <div className="text-center">
             <p className="text-4xl mb-4">📖</p>
             <h1 className="text-xl font-bold text-slate-900">Book not found</h1>
-            <Link to="/translate" className="text-teal-600 font-medium text-sm mt-3 inline-block">
+            <Link to="/translator" className="text-teal-600 font-medium text-sm mt-3 inline-block">
               ← Back to Translation Workspace
             </Link>
           </div>
@@ -76,7 +76,7 @@ export default function TranslationWorkspacePage() {
   }
 
   function handleLanguageChange(nextLanguage) {
-    if (nextLanguage) navigate(`/translate/${bookId}/${nextLanguage}`);
+    if (nextLanguage) navigate(`/translator/${bookId}/${nextLanguage}`);
   }
 
   function handleSubmit() {
@@ -134,7 +134,7 @@ export default function TranslationWorkspacePage() {
       <Navbar />
 
       <div className="max-w-6xl mx-auto w-full px-6 py-10 flex-1">
-        <Link to="/translate" className="inline-block text-sm text-teal-600 hover:text-teal-700 mb-6">
+        <Link to="/translator" className="inline-block text-sm text-teal-600 hover:text-teal-700 mb-6">
           ← Back to Translation Workspace
         </Link>
 

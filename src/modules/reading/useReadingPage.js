@@ -8,6 +8,9 @@ import * as settingsService from '../settings/settingsService';
 import * as bookmarksService from './bookmarksService';
 import * as notesService from './notesService';
 import useTranslateRequest from '../library/useTranslateRequest';
+import useBookTranslation from '../translation/useBookTranslation';
+import * as machineTranslationService from '../translation/machineTranslationService';
+import { isFeatureEnabled } from '../../config/featureFlags';
 import { pickVocabularyWords } from './vocabulary';
 import { getFunFact } from './funFacts';
 import { MAX_VOCABULARY_WORDS_PER_PAGE } from '../../config/rules';
@@ -89,9 +92,10 @@ export default function useReadingPage(bookId) {
 
   const funFact = useMemo(() => getFunFact(book, pageIndex), [book, pageIndex]);
 
-  const availableLanguages = book?.attributes?.availableLanguages?.length
-    ? book.attributes.availableLanguages
-    : book ? [book.language] : [];
+  // Interim machine translation of the current page (Translate button) —
+  // replaced by real AI translation later without touching this page.
+  const machineTranslationOn = isFeatureEnabled('bookMachineTranslation');
+  const translation = useBookTranslation(machineTranslationOn ? book?.content?.[pageIndex] : null, book?.language);
 
   function nextPage() {
     if (!isLastPage) {
@@ -153,10 +157,10 @@ export default function useReadingPage(bookId) {
     setSpeaking(true);
   }
 
-  function selectAvailableLanguage(language) {
+  // `code` null = back to the book's original language.
+  function chooseTranslation(code) {
     setTranslateMenuOpen(false);
-    if (language === book.language) return;
-    toast?.addToast(`Full in-language reading in ${language} is coming soon — try Listen for now.`, 'info');
+    machineTranslationService.setTargetLanguage(code);
   }
 
   function openMoreLanguages() {
@@ -179,11 +183,12 @@ export default function useReadingPage(bookId) {
     pageIndex, totalPages, isFirstPage, isLastPage, progressPercent,
     fontSize, nightMode, saved, pageBookmark, speaking,
     translateMenuOpen, settingsOpen, contentsOpen, notesOpen, focusMode,
-    notes, vocabularyMatches, funFact, availableLanguages, translateRequest,
+    notes, vocabularyMatches, funFact, translateRequest,
+    machineTranslationOn, translation,
     nextPage, prevPage, goToPage,
     increaseFont, decreaseFont, toggleNightMode,
     toggleSave, togglePageBookmark, toggleListen,
-    setTranslateMenuOpen, selectAvailableLanguage, openMoreLanguages,
+    setTranslateMenuOpen, chooseTranslation, openMoreLanguages,
     setSettingsOpen, setContentsOpen, setNotesOpen,
     setFocusMode: () => setFocusMode((v) => !v),
     addNote, deleteNote,

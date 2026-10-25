@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 // data), so it stays informational instead of linking to something that
 // doesn't exist.
 const FEATURES = [
-  { icon: '📶', label: 'Read Online or Offline', desc: 'Take your favourite stories anywhere, anytime.', bg: '#F1E9FF', color: '#6C5FBC', to: '/offline' },
+  { icon: '📶', label: 'Read Online or Offline', desc: 'Take your favourite stories anywhere, anytime.', bg: '#F1E9FF', color: '#6C5FBC', to: '/downloads' },
   { icon: '🎧', label: 'Listen as You Read', desc: 'Audio support — coming soon.', bg: '#E8F2FF', color: '#2D6BE4', to: null },
   { icon: '🌍', label: 'Translate with AI', desc: 'Request any book in your language.', bg: '#E7F9EF', color: '#2F7A26', to: '/help' },
   { icon: '🤝', label: 'Help Us Grow', desc: 'Suggest stories, volunteer, or partner with us.', bg: '#FFE9E4', color: '#FF6B6B', to: '/about' },

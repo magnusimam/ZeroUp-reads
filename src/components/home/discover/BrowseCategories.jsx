@@ -7,14 +7,13 @@ import { HOMEPAGE_CATEGORIES } from './discoverConfig';
 // read as one family of controls rather than two different UI patterns.
 export default function BrowseCategories() {
   return (
-    <div>
+    <div id="browse-categories" style={{ scrollMarginTop: 96 }}>
       <h2 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', margin: '0 0 14px' }}>
         Browse by category
       </h2>
-      {/* Mobile: clipped to 2 rows (max-height + overflow hidden) instead of
-          wrapping to a tall stack of lines; the "View all" chip is pinned to
-          the front on mobile (CSS order) so it always stays reachable even
-          though most category chips get clipped below the fold. */}
+      {/* Mobile: one swipeable line instead of wrapping to a tall stack (or
+          clipping chips); the "View all" chip is pinned to the front (CSS
+          order) so it's always the first thing in reach. */}
       <div className="browse-cats-row" style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
         {HOMEPAGE_CATEGORIES.map(({ name, color, icon }) => (
           <Link
@@ -52,7 +51,10 @@ export default function BrowseCategories() {
 
       <style>{`
         @media (max-width: 640px) {
-          .browse-cats-row { max-height: 88px; overflow: hidden; }
+          /* one swipeable line: every chip reachable, none cut in half */
+          .browse-cats-row { flex-wrap: nowrap !important; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+          .browse-cats-row::-webkit-scrollbar { display: none; }
+          .browse-cats-row > a { flex-shrink: 0; white-space: nowrap; }
           .browse-cats-row .chip-pin-first { order: -1; }
         }
       `}</style>

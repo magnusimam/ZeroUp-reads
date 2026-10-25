@@ -238,7 +238,7 @@ return (
                     Decline
                   </button>
                   <Link
-                    to={`/translate/${request.bookId}/${request.language}`}
+                    to={`/translator/${request.bookId}/${request.language}`}
                     className='px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium transition-colors'
                   >
                     Open in Workspace →

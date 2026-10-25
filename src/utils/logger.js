@@ -50,6 +50,8 @@ const TRACKED_EVENTS = [
   'note.added',
   'note.deleted',
   'notifications.read_all',
+  'site.language.changed',
+  'book.translation.target.changed',
 ];
 
 TRACKED_EVENTS.forEach((eventName) => {

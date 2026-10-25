@@ -28,7 +28,7 @@ export default function ContinueJourneyCard({ book }) {
         overflow: 'hidden', cursor: 'pointer', userSelect: 'none',
       }}
     >
-      <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+      <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'absolute', inset: 0 }} />
 
       <button
         onClick={(e) => { e.stopPropagation(); setBookmarked(toggleBookmark(book.id).includes(book.id)); }}

@@ -9,8 +9,7 @@ export const WORDS_PER_PAGE = 300;
 
 // How many books the homepage's "Popular Books" section shows in total
 // (sorted by reads, most first): 1 large featured card + the rest as a
-// compact list, same "top pick + list" layout as the Library page's
-// Educational Books section — used by PopularBooksSection.
+// compact list — used by PopularBooksSection.
 export const POPULAR_BOOKS_HIGHLIGHT_COUNT = 4;
 
 // Reader Dashboard (src/modules/dashboard) — how many "in progress" books the
@@ -84,7 +83,7 @@ export const READING_POINTS_PER_PAGE = 5;
 // page of text doesn't turn into a wall of underlines.
 export const MAX_VOCABULARY_WORDS_PER_PAGE = 3;
 
-// My Downloads page (src/pages/OfflinePage.jsx) — the free on-device storage
+// My Downloads page (src/modules/reading/DownloadsPage.jsx) — the free on-device storage
 // allowance its usage bar measures against. offlineService.js already tracks
 // real bytes used (getStorageUsedBytes); this is just the ceiling that turns
 // that number into a percentage, since no account/plan system exists yet to
@@ -93,3 +92,7 @@ export const OFFLINE_STORAGE_QUOTA_BYTES = 2 * 1024 * 1024 * 1024;
 
 // My Downloads' "Popular Downloads" row — how many titles it suggests.
 export const POPULAR_DOWNLOADS_COUNT = 6;
+
+// Which position in that row the top-rated title sits in, shown larger with a
+// "Recommended" badge (0-based; the design centres it in the visible row).
+export const POPULAR_DOWNLOADS_FEATURED_SLOT = 2;

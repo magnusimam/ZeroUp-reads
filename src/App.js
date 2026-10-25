@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
 
 // Pages
@@ -28,7 +28,6 @@ import SuggestBookPage from './modules/help/SuggestBookPage';
 import FeedbackPage from './modules/help/FeedbackPage';
 import AboutPage from './pages/AboutPage';
 import OnboardingPage from './modules/onboarding/OnboardingPage';
-import OfflinePage from './pages/OfflinePage';
 import NotFoundPage from './pages/NotFoundPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
@@ -45,12 +44,12 @@ import PublishingDashboardPage from './modules/publishing/PublishingDashboardPag
 import NewDraftPage from './modules/publishing/NewDraftPage';
 import SubmissionDetailPage from './modules/publishing/SubmissionDetailPage';
 import TranslationHubPage from './modules/translation/TranslationHubPage';
+import TranslatePage from './modules/translation/TranslatePage';
 import TranslationWorkspacePage from './modules/translation/TranslationWorkspacePage';
 import DownloadsPage from './modules/reading/DownloadsPage';
 import AuthorPage from './modules/books/AuthorPage';
+import ParentsTeachersPage from './modules/library/ParentsTeachersPage';
 import IllustratorPage from './modules/books/IllustratorPage';
-import CollectionsPage from './modules/library/CollectionsPage';
-import CollectionDetailPage from './modules/library/CollectionDetailPage';
 
 function App() {
   return (
@@ -73,10 +72,9 @@ function App() {
               <Route path="/book/:bookId"      element={<BookDetailPage />} />
               <Route path="/read/:bookId"      element={<ReadingPage />} />
               <Route path="/downloads"         element={<DownloadsPage />} />
+              <Route path="/parents-teachers"  element={<ParentsTeachersPage />} />
               <Route path="/authors/:id"       element={<AuthorPage />} />
               <Route path="/illustrators/:id"  element={<IllustratorPage />} />
-              <Route path="/collections"       element={<CollectionsPage />} />
-              <Route path="/collections/:id"   element={<CollectionDetailPage />} />
               <Route path="/profile"           element={<ProfilePage />} />
               <Route path="/dashboard"         element={<DashboardPage />} />
               <Route path="/settings"          element={<SettingsPage />} />
@@ -92,11 +90,12 @@ function App() {
               <Route path="/publishing"        element={<RequireRole allow={PUBLISHING_ROLES}><PublishingDashboardPage /></RequireRole>} />
               <Route path="/publishing/new"    element={<RequireRole allow={PUBLISHING_ROLES}><NewDraftPage /></RequireRole>} />
               <Route path="/publishing/:id"    element={<RequireRole allow={PUBLISHING_ROLES}><SubmissionDetailPage /></RequireRole>} />
-              <Route path="/translate"                    element={<RequireRole allow={TRANSLATION_ROLES}><TranslationHubPage /></RequireRole>} />
-              <Route path="/translate/:bookId/:language"  element={<RequireRole allow={TRANSLATION_ROLES}><TranslationWorkspacePage /></RequireRole>} />
+              <Route path="/translate"                     element={<TranslatePage />} />
+              <Route path="/translator"                    element={<RequireRole allow={TRANSLATION_ROLES}><TranslationHubPage /></RequireRole>} />
+              <Route path="/translator/:bookId/:language"  element={<RequireRole allow={TRANSLATION_ROLES}><TranslationWorkspacePage /></RequireRole>} />
               <Route path="/about"             element={<AboutPage />} />
               <Route path="/welcome"           element={<OnboardingPage />} />
-              <Route path="/offline"           element={<OfflinePage />} />
+              <Route path="/offline"           element={<Navigate to="/downloads" replace />} />
               <Route path="/privacy"           element={<PrivacyPage />} />
               <Route path="/terms"             element={<TermsPage />} />
               <Route path="*"                  element={<NotFoundPage />} />

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 // Illustrated cover treatment shared by every book-facing surface (BookCard's
 // portrait variant, carousel, testimonial thumbnails, educational cards) so a
@@ -198,8 +198,27 @@ const DEFAULT_THEME = {
   icon: <circle cx="50" cy="50" r="30" />,
 };
 
-export default function BookCoverArt({ category, className = '', style = {} }) {
+// `coverUrl` (book.coverUrl): when a book has real cover artwork, show that
+// photo instead of the illustrated category placeholder — every surface that
+// draws a cover goes through here, so they all switch to real covers at once.
+// Falls back to the illustration if the image is missing or fails to load.
+export default function BookCoverArt({ category, coverUrl, alt = '', className = '', style = {} }) {
   const theme = THEMES[category] || DEFAULT_THEME;
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => { setImageFailed(false); }, [coverUrl]);
+
+  if (coverUrl && !imageFailed) {
+    return (
+      <img
+        src={coverUrl}
+        alt={alt}
+        onError={() => setImageFailed(true)}
+        className={className}
+        style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'cover', display: 'block', ...style }}
+      />
+    );
+  }
 
   return (
     <div

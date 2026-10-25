@@ -45,14 +45,14 @@ export default function Footer() {
       fontFamily: 'Nunito Sans, sans-serif',
     }}>
       {/* Main footer columns */}
-      <div className="container" style={{ padding: '56px 64px 32px' }}>
-        <div style={{
+      <div className="container footer-main" style={{ padding: '56px 64px 32px' }}>
+        <div className="footer-grid" style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
           gap: 40,
         }}>
           {/* Col 1: Logo + Mission + Social */}
-          <div>
+          <div className="footer-wide">
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
               <div style={{
                 width: 40, height: 40, borderRadius: 10,
@@ -114,7 +114,7 @@ export default function Footer() {
           </div>
 
           {/* Col 4: Stay Updated */}
-          <div>
+          <div className="footer-wide">
             <h4 style={{ color: 'var(--amber)', fontFamily: 'Nunito', fontWeight: 700, fontSize: 16, margin: '0 0 18px' }}>Stay Updated</h4>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.65)', lineHeight: 1.6, margin: '0 0 14px' }}>
               Get new books, updates and learning tips.
@@ -157,6 +157,21 @@ export default function Footer() {
           </p>
         </div>
       </div>
+      {/* Phones: normal page margins (the 64px desktop side padding left the
+          content indented), brand + newsletter full width, the two link
+          lists side by side instead of one long column. */}
+      <style>{}</style>
+
+      {/* Phones: normal page margins (the 64px desktop side padding left the
+          content indented), brand + newsletter full width, and the two link
+          lists side by side instead of one long column. */}
+      <style>{`
+        @media (max-width: 640px) {
+          .footer-main { padding: 40px 20px 24px !important; }
+          .footer-grid { grid-template-columns: 1fr 1fr !important; gap: 28px 20px !important; }
+          .footer-grid .footer-wide { grid-column: 1 / -1; }
+        }
+      `}</style>
     </footer>
   );
 }

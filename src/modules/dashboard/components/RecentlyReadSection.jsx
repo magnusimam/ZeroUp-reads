@@ -21,7 +21,7 @@ export default function RecentlyReadSection({ books }) {
               display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
             }}>
               <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
-                <BookCoverArt category={book.category} style={{ position: 'relative' }} />
+                <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'relative' }} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p style={{

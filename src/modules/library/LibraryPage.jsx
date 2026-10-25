@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import useLibraryFilters from './useLibraryFilters';
-import { preferCoveredBooks } from './libraryConfig';
+import { preferCoveredBooks, SORT_OPTIONS, describeResults } from './libraryConfig';
 import useTranslateRequest from './useTranslateRequest';
 import * as booksService from '../books/booksService';
 import * as testimonialsService from './testimonialsService';
@@ -13,9 +13,9 @@ import useContinueReading from '../reading/useContinueReading';
 import LibraryHero from './components/LibraryHero';
 import LibrarySidebar from './components/LibrarySidebar';
 import ContinueReadingSection from './components/ContinueReadingSection';
+import AudienceCards from './components/AudienceCards';
 import BestForYouCarousel from './components/BestForYouCarousel';
-import StoryBooksSection from './components/StoryBooksSection';
-import EducationalBooksSection from './components/EducationalBooksSection';
+import AllBooksSection from './components/AllBooksSection';
 import EmptySearchState from './components/EmptySearchState';
 import TestimonialsSection from './components/TestimonialsSection';
 import OrderCTA from './components/OrderCTA';
@@ -25,7 +25,10 @@ import TranslateRequestModal from './components/TranslateRequestModal';
 
 export default function LibraryPage() {
   const [searchParams] = useSearchParams();
-  const typeFilter = searchParams.get('type'); // 'story' | 'educational' | null
+  // 'all' — plus the old 'story' / 'educational' values from before the two
+  // sections merged, so existing links still land on the book list.
+  const typeFilter = searchParams.get('type');
+  const showAllBooks = ['all', 'story', 'educational'].includes(typeFilter);
   const { user } = useAuth();
 
   // Re-reads on every mount, so an admin upload/delete is reflected the next
@@ -69,43 +72,52 @@ export default function LibraryPage() {
   } = useLibraryFilters(books);
 
   useEffect(() => {
-    const anchorId = typeFilter === 'story' ? 'story-books'
-      : typeFilter === 'educational' ? 'educational-books'
-      : null;
-    if (anchorId) {
-      document.getElementById(anchorId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (showAllBooks) {
+      document.getElementById('all-books')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [typeFilter]);
+  }, [showAllBooks]);
 
-  // Hands off the homepage's "Find a story" card (search/language/level/topic
-  // selects, popular-language chips, reading-level cards) into these same
-  // filters instead of that card re-implementing its own filter logic —
-  // one filter implementation, entered from two places.
+  // Hands off the homepage's search bar, language/category chips and
+  // reading-level cards, Popular Books "View all" and Explore → Popular Books
+  // (?search= / ?language= / ?level= / ?category= / ?sort=) into these same
+  // filters instead of each entry point re-implementing filter logic.
+  // Re-runs whenever the address changes (not just on first load), so a
+  // link clicked while already on the Library still applies. The reader
+  // asked for something specific, so the results are scrolled into view
+  // first — not the header, "Keep Going" or the Featured picks.
+  const queryKey = searchParams.toString();
   useEffect(() => {
     const qSearch = searchParams.get('search');
     const qLanguage = searchParams.get('language');
     const qLevel = searchParams.get('level');
     const qCategory = searchParams.get('category');
-    if (qSearch) setSearch(qSearch);
+    const qSort = searchParams.get('sort');
+    if (!qSearch && !qLanguage && !qLevel && !qCategory && !qSort) return undefined;
+
+    clearFilters();
+    setSearch(qSearch || '');
     if (qLanguage) setLanguage(qLanguage);
     if (qLevel) setLevel(qLevel);
     if (qCategory) toggleCategory(qCategory);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (qSort && SORT_OPTIONS.some(o => o.value === qSort)) setSort(qSort);
 
-  const storyBooks = filtered.filter(b => !b.isEducational);
-  const educationalBooks = filtered.filter(b => b.isEducational);
+    const timer = setTimeout(() => {
+      document.getElementById('all-books')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryKey]);
+
   const noSearchResults = Boolean(search.trim()) && filtered.length === 0;
 
-  // Featured Books, Story Books and Educational Books all prefer titles with
-  // a real cover photo over the plain color+icon placeholder — most of the
-  // catalogue has no cover art yet, and these are the sections readers see
-  // by default. Skipped once a search/filter is active (hasActiveFilters),
-  // since a reader filtering wants the true matching results, not a
-  // cover-biased subset — same reasoning Featured Books already used.
+  // Featured Books and All Books prefer titles with a real cover photo over
+  // the plain color+icon placeholder — most of the catalogue has no cover art
+  // yet, and these are the sections readers see by default. Skipped once a
+  // search/filter is active (hasActiveFilters), or when the reader asked for
+  // the full list, since then they want the true matching results, not a
+  // cover-biased subset.
   const featuredBooks = preferCoveredBooks(recommendedBooks || books);
-  const storyBooksForDisplay = hasActiveFilters ? storyBooks : preferCoveredBooks(storyBooks);
-  const educationalBooksForDisplay = hasActiveFilters ? educationalBooks : preferCoveredBooks(educationalBooks);
+  const allBooksForDisplay = hasActiveFilters || showAllBooks ? filtered : preferCoveredBooks(filtered);
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--hero-cream)' }}>
@@ -134,6 +146,20 @@ export default function LibraryPage() {
         onClearFilters={clearFilters}
       />
 
+      {/* Returning readers: "pick up where you left off" comes first, right
+          under the header (renders nothing if no book is in progress).
+          While a search/filter is active the results take the top spot
+          instead, so these step aside (they're back once filters clear). */}
+      {user && !hasActiveFilters && (
+        <ContinueReadingSection
+          userName={user.name}
+          books={continueReadingBooks}
+          onTranslateRequest={translateRequest.open}
+        />
+      )}
+
+      {!hasActiveFilters && <AudienceCards />}
+
       <div className="max-w-content mx-auto w-full px-4 sm:px-6 py-8 flex flex-col lg:flex-row gap-8 items-start">
         <LibrarySidebar
           language={language} setLanguage={setLanguage} languageOptions={languageOptions}
@@ -156,32 +182,18 @@ export default function LibraryPage() {
           {noSearchResults ? (
             <EmptySearchState />
           ) : (
-            <>
-              <StoryBooksSection
-                books={storyBooksForDisplay}
-                viewAll={hasActiveFilters || typeFilter === 'story'}
-                onTranslateRequest={translateRequest.open}
-              />
-
-              <EducationalBooksSection
-                books={educationalBooksForDisplay}
-                viewAll={hasActiveFilters || typeFilter === 'educational'}
-                onTranslateRequest={translateRequest.open}
-              />
-            </>
+            <AllBooksSection
+              books={allBooksForDisplay}
+              viewAll={hasActiveFilters || showAllBooks}
+              resultsTitle={hasActiveFilters ? describeResults({ search, language, level, category: activeCategory, sort }) : null}
+              onClearFilters={() => { clearFilters(); setSearch(''); }}
+              onTranslateRequest={translateRequest.open}
+            />
           )}
         </div>
       </div>
 
       <TestimonialsSection testimonials={testimonials} books={books} />
-
-      {user && (
-        <ContinueReadingSection
-          userName={user.name}
-          books={continueReadingBooks}
-          onTranslateRequest={translateRequest.open}
-        />
-      )}
 
       <OrderCTA />
 

@@ -199,7 +199,7 @@ function QuickActionsCard() {
 
   const ACTIONS = [
     { label: 'Explore New Books', icon: BookOpen, bg: '#E7F9EF', color: 'var(--hero-green)', to: '/library' },
-    { label: 'Download for Offline Reading', icon: Download, bg: '#E8F2FF', color: 'var(--sky-blue, #2D6BE4)', to: '/offline' },
+    { label: 'Download for Offline Reading', icon: Download, bg: '#E8F2FF', color: 'var(--sky-blue, #2D6BE4)', to: '/downloads' },
     { label: 'Update Profile', icon: UserRound, bg: '#FFE9E4', color: 'var(--hero-orange)', to: '/settings' },
     { label: 'Invite a Friend', icon: Users, bg: '#F1E9FF', color: '#6C5FBC', onClick: inviteFriend },
   ];

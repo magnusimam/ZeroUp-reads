@@ -14,7 +14,6 @@ import DownloadButton from '../reading/components/DownloadButton';
 import useBookDetail from './useBookDetail';
 import useTranslateRequest from '../library/useTranslateRequest';
 import TranslateRequestModal from '../library/components/TranslateRequestModal';
-import AddToCollectionButton from '../library/components/AddToCollectionButton';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../auth/AuthContext';
 import { isFeatureEnabled } from '../../config/featureFlags';
@@ -211,7 +210,7 @@ export default function BookDetailPage() {
   const actionButtons = [
     { key: 'read', label: 'Read Now', icon: BookOpen, onClick: () => navigate(`/read/${book.id}`), className: 'bg-story-orange text-white shadow-[0_10px_28px_rgba(255,138,30,0.35)] hover:bg-story-orange-dark' },
     { key: 'ai', label: 'Listen with AI', icon: Headphones, onClick: handleListenWithAI, className: 'bg-story-lavender text-story-navy hover:brightness-95' },
-    { key: 'translate', label: 'Translate', icon: Globe, onClick: () => translateRequest.open(book), className: 'bg-story-mint text-story-navy hover:brightness-95' },
+    { key: 'translate', label: 'Translate this story', icon: Globe, onClick: () => navigate(`/translate?book=${book.id}`), className: 'bg-story-mint text-story-navy hover:brightness-95' },
     { key: 'download', label: 'Download', icon: Download, onClick: handleDownload, className: 'bg-story-yellow text-story-navy hover:brightness-95' },
     { key: 'save', label: 'Save', icon: Heart, onClick: handleSave, className: `bg-white border-2 border-story-navy/10 text-story-navy hover:border-story-orange/40 ${favourited ? 'text-coral' : ''}`, filled: favourited },
   ];
@@ -240,13 +239,19 @@ export default function BookDetailPage() {
             className="relative mx-auto lg:mx-0 w-full max-w-[320px]"
           >
             <div className="relative rounded-3xl overflow-hidden shadow-story-float aspect-[3/4] transition-transform duration-300 hover:-translate-y-1">
-              <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
-              <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-                <span className="font-playfair text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">
-                  {book.title}
-                </span>
-              </div>
-              {tagline && (
+              <BookCoverArt category={book.category} coverUrl={book.coverUrl} alt={`${book.title} cover`} style={{ position: 'absolute', inset: 0 }} />
+              {/* Real cover art already shows the title; only the illustrated
+                  placeholder needs it written on top. */}
+              {!book.coverUrl && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+                  <span className="font-playfair text-2xl sm:text-3xl font-bold text-white leading-tight drop-shadow-lg">
+                    {book.title}
+                  </span>
+                </div>
+              )}
+              {/* Real cover art has its own printed text, so the tagline
+                  caption only goes over the illustrated placeholder. */}
+              {tagline && !book.coverUrl && (
                 <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-5 pt-10 pb-4">
                   <p className="text-white/90 text-xs font-nunito font-bold text-center leading-snug">{tagline}</p>
                 </div>
@@ -298,20 +303,20 @@ export default function BookDetailPage() {
               <p className="text-ink-secondary leading-relaxed max-w-2xl mt-1">{book.description}</p>
             )}
 
-            {/* Large rounded pill action buttons */}
-            <div className="flex flex-wrap gap-3 mt-3">
+            {/* Large rounded pill action buttons — a tidy 2-column grid on
+                phones (Read Now full width), a wrapping row from sm: up. */}
+            <div className="grid grid-cols-2 gap-2.5 mt-3 sm:flex sm:flex-wrap sm:gap-3">
               {actionButtons.map(({ key, label, icon: Icon, onClick, className, filled }) => (
                 <button
                   key={key}
                   onClick={onClick}
-                  className={`inline-flex items-center justify-center gap-2 rounded-full min-h-[52px] px-6 font-nunito font-bold text-[15px] transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] ${className}`}
+                  className={`inline-flex items-center justify-center gap-2 rounded-full min-h-[48px] sm:min-h-[52px] px-3 sm:px-6 font-nunito font-bold text-[14px] sm:text-[15px] transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] ${key === 'read' ? 'col-span-2' : ''} ${className}`}
                 >
                   <Icon size={18} fill={filled ? 'currentColor' : 'none'} />
                   {label}
                 </button>
               ))}
               <DownloadButton book={book} />
-              <AddToCollectionButton book={book} />
             </div>
           </motion.div>
         </div>
@@ -333,7 +338,7 @@ export default function BookDetailPage() {
               </h2>
               <div className="flex flex-col sm:flex-row gap-5">
                 <div className="relative w-full sm:w-40 h-40 shrink-0 rounded-2xl overflow-hidden shadow-story-card">
-                  <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+                  <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'absolute', inset: 0 }} />
                 </div>
                 <div className="flex-1">
                   <p className="text-ink-secondary leading-relaxed">{book.content[0]}</p>

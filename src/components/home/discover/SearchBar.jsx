@@ -45,7 +45,7 @@ function SearchResultRow({ book, onSelect }) {
       onMouseLeave={(e) => { e.currentTarget.style.background = 'white'; }}
     >
       <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
-        <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+        <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'absolute', inset: 0 }} />
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>

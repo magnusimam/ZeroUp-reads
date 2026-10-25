@@ -54,7 +54,7 @@ export default function TranslationHubPage() {
               {pendingRequests.map((request) => (
                 <Link
                   key={request.id}
-                  to={`/translate/${request.bookId}/${request.language}`}
+                  to={`/translator/${request.bookId}/${request.language}`}
                   className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                 >
                   <div className="min-w-0">
@@ -82,7 +82,7 @@ export default function TranslationHubPage() {
               {myDrafts.map((draft) => (
                 <Link
                   key={draft.id}
-                  to={`/translate/${draft.bookId}/${draft.targetLanguage}`}
+                  to={`/translator/${draft.bookId}/${draft.targetLanguage}`}
                   className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                 >
                   <div className="min-w-0">
@@ -114,7 +114,7 @@ export default function TranslationHubPage() {
                 {reviewQueue.map((draft) => (
                   <Link
                     key={draft.id}
-                    to={`/translate/${draft.bookId}/${draft.targetLanguage}`}
+                    to={`/translator/${draft.bookId}/${draft.targetLanguage}`}
                     className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                   >
                     <div className="min-w-0">

@@ -1,8 +1,7 @@
 import React from 'react';
 
-// Shown instead of the Story/Educational sections once a search returns zero
-// books across the whole catalogue, so a reader sees one clear message
-// instead of two separate "no matches" notes stacked on top of each other.
+// Shown instead of the All Books section once a search returns zero books
+// across the whole catalogue, with a clearer message than an empty grid.
 export default function EmptySearchState() {
   return (
     <section className="max-w-content mx-auto w-full px-4 sm:px-6 py-20 text-center">

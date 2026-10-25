@@ -20,9 +20,8 @@ const LANGUAGE_PILL_CLASSES = {
 };
 const DEFAULT_PILL_CLASS = 'bg-navy/12 text-navy';
 
-// Same "featured card + compact list" layout as the Library page's
-// Educational Books section (its "⭐ Top Pick" featured card), so Popular
-// Books reads as the same visual pattern instead of its own one-off design.
+// "Featured card + compact list" layout: one "⭐ Top Pick" card plus the
+// next most-read titles.
 export default function PopularBooksSection({ books }) {
   const navigate = useNavigate();
 
@@ -40,7 +39,7 @@ export default function PopularBooksSection({ books }) {
           <p className="font-nunito-sans text-charcoal/50 text-sm mt-1">See what other children love</p>
         </div>
         <Link
-          to="/library"
+          to="/library?sort=reads"
           className="font-nunito font-bold text-sm text-cocoa hover:text-coral transition-colors whitespace-nowrap mt-1"
         >
           View all →
@@ -54,7 +53,7 @@ export default function PopularBooksSection({ books }) {
           onClick={() => navigate(`/read/${featuredBook.id}`)}
         >
           <div className="relative h-48 sm:h-full min-h-[220px]">
-            <BookCoverArt category={featuredBook.category} style={{ position: 'absolute', inset: 0 }} />
+            <BookCoverArt category={featuredBook.category} coverUrl={featuredBook.coverUrl} alt={`${featuredBook.title} cover`} style={{ position: 'absolute', inset: 0 }} />
           </div>
           <div className="p-6 sm:p-8 flex flex-col justify-center">
             <div className="flex items-center gap-2 mb-3 flex-wrap">
@@ -94,7 +93,7 @@ export default function PopularBooksSection({ books }) {
               className="flex items-center gap-4 p-3 rounded-2xl border-2 border-gold/15 bg-black/[0.02] hover:border-gold/50 hover:bg-black/[0.04] hover:-translate-y-0.5 transition-all text-left cursor-pointer"
             >
               <div className="relative w-14 h-14 rounded-lg overflow-hidden shrink-0">
-                <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+                <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'absolute', inset: 0 }} />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="font-nunito font-bold text-sm text-charcoal truncate">{book.title}</p>
