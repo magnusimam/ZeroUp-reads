@@ -13,7 +13,7 @@ export const BOOK_CATEGORIES = [
 // Canonical book-language taxonomy — kept in sync with AdminCMSPage.jsx's
 // LANGUAGES select options so a book uploaded in admin always uses a language
 // from the same list. Distinct from any site-UI-locale selector (e.g.
-// LibraryHeader's display-language dropdown) — this is about what language a
+// modules/languages/SiteLanguageSelector) — this is about what language a
 // book's *content* is written in, not what language the site chrome renders in.
 // Kanuri/Tiv/Efik added for the homepage's "Popular Languages" chips — they're
 // part of docs/ZEROUP_READS_CONCEPT.md §4.4's Nigerian-language rollout, added

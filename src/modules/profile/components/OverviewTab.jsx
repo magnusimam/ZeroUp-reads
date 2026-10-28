@@ -17,10 +17,8 @@ function Card({ title, icon, action, children }) {
   );
 }
 
-function ReadingProgressCard({ progress, currentTier, nextBookAchievement, booksToNextAchievement }) {
+function ReadingProgressCard({ progress, currentTier, nextBookAchievement, booksToNextAchievement, pct }) {
   const navigate = useNavigate();
-  const target = nextBookAchievement?.threshold || Math.max(progress.booksCompleted || 0, 1);
-  const pct = Math.min(100, Math.round(((progress.booksCompleted || 0) / target) * 100));
   const circumference = 2 * Math.PI * 42;
 
   return (
@@ -78,8 +76,8 @@ function RecentBooksCard({ books, onSwitchTab }) {
         </p>
       ) : (
         <div className="flex flex-col gap-3">
-          {books.slice(0, 3).map(book => {
-            const pct = book.totalPages ? Math.round((book.currentPage / book.totalPages) * 100) : 0;
+          {books.map(book => {
+            const pct = book.progressPercent;
             return (
               <Link key={book.id} to={`/read/${book.id}`} className="flex items-center gap-3 group">
                 <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-black/5">
@@ -234,13 +232,13 @@ function QuickActionsCard() {
 
 export default function OverviewTab({
   progress, currentTier, nextBookAchievement, booksToNextAchievement,
-  continueReadingBooks, achievements, bookmarkedBooks, settings, onboardingPrefs,
+  recentBooks, progressPercent, achievements, bookmarkedBooks, settings, onboardingPrefs,
   onSwitchTab,
 }) {
   return (
     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-      <ReadingProgressCard progress={progress} currentTier={currentTier} nextBookAchievement={nextBookAchievement} booksToNextAchievement={booksToNextAchievement} />
-      <RecentBooksCard books={continueReadingBooks} onSwitchTab={onSwitchTab} />
+      <ReadingProgressCard progress={progress} currentTier={currentTier} nextBookAchievement={nextBookAchievement} booksToNextAchievement={booksToNextAchievement} pct={progressPercent} />
+      <RecentBooksCard books={recentBooks} onSwitchTab={onSwitchTab} />
       <AchievementsPreviewCard achievements={achievements} onSwitchTab={onSwitchTab} />
       <BookmarksPreviewCard bookmarkedBooks={bookmarkedBooks} onSwitchTab={onSwitchTab} />
       <PreferencesCard settings={settings} currentTier={currentTier} onboardingPrefs={onboardingPrefs} />

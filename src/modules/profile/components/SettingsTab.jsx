@@ -1,12 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { BOOK_LANGUAGES } from '../../../utils/mockData';
+import { READER_FONT_SIZES } from '../../../config/rules';
 
-const FONT_SIZES = [
-  { label: 'Small', value: 14 },
-  { label: 'Medium', value: 18 },
-  { label: 'Large', value: 24 },
-];
 
 function ToggleRow({ label, desc, checked, onChange }) {
   return (
@@ -49,7 +45,7 @@ export default function SettingsTab({ settings, updateSettings, onboardingPrefs,
           <h3 className="font-nunito font-extrabold text-[15px]" style={{ color: 'var(--hero-ink)' }}>Default reading text size</h3>
           <p className="font-nunito-sans text-xs mt-1 mb-3" style={{ color: 'var(--hero-gray)' }}>Applied when you open a book in the reader.</p>
           <div className="flex gap-2">
-            {FONT_SIZES.map(size => (
+            {READER_FONT_SIZES.map(size => (
               <button
                 key={size.value}
                 onClick={() => updateSettings({ readerFontSize: size.value })}

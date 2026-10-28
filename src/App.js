@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import './index.css';
+import { isFeatureEnabled } from './config/featureFlags';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -90,7 +91,7 @@ function App() {
               <Route path="/publishing"        element={<RequireRole allow={PUBLISHING_ROLES}><PublishingDashboardPage /></RequireRole>} />
               <Route path="/publishing/new"    element={<RequireRole allow={PUBLISHING_ROLES}><NewDraftPage /></RequireRole>} />
               <Route path="/publishing/:id"    element={<RequireRole allow={PUBLISHING_ROLES}><SubmissionDetailPage /></RequireRole>} />
-              <Route path="/translate"                     element={<TranslatePage />} />
+              <Route path="/translate"                     element={isFeatureEnabled('bookMachineTranslation') ? <TranslatePage /> : <Navigate to="/library" replace />} />
               <Route path="/translator"                    element={<RequireRole allow={TRANSLATION_ROLES}><TranslationHubPage /></RequireRole>} />
               <Route path="/translator/:bookId/:language"  element={<RequireRole allow={TRANSLATION_ROLES}><TranslationWorkspacePage /></RequireRole>} />
               <Route path="/about"             element={<AboutPage />} />

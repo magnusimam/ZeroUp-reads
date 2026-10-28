@@ -6,12 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { BOOK_LANGUAGES } from '../../utils/mockData';
 import * as settingsService from './settingsService';
+import { READER_FONT_SIZES } from '../../config/rules';
 
-const FONT_SIZES = [
-  { label: 'Small', value: 14 },
-  { label: 'Medium', value: 18 },
-  { label: 'Large', value: 24 },
-];
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -62,7 +58,7 @@ export default function SettingsPage() {
             Applied when you open a new book in the reader.
           </p>
           <div className="flex gap-2">
-            {FONT_SIZES.map((size) => (
+            {READER_FONT_SIZES.map((size) => (
               <button
                 key={size.value}
                 onClick={() => update({ readerFontSize: size.value })}

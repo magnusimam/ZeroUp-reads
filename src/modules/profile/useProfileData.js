@@ -9,6 +9,7 @@ import useContinueReading from '../reading/useContinueReading';
 import { computeAchievements, computeReaderLevel } from '../dashboard/achievements';
 import { computeGenreBreakdown } from '../dashboard/genreBreakdown';
 import { READING_LEVELS } from '../../components/home/discover/discoverConfig';
+import { PROFILE_RECENT_BOOKS_COUNT } from '../../config/rules';
 
 export const PROFILE_TABS = [
   { id: 'overview', label: 'Overview', icon: '▦' },
@@ -45,6 +46,13 @@ export default function useProfileData() {
   const readerLevel = computeReaderLevel(progress);
 
   const continueReadingBooks = useContinueReading(books);
+  const recentBooks = useMemo(
+    () => continueReadingBooks.slice(0, PROFILE_RECENT_BOOKS_COUNT).map(book => ({
+      ...book,
+      progressPercent: book.totalPages ? Math.round((book.currentPage / book.totalPages) * 100) : 0,
+    })),
+    [continueReadingBooks]
+  );
   const bookmarkIds = bookmarksService.getBookmarks();
   const bookmarkedBooks = useMemo(
     () => books.filter(b => bookmarkIds.includes(b.id)),
@@ -82,15 +90,18 @@ export default function useProfileData() {
   const booksToNextAchievement = nextBookAchievement
     ? Math.max(0, nextBookAchievement.threshold - (progress.booksCompleted || 0))
     : 0;
+  // Overview's progress ring: books completed against that next milestone.
+  const progressTarget = nextBookAchievement?.threshold || Math.max(progress.booksCompleted || 0, 1);
+  const progressPercent = Math.min(100, Math.round(((progress.booksCompleted || 0) / progressTarget) * 100));
 
   return {
     activeTab, setActiveTab,
     books, progress, achievements, readerLevel,
-    continueReadingBooks, bookmarkedBooks, completedBooks,
+    continueReadingBooks, recentBooks, bookmarkedBooks, completedBooks,
     genreBreakdown, weeklyActivity,
     downloadedCount,
     settings, updateSettings,
     onboardingPrefs, currentTier, nextTier,
-    nextBookAchievement, booksToNextAchievement,
+    nextBookAchievement, booksToNextAchievement, progressPercent,
   };
 }

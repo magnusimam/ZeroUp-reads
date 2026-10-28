@@ -7,6 +7,19 @@
 // raw word count.
 export const WORDS_PER_PAGE = 300;
 
+// Reader text-size choices offered by both Settings screens (SettingsPage and
+// My Profile's Settings tab); `value` is the reader's font size in px and is
+// what settingsService stores as readerFontSize.
+export const READER_FONT_SIZES = [
+  { label: 'Small', value: 14 },
+  { label: 'Medium', value: 18 },
+  { label: 'Large', value: 24 },
+];
+
+// My Profile's Overview tab — how many in-progress books its "Recent Books"
+// card lists before pointing to the My Books tab.
+export const PROFILE_RECENT_BOOKS_COUNT = 3;
+
 // How many books the homepage's "Popular Books" section shows in total
 // (sorted by reads, most first): 1 large featured card + the rest as a
 // compact list — used by PopularBooksSection.

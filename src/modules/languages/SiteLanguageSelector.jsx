@@ -5,7 +5,7 @@ import * as siteTranslationService from './siteTranslationService';
 
 // Navbar language selector ("🌐 EN ▾"): the language the *website* (menus,
 // buttons, page copy) is shown in. Separate from the Translate button
-// (modules/translation/components/TranslateBooksButton), which translates
+// (modules/reading/components/TranslateMenu), which translates
 // *book text*. `variant="mobile"` renders a plain select for the hamburger
 // overlay instead of a dropdown.
 export default function SiteLanguageSelector({ variant = 'desktop' }) {

@@ -26,11 +26,11 @@ export default function ProfilePage() {
   const {
     activeTab, setActiveTab,
     progress, achievements,
-    continueReadingBooks, bookmarkedBooks, completedBooks,
+    continueReadingBooks, recentBooks, bookmarkedBooks, completedBooks,
     genreBreakdown, weeklyActivity,
     settings, updateSettings,
     onboardingPrefs, currentTier,
-    nextBookAchievement, booksToNextAchievement,
+    nextBookAchievement, booksToNextAchievement, progressPercent,
   } = useProfileData();
 
   if (!user) return null;
@@ -55,7 +55,8 @@ export default function ProfilePage() {
             currentTier={currentTier}
             nextBookAchievement={nextBookAchievement}
             booksToNextAchievement={booksToNextAchievement}
-            continueReadingBooks={continueReadingBooks}
+            recentBooks={recentBooks}
+            progressPercent={progressPercent}
             achievements={achievements}
             bookmarkedBooks={bookmarkedBooks}
             settings={settings}
