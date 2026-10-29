@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from "hono";
 import type { Env } from "../env";
 import { verifyToken, type AuthTokenPayload } from "./jwt";
 import type { Role } from "../config/roles";
@@ -44,22 +44,6 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env; Variables: AuthV
   c.set("authUser", payload);
   await next();
 };
-
-// Like authMiddleware, but never blocks — for routes that behave differently
-// for a signed-in caller (e.g. Collections: a private one only shows up for
-// its owner) without requiring one (a public collection still works for a
-// guest). Returns null for a missing/invalid token instead of 401ing.
-export async function getOptionalUser<E extends { Bindings: Env }>(c: Context<E>): Promise<AuthTokenPayload | null> {
-  const header = c.req.header("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-  try {
-    const payload = await verifyToken(header.slice("Bearer ".length), c.env.JWT_SECRET);
-    if (await isTokenRevoked(c.env.DB, payload)) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
 
 // Composes after authMiddleware — restricts a route to a set of roles.
 // Still used directly (rather than requirePermission below) for the handful
