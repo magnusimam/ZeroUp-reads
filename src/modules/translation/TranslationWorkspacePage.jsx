@@ -1,131 +1,46 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import React from 'react';
+import { Link, useParams } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import { useAuth } from '../auth/AuthContext';
-import { useToast } from '../../context/ToastContext';
-import * as booksService from '../books/booksService';
-import * as translationService from './translationService';
+import useTranslationWorkspace from './useTranslationWorkspace';
 import { BOOK_LANGUAGES } from '../../utils/mockData';
-import { effectiveRole, hasRole, ROLES } from '../../config/roles';
 
-const AUTOSAVE_DELAY_MS = 1500;
+function CenteredMessage({ icon, title, children }) {
+  return (
+    <div className="bg-slate-50 min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-4xl mb-4">{icon}</p>
+          <h1 className="text-xl font-bold text-slate-900">{title}</h1>
+          {children}
+          <Link to="/translator" className="text-teal-600 font-medium text-sm mt-3 inline-block">
+            ← Back to Translation Workspace
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function TranslationWorkspacePage() {
   const { bookId, language } = useParams();
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const toast = useToast();
+  const {
+    book, draft, loadError, paragraphs,
+    translatedCount, total, saveState, busy,
+    canEdit, canReview, canSubmit,
+    changeParagraph, changeLanguage, submit, approve,
+    reject, cancelReject, showRejectBox, rejectComment, setRejectComment,
+  } = useTranslationWorkspace(bookId, language);
 
-  const book = booksService.getBook(bookId);
-  const actor = useMemo(() => ({ id: user.id, name: user.name, systemRole: effectiveRole(user) }), [user]);
-
-  const [draft, setDraft] = useState(null);
-  const [paragraphs, setParagraphs] = useState([]);
-  const [saveState, setSaveState] = useState('saved'); // 'saved' | 'saving'
-  const [rejectComment, setRejectComment] = useState('');
-  const [showRejectBox, setShowRejectBox] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const saveTimer = useRef(null);
-
-  useEffect(() => {
-    if (!book) return;
-    const started = translationService.startDraft(book, language, { id: user.id, name: user.name });
-    setDraft(started);
-    setParagraphs(started.paragraphs);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId, language]);
-
-  useEffect(() => () => clearTimeout(saveTimer.current), []);
-
-  if (!book) {
+  if (!book) return <CenteredMessage icon="📖" title="Book not found" />;
+  if (loadError) {
     return (
-      <div className="bg-slate-50 min-h-screen flex flex-col">
-        <Navbar />
-        <div className="flex-1 flex items-center justify-center px-6">
-          <div className="text-center">
-            <p className="text-4xl mb-4">📖</p>
-            <h1 className="text-xl font-bold text-slate-900">Book not found</h1>
-            <Link to="/translator" className="text-teal-600 font-medium text-sm mt-3 inline-block">
-              ← Back to Translation Workspace
-            </Link>
-          </div>
-        </div>
-      </div>
+      <CenteredMessage icon="⚠️" title="Couldn't open this translation">
+        <p className="text-sm text-slate-500 mt-2">{loadError}</p>
+      </CenteredMessage>
     );
   }
-
   if (!draft) return null;
-
-  const translatedCount = paragraphs.filter((p) => p.translated.trim()).length;
-  const total = paragraphs.length;
-  const isOwner = draft.translatorId === user.id;
-  const isReviewer = hasRole(user, [ROLES.EDITOR, ROLES.ADMINISTRATOR]);
-  const canEdit = isOwner && ['in_progress', 'rejected'].includes(draft.status);
-  const canReview = isReviewer && draft.status === 'submitted' && !isOwner;
-
-  function handleParagraphChange(index, value) {
-    const next = paragraphs.map((p, i) => (i === index ? { ...p, translated: value } : p));
-    setParagraphs(next);
-    setSaveState('saving');
-    clearTimeout(saveTimer.current);
-    saveTimer.current = setTimeout(() => {
-      const updated = translationService.autoSaveDraft(draft.id, next);
-      if (updated) setDraft(updated);
-      setSaveState('saved');
-    }, AUTOSAVE_DELAY_MS);
-  }
-
-  function handleLanguageChange(nextLanguage) {
-    if (nextLanguage) navigate(`/translator/${bookId}/${nextLanguage}`);
-  }
-
-  function handleSubmit() {
-    clearTimeout(saveTimer.current);
-    setBusy(true);
-    translationService.autoSaveDraft(draft.id, paragraphs);
-    setTimeout(() => {
-      const updated = translationService.submitForReview(draft.id, actor);
-      setBusy(false);
-      if (updated) {
-        setDraft(updated);
-        toast?.addToast('Submitted for review 🎉', 'success');
-      }
-    }, 300);
-  }
-
-  function handleApprove() {
-    setBusy(true);
-    setTimeout(() => {
-      const updated = translationService.approve(draft.id, actor);
-      setBusy(false);
-      if (updated) {
-        setDraft(updated);
-        toast?.addToast(`Approved — "${draft.bookTitle}" (${draft.targetLanguage}) is now live in the library!`, 'success');
-      }
-    }, 300);
-  }
-
-  function handleReject() {
-    if (!showRejectBox) {
-      setShowRejectBox(true);
-      return;
-    }
-    if (!rejectComment.trim()) {
-      toast?.addToast('Please explain what needs revision.', 'error');
-      return;
-    }
-    setBusy(true);
-    setTimeout(() => {
-      const updated = translationService.reject(draft.id, actor, rejectComment.trim());
-      setBusy(false);
-      setShowRejectBox(false);
-      setRejectComment('');
-      if (updated) {
-        setDraft(updated);
-        toast?.addToast('Sent back to the translator for revision.', 'info');
-      }
-    }, 300);
-  }
 
   const languageOptions = BOOK_LANGUAGES.filter((l) => l !== book.language);
 
@@ -148,7 +63,7 @@ export default function TranslationWorkspacePage() {
               <label className="block text-xs font-medium text-slate-500 mb-1">Translating into</label>
               <select
                 value={language}
-                onChange={(e) => handleLanguageChange(e.target.value)}
+                onChange={(e) => changeLanguage(e.target.value)}
                 className="px-3 py-2 rounded-lg border border-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
               >
                 {languageOptions.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -165,7 +80,7 @@ export default function TranslationWorkspacePage() {
         <div className="mb-6">
           <div className="flex items-center justify-between text-xs text-slate-500 mb-1.5">
             <span>{translatedCount} of {total} paragraphs translated</span>
-            <span>{canEdit && (saveState === 'saving' ? 'Saving…' : `Saved ✓ ${new Date(draft.lastSavedAt).toLocaleTimeString()}`)}</span>
+            <span>{canEdit && (saveState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Not saved — check your connection' : `Saved ✓ ${new Date(draft.lastSavedAt).toLocaleTimeString()}`)}</span>
           </div>
           <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
             <div
@@ -192,7 +107,7 @@ export default function TranslationWorkspacePage() {
                   </p>
                   <textarea
                     value={p.translated}
-                    onChange={(e) => handleParagraphChange(i, e.target.value)}
+                    onChange={(e) => changeParagraph(i, e.target.value)}
                     disabled={!canEdit}
                     rows={4}
                     placeholder={canEdit ? 'Type the translation…' : ''}
@@ -217,8 +132,9 @@ export default function TranslationWorkspacePage() {
                 <div className="flex flex-wrap gap-3">
                   {canEdit && (
                     <button
-                      onClick={handleSubmit}
-                      disabled={busy || translatedCount === 0}
+                      onClick={submit}
+                      disabled={busy || !canSubmit}
+                      title={canSubmit ? undefined : 'Translate every paragraph before submitting'}
                       className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
                     >
                       {busy ? 'Submitting…' : 'Submit for Review'}
@@ -227,14 +143,14 @@ export default function TranslationWorkspacePage() {
                   {canReview && (
                     <>
                       <button
-                        onClick={handleApprove}
+                        onClick={approve}
                         disabled={busy}
                         className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-sm font-semibold disabled:opacity-50 transition-colors"
                       >
                         {busy ? 'Working…' : 'Approve'}
                       </button>
                       <button
-                        onClick={handleReject}
+                        onClick={reject}
                         disabled={busy}
                         className="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 text-sm font-semibold disabled:opacity-50 transition-colors"
                       >
@@ -242,7 +158,7 @@ export default function TranslationWorkspacePage() {
                       </button>
                       {showRejectBox && (
                         <button
-                          onClick={() => { setShowRejectBox(false); setRejectComment(''); }}
+                          onClick={cancelReject}
                           className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-500 hover:bg-slate-50"
                         >
                           Cancel

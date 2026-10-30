@@ -70,6 +70,18 @@ export function requireRole(
 // GET /permissions/roles response an admin sees IS what's enforced, not a
 // separate description of it. Granting a role a new permission is now a
 // data change (an INSERT into role_permissions), not a code change.
+// For routes whose response depends on a capability rather than being gated
+// by it (e.g. GET /translations/drafts: reviewers see every draft, a
+// translator only their own) — same role_permissions lookup requirePermission
+// enforces.
+export async function hasPermission(db: D1Database, role: string, permissionKey: string): Promise<boolean> {
+  const grant = await db
+    .prepare("SELECT 1 FROM role_permissions WHERE role = ? AND permission_key = ?")
+    .bind(role, permissionKey)
+    .first();
+  return Boolean(grant);
+}
+
 export function requirePermission(
   permissionKey: string
 ): MiddlewareHandler<{ Bindings: Env; Variables: AuthVariables }> {
@@ -78,10 +90,7 @@ export function requirePermission(
     if (!user) {
       return c.json({ error: "Forbidden." }, 403);
     }
-    const grant = await c.env.DB.prepare("SELECT 1 FROM role_permissions WHERE role = ? AND permission_key = ?")
-      .bind(user.role, permissionKey)
-      .first();
-    if (!grant) {
+    if (!(await hasPermission(c.env.DB, user.role, permissionKey))) {
       return c.json({ error: "Forbidden." }, 403);
     }
     await next();

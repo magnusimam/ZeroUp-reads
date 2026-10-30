@@ -109,3 +109,7 @@ export const POPULAR_DOWNLOADS_COUNT = 6;
 // Which position in that row the top-rated title sits in, shown larger with a
 // "Recommended" badge (0-based; the design centres it in the visible row).
 export const POPULAR_DOWNLOADS_FEATURED_SLOT = 2;
+
+// Translation Workspace — how long after the translator stops typing before
+// the draft autosaves (useTranslationWorkspace).
+export const TRANSLATION_AUTOSAVE_DELAY_MS = 1500;

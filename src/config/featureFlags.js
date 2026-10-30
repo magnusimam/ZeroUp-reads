@@ -135,6 +135,11 @@ const FLAGS = {
   // ResetPasswordPage) to the real backend/ Password Reset API. Same
   // default-false, instantly-reversible posture as the other realXApi flags.
   realPasswordResetApi: true,
+  // Stage 18: routes translationRequestService (reader requests + the admin
+  // accept/decline queue) and translationService (Translation Workspace
+  // drafts → review → approve) to the real backend/ Translations API.
+  // Same instantly-reversible posture as the other realXApi flags.
+  realTranslationApi: true,
 };
 
 export function isFeatureEnabled(flagName) {

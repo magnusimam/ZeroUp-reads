@@ -43,6 +43,7 @@ export default function AdminCMSPage() {
   const {
     pendingRequests,
     requestMSG,
+    accept: acceptTranslationRequest,
     reject: rejectTranslationRequest,
   } = useTranslationRequests();
 
@@ -207,8 +208,9 @@ return (
             </span>
           </h2>
           <p className='text-xs text-slate-500 mt-1'>
-            Readers can request a book be translated from the Library page. Open a request in the
-            Translation Workspace for a human translator to review before anything publishes.
+            Readers can request a book be translated from the Library page. Accept a request to open it
+            to translators in the Translation Workspace — nothing publishes until a reviewer approves
+            their translation.
           </p>
         </div>
 
@@ -236,6 +238,12 @@ return (
                     className='px-3 py-1.5 rounded-lg border border-red-200 text-red-500 text-xs font-medium hover:bg-red-50 transition-colors'
                   >
                     Decline
+                  </button>
+                  <button
+                    onClick={() => acceptTranslationRequest(request.id)}
+                    className='px-3 py-1.5 rounded-lg border border-teal-200 text-teal-700 text-xs font-medium hover:bg-teal-50 transition-colors'
+                  >
+                    Accept
                   </button>
                   <Link
                     to={`/translator/${request.bookId}/${request.language}`}

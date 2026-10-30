@@ -30,6 +30,7 @@ const TRACKED_EVENTS = [
   'translation.completed',
   'translation.requested',
   'translation.request.approved',
+  'translation.request.accepted',
   'translation.request.rejected',
   'book.completed',
   'book.bookmarked',
