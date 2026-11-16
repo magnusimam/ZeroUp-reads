@@ -6,12 +6,8 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { BOOK_LANGUAGES } from '../../utils/mockData';
 import * as settingsService from './settingsService';
+import { READER_FONT_SIZES } from '../../config/rules';
 
-const FONT_SIZES = [
-  { label: 'Small', value: 14 },
-  { label: 'Medium', value: 18 },
-  { label: 'Large', value: 24 },
-];
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -40,7 +36,7 @@ export default function SettingsPage() {
         <p className="text-sm text-slate-500 mb-8">Personalise how ZeroUp Reads works for you</p>
 
         <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
-          <h2 className="font-bold text-slate-900 mb-1">Preferred reading language</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Preferred reading language</h2>
           <p className="text-sm text-slate-500 mb-4">
             Used when you start a new story from your dashboard.
           </p>
@@ -57,12 +53,12 @@ export default function SettingsPage() {
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h2 className="font-bold text-slate-900 mb-1">Default reading text size</h2>
+          <h2 className="text-lg font-bold text-slate-900 mb-1">Default reading text size</h2>
           <p className="text-sm text-slate-500 mb-4">
             Applied when you open a new book in the reader.
           </p>
           <div className="flex gap-2">
-            {FONT_SIZES.map((size) => (
+            {READER_FONT_SIZES.map((size) => (
               <button
                 key={size.value}
                 onClick={() => update({ readerFontSize: size.value })}

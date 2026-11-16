@@ -73,8 +73,15 @@ export default function LibraryHero({
         />
         {/* Left-side scrim — the sky in the photo is bright enough on its own,
             this just guarantees the title/search stay legible at every width. */}
+        {/* On phones the title/subtitle cover most of the photo (busy with the
+            boy and robot), so a stronger left-weighted wash keeps them readable. */}
         <div
-          className="absolute inset-0"
+          className="absolute inset-0 sm:hidden"
+          style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.88) 0%, rgba(255,255,255,0.7) 55%, rgba(255,255,255,0.25) 100%)' }}
+          aria-hidden="true"
+        />
+        <div
+          className="absolute inset-0 hidden sm:block"
           style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.3) 34%, rgba(255,255,255,0) 60%)' }}
           aria-hidden="true"
         />
@@ -95,7 +102,7 @@ export default function LibraryHero({
               <h1 className="font-nunito font-extrabold text-4xl sm:text-5xl drop-shadow-sm" style={{ color: 'var(--navy)' }}>
                 Library
               </h1>
-              <p className="font-nunito-sans mt-3 text-base drop-shadow-sm" style={{ color: 'var(--hero-gray)' }}>
+              <p className="font-nunito-sans mt-3 text-base drop-shadow-sm" style={{ color: 'var(--hero-ink)' }}>
                 Discover stories, knowledge and ideas in your language.
               </p>
 
@@ -133,14 +140,6 @@ export default function LibraryHero({
               </form>
             </div>
           </div>
-        </div>
-
-        {/* Small label sitting on the stack of books at the right edge of
-            the photo — was a large floating caption, shrunk down to read
-            like a tag on the books themselves. */}
-        <div className="hidden sm:block absolute right-3 sm:right-5 bottom-24 sm:bottom-28 text-right leading-tight">
-          <p className="font-nunito font-extrabold text-[10px] sm:text-xs text-white drop-shadow">BIG STORIES</p>
-          <p className="font-nunito font-extrabold text-[10px] sm:text-xs drop-shadow" style={{ color: 'var(--hero-orange)' }}>BRIGHT FUTURES</p>
         </div>
 
       </div>

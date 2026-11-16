@@ -1,10 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
-import { useAuth } from '../auth/AuthContext';
-import * as translationRequestService from '../books/translationRequestService';
-import * as translationService from './translationService';
-import { ROLES, hasRole } from '../../config/roles';
+import useTranslationHub from './useTranslationHub';
 
 const STATUS_BADGE = {
   in_progress: 'bg-slate-100 text-slate-600',
@@ -21,13 +18,7 @@ const STATUS_LABEL = {
 };
 
 export default function TranslationHubPage() {
-  const { user } = useAuth();
-  const [pendingRequests] = useState(() => translationRequestService.getPendingRequests());
-  const [drafts] = useState(() => translationService.getDrafts());
-
-  const isReviewer = hasRole(user, [ROLES.EDITOR, ROLES.ADMINISTRATOR]);
-  const myDrafts = drafts.filter((d) => d.translatorId === user.id);
-  const reviewQueue = drafts.filter((d) => d.status === 'submitted');
+  const { loading, openRequests, myDrafts, reviewQueue, isReviewer } = useTranslationHub();
 
   return (
     <div className="bg-slate-50 min-h-screen flex flex-col">
@@ -43,18 +34,20 @@ export default function TranslationHubPage() {
           <div className="px-6 py-4 border-b border-slate-100">
             <h2 className="font-bold text-slate-900">
               Open Requests
-              <span className="ml-2 text-sm font-normal text-slate-400">({pendingRequests.length})</span>
+              <span className="ml-2 text-sm font-normal text-slate-400">({openRequests.length})</span>
             </h2>
             <p className="text-xs text-slate-500 mt-1">Readers asked for these — pick one up to start translating.</p>
           </div>
-          {pendingRequests.length === 0 ? (
+          {loading ? (
+            <p className="px-6 py-8 text-sm text-slate-400 text-center">Loading…</p>
+          ) : openRequests.length === 0 ? (
             <p className="px-6 py-8 text-sm text-slate-400 text-center">No open requests right now.</p>
           ) : (
             <div className="divide-y divide-slate-100">
-              {pendingRequests.map((request) => (
+              {openRequests.map((request) => (
                 <Link
                   key={request.id}
-                  to={`/translate/${request.bookId}/${request.language}`}
+                  to={`/translator/${request.bookId}/${request.language}`}
                   className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                 >
                   <div className="min-w-0">
@@ -82,7 +75,7 @@ export default function TranslationHubPage() {
               {myDrafts.map((draft) => (
                 <Link
                   key={draft.id}
-                  to={`/translate/${draft.bookId}/${draft.targetLanguage}`}
+                  to={`/translator/${draft.bookId}/${draft.targetLanguage}`}
                   className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                 >
                   <div className="min-w-0">
@@ -114,7 +107,7 @@ export default function TranslationHubPage() {
                 {reviewQueue.map((draft) => (
                   <Link
                     key={draft.id}
-                    to={`/translate/${draft.bookId}/${draft.targetLanguage}`}
+                    to={`/translator/${draft.bookId}/${draft.targetLanguage}`}
                     className="flex items-center justify-between gap-4 px-6 py-4 hover:bg-slate-50 transition-colors"
                   >
                     <div className="min-w-0">

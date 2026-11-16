@@ -14,7 +14,6 @@ export default function ContinueReadingSection({ userName, books, onTranslateReq
     <section className="relative w-full overflow-hidden" style={{ background: 'linear-gradient(135deg, #FFE9C7 0%, #FFD9A0 100%)' }}>
       <div className="relative z-10 max-w-content mx-auto w-full px-4 sm:px-6 py-10">
         <div className="flex items-center gap-3 mb-1">
-          <span className="text-3xl animate-[float_3s_ease-in-out_infinite]" aria-hidden="true">📖</span>
           <h2 className="font-nunito font-extrabold text-2xl sm:text-3xl" style={{ color: 'var(--hero-ink)' }}>
             Keep Going, {firstName}!
           </h2>
@@ -22,8 +21,8 @@ export default function ContinueReadingSection({ userName, books, onTranslateReq
             {books.length} in progress
           </span>
         </div>
-        <p className="font-nunito-sans text-sm sm:text-base mb-6 ml-11" style={{ color: 'var(--hero-gray)' }}>
-          You're doing great — pick up right where you left off. 🌟
+        <p className="font-nunito-sans text-sm sm:text-base mb-6" style={{ color: 'var(--hero-gray)' }}>
+          You're doing great — pick up right where you left off.
         </p>
 
         <div className="flex gap-5 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory">

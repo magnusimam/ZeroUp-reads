@@ -99,15 +99,16 @@ export default function ReadingPage() {
             <div className="relative">
               <HeaderAction
                 icon={Languages}
-                label="Translate"
-                active={reading.translateMenuOpen}
+                label={reading.translation.target ? reading.translation.target.name : 'Translate'}
+                active={reading.translateMenuOpen || Boolean(reading.translation.target)}
                 onClick={() => reading.setTranslateMenuOpen((v) => !v)}
               />
               {reading.translateMenuOpen && (
                 <TranslateMenu
                   book={book}
-                  availableLanguages={reading.availableLanguages}
-                  onSelectAvailable={reading.selectAvailableLanguage}
+                  targetCode={reading.translation.target?.code}
+                  machineTranslationOn={reading.machineTranslationOn}
+                  onChoose={reading.chooseTranslation}
                   onMoreLanguages={reading.openMoreLanguages}
                 />
               )}
@@ -124,19 +125,43 @@ export default function ReadingPage() {
 
         {/* Hero image */}
         <div className="relative w-full h-56 sm:h-72 rounded-3xl overflow-hidden shadow-story-card">
-          <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+          <BookCoverArt category={book.category} coverUrl={book.coverUrl} alt={`${book.title} cover`} style={{ position: 'absolute', inset: 0, objectPosition: 'center 30%' }} />
         </div>
 
         {/* Page content */}
         <div className={`relative rounded-3xl border px-6 py-7 sm:px-9 sm:py-9 shadow-story-card transition-colors ${
           reading.nightMode ? 'bg-midnight-light border-white/5' : 'bg-white border-story-navy/8'
         }`}>
-          <ReadingText
-            text={book.content[reading.pageIndex]}
-            matches={reading.vocabularyMatches}
-            className={`leading-relaxed transition-all ${reading.nightMode ? 'text-white/90' : 'text-ink-primary'}`}
-            style={{ fontSize: `${reading.fontSize}px` }}
-          />
+          {reading.translation.target && (
+            <div className={`notranslate flex items-center justify-between gap-3 flex-wrap mb-4 px-3.5 py-2 rounded-xl text-xs font-nunito font-bold ${
+              reading.nightMode ? 'bg-white/5 text-white/70' : 'bg-story-cream text-ink-secondary'
+            }`}>
+              <span className="inline-flex items-center gap-1.5">
+                <Languages size={14} />
+                {reading.translation.status === 'loading' && `Translating to ${reading.translation.target.name}…`}
+                {reading.translation.status === 'error' && `Couldn't translate to ${reading.translation.target.name} — showing the original.`}
+                {reading.translation.status === 'done' && (reading.translation.showOriginal
+                  ? `Showing the original ${book.language}`
+                  : `Machine-translated to ${reading.translation.target.name}`)}
+              </span>
+              {reading.translation.status === 'done' && (
+                <button type="button" onClick={reading.translation.toggleOriginal} className="text-story-orange hover:underline">
+                  {reading.translation.showOriginal ? `Show ${reading.translation.target.name}` : 'Show original'}
+                </button>
+              )}
+            </div>
+          )}
+          {/* notranslate: book text is only ever translated by the Translate
+              button, never by the website-language selector. */}
+          <div className="notranslate" lang={reading.translation.translated ? reading.translation.target.code : undefined}>
+            <ReadingText
+              text={reading.translation.displayText}
+              // glossary matches index into the original text, so they only apply to it
+              matches={reading.translation.translated ? [] : reading.vocabularyMatches}
+              className={`leading-relaxed transition-all ${reading.translation.status === 'loading' ? 'opacity-50' : ''} ${reading.nightMode ? 'text-white/90' : 'text-ink-primary'}`}
+              style={{ fontSize: `${reading.fontSize}px` }}
+            />
+          </div>
           <DidYouKnowCard fact={reading.funFact} />
         </div>
       </main>
@@ -243,7 +268,8 @@ export default function ReadingPage() {
       <style>{`
         @media (max-width: 900px) {
           .reader-shell { flex-direction: column; padding: 16px !important; }
-          .reader-sidebar { display: none; }
+          /* !important: the sidebar's inline display:flex would otherwise win */
+          .reader-sidebar { display: none !important; }
         }
       `}</style>
     </div>

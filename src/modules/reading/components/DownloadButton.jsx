@@ -30,17 +30,20 @@ export default function DownloadButton({ book, variant = 'pill' }) {
     toast?.addToast(`Removed "${book.title}" from downloads`, 'info');
   }
 
-  if (variant === 'icon') {
+  // 'icon-light': white disc with a navy glyph, for sitting on top of cover art.
+  if (variant === 'icon' || variant === 'icon-light') {
+    const light = variant === 'icon-light';
     if (downloading) {
       return (
         <span
-          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-black/35"
+          className={`inline-flex items-center justify-center w-9 h-9 rounded-full ${light ? 'bg-white shadow' : 'bg-black/35'}`}
           aria-label="Downloading for offline reading"
         >
-          <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+          <span className={`w-4 h-4 border-2 rounded-full animate-spin ${light ? 'border-[#0B1F4D]/25 border-t-[#0B1F4D]' : 'border-white/40 border-t-white'}`} />
         </span>
       );
     }
+    const idle = light ? 'bg-white text-[#0B1F4D] shadow hover:bg-white/90' : 'bg-black/35 text-white hover:bg-black/55';
     return (
       <button
         type="button"
@@ -48,10 +51,10 @@ export default function DownloadButton({ book, variant = 'pill' }) {
         aria-label={downloaded ? `Remove "${book.title}" from downloads` : `Save "${book.title}" for offline reading`}
         title={downloaded ? 'Offline Available — tap to remove' : 'Save Offline'}
         className={`inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
-          downloaded ? 'bg-green text-white' : 'bg-black/35 text-white hover:bg-black/55'
+          downloaded ? 'bg-green text-white' : idle
         }`}
       >
-        {downloaded ? <Check size={16} /> : <Download size={16} />}
+        {downloaded ? <Check size={16} /> : <Download size={16} strokeWidth={light ? 2.6 : 2} />}
       </button>
     );
   }

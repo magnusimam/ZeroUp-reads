@@ -10,8 +10,8 @@ export const CTA_BLOCKS = [
     bg: '#7C3AED',
     title: 'Translate',
     body: 'Pick any book in the library and get it translated into your language.',
-    ctaLabel: 'Translate a Book',
-    ctaTo: '/library',
+    ctaLabel: 'Translate a Story',
+    ctaTo: '/translate',
     illustration: ['📚', '🔤', '🗣️'],
   },
   {

@@ -1,20 +1,17 @@
 // Product/business constants for the Library page — centralized here instead of
 // buried as magic numbers inside components, per the repo's Rules Engine principle.
+import { BOOK_CATEGORIES } from '../../utils/mockData';
 
-// Topics the Educational Books "Choose Topic" dropdown offers — restricted to
-// categories that actually have educational books today (Science, History,
-// Language & Culture). A list including e.g. "Technology"/"Mathematics" with
-// zero matching books silently emptied the section for that choice; add a
-// topic here only once a real book exists in it.
-export const EDUCATIONAL_TOPICS = ['Science', 'History', 'Language & Culture'];
-
-// Story-specific themes for the Story Books "Select Theme" dropdown — tagged
-// per-book via book.attributes.theme (Schema-Driven Design's extensible-metadata
-// bag), not the general BOOK_CATEGORIES taxonomy used by the top category chips.
-// Same rule as EDUCATIONAL_TOPICS: only list a theme once a real book has it.
-export const STORY_THEMES = [
-  'Folktales & Legends', 'Adventure', 'Fantasy', 'Nature & Environment',
-];
+// Topics for the All Books "Choose Topic" dropdown: every category that has
+// at least one book in the given list, in BOOK_CATEGORIES order. Derived from
+// the books themselves so a topic never appears with zero matches (a
+// hand-kept list did exactly that before) and new topics show up on their own.
+export function topicsFor(books) {
+  const present = new Set(books.map(b => b.category).filter(Boolean));
+  const known = BOOK_CATEGORIES.filter(c => present.has(c));
+  const extra = [...present].filter(c => !BOOK_CATEGORIES.includes(c)).sort();
+  return [...known, ...extra];
+}
 
 export const SORT_OPTIONS = [
   { value: 'recommended', label: 'Recommended' },
@@ -29,13 +26,23 @@ export const SORT_OPTIONS = [
 const MIN_COVERED_FOR_PREFERENCE = 3;
 
 // Prefer titles with a real cover photo over the plain color+icon
-// placeholder — used by Featured Books, Story Books and Educational Books
-// so the sections readers see by default showcase real artwork first,
+// placeholder — used by Featured Books and All Books so the sections readers see by default showcase real artwork first,
 // until more covers exist. Callers skip this during an active search/filter,
 // where a reader wants the true matching results, not a curated subset.
 export function preferCoveredBooks(list) {
   const covered = list.filter(b => b.coverUrl);
   return covered.length >= MIN_COVERED_FOR_PREFERENCE ? covered : list;
+}
+
+const SORT_RESULT_TITLES = { reads: 'Most popular books', rating: 'Top rated books', az: 'All books, A–Z' };
+
+// Heading for the Library's book list while a search/filter is active, e.g.
+// `Results for "tortoise"`, "Hausa Science books", "Most popular books".
+export function describeResults({ search, language, level, category, sort }) {
+  if (search?.trim()) return `Results for "${search.trim()}"`;
+  const parts = [language, level, category].filter(Boolean);
+  if (parts.length) return `${parts.join(' ')} books`;
+  return SORT_RESULT_TITLES[sort] || 'Matching books';
 }
 
 export function sortBooks(books, sortValue) {
@@ -71,8 +78,9 @@ export const CAROUSEL = {
   CENTER_LIFT_MOBILE_PX: 12,
 };
 
-export const STORY_BOOKS_COUNT = 6;
-export const EDUCATIONAL_SMALL_COUNT = 6;
+// All Books shows two rows of six before "View All" (it replaced the old
+// separate 6-book Story Books + 6-book Educational Books sections).
+export const ALL_BOOKS_PREVIEW_COUNT = 12;
 
 // Canonical display order for the sidebar's "Age Group" filter — the field
 // itself (book.ageGroup) already exists on every book; this just keeps the

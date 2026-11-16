@@ -1,4 +1,4 @@
-import type { Context, MiddlewareHandler } from "hono";
+import type { MiddlewareHandler } from "hono";
 import type { Env } from "../env";
 import { verifyToken, type AuthTokenPayload } from "./jwt";
 import type { Role } from "../config/roles";
@@ -45,22 +45,6 @@ export const authMiddleware: MiddlewareHandler<{ Bindings: Env; Variables: AuthV
   await next();
 };
 
-// Like authMiddleware, but never blocks — for routes that behave differently
-// for a signed-in caller (e.g. Collections: a private one only shows up for
-// its owner) without requiring one (a public collection still works for a
-// guest). Returns null for a missing/invalid token instead of 401ing.
-export async function getOptionalUser<E extends { Bindings: Env }>(c: Context<E>): Promise<AuthTokenPayload | null> {
-  const header = c.req.header("Authorization");
-  if (!header?.startsWith("Bearer ")) return null;
-  try {
-    const payload = await verifyToken(header.slice("Bearer ".length), c.env.JWT_SECRET);
-    if (await isTokenRevoked(c.env.DB, payload)) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
-
 // Composes after authMiddleware — restricts a route to a set of roles.
 // Still used directly (rather than requirePermission below) for the handful
 // of Administrator-only routes migrations/0013_permissions.sql's seed never
@@ -86,6 +70,18 @@ export function requireRole(
 // GET /permissions/roles response an admin sees IS what's enforced, not a
 // separate description of it. Granting a role a new permission is now a
 // data change (an INSERT into role_permissions), not a code change.
+// For routes whose response depends on a capability rather than being gated
+// by it (e.g. GET /translations/drafts: reviewers see every draft, a
+// translator only their own) — same role_permissions lookup requirePermission
+// enforces.
+export async function hasPermission(db: D1Database, role: string, permissionKey: string): Promise<boolean> {
+  const grant = await db
+    .prepare("SELECT 1 FROM role_permissions WHERE role = ? AND permission_key = ?")
+    .bind(role, permissionKey)
+    .first();
+  return Boolean(grant);
+}
+
 export function requirePermission(
   permissionKey: string
 ): MiddlewareHandler<{ Bindings: Env; Variables: AuthVariables }> {
@@ -94,10 +90,7 @@ export function requirePermission(
     if (!user) {
       return c.json({ error: "Forbidden." }, 403);
     }
-    const grant = await c.env.DB.prepare("SELECT 1 FROM role_permissions WHERE role = ? AND permission_key = ?")
-      .bind(user.role, permissionKey)
-      .first();
-    if (!grant) {
+    if (!(await hasPermission(c.env.DB, user.role, permissionKey))) {
       return c.json({ error: "Forbidden." }, 403);
     }
     await next();

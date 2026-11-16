@@ -195,8 +195,8 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
           <BookCoverArt category={book.category} className="absolute-fill" style={{ position: 'absolute', inset: 0 }} />
         )}
 
-        {/* Age-group / category badge */}
-        {book.ageGroup && (
+        {/* Age-group / category badge (real covers print their own) */}
+        {book.ageGroup && !book.coverUrl && (
           <span style={{
             position: 'absolute', top: 12, left: 12,
             background: 'rgba(10,10,15,0.55)', border: '1px solid rgba(212,175,55,0.5)',
@@ -241,14 +241,21 @@ export default function BookCard({ book, compact = false, variant = 'light', bot
               boxShadow: '0 4px 16px rgba(212,175,55,0.45)',
             }}>{bottomBadge}</span>
           )}
-          <h3 style={{
-            fontFamily: 'Nunito', fontWeight: 800, fontSize: 16, color: 'white',
-            margin: 0, overflow: 'hidden', display: '-webkit-box',
-            WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25,
-          }}>{book.title}</h3>
-          <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: 'Nunito Sans' }}>
-            {book.author}
-          </p>
+          {/* Real cover art already prints the title (and age band), so only
+              the illustrated placeholder needs them written on top — over a
+              photo they just doubled up and crowded the card, worst on phones. */}
+          {!book.coverUrl && (
+            <>
+              <h3 style={{
+                fontFamily: 'Nunito', fontWeight: 800, fontSize: 16, color: 'white',
+                margin: 0, overflow: 'hidden', display: '-webkit-box',
+                WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', lineHeight: 1.25,
+              }}>{book.title}</h3>
+              <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.6)', fontFamily: 'Nunito Sans' }}>
+                {book.author}
+              </p>
+            </>
+          )}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
             {book.rating ? <StarRating rating={book.rating} /> : <span />}
           </div>

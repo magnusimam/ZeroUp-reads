@@ -16,10 +16,10 @@ import authors from "./authors/routes";
 import illustrators from "./illustrators/routes";
 import ratings from "./ratings/routes";
 import reviews from "./reviews/routes";
-import collections from "./collections/routes";
 import downloads from "./downloads/routes";
 import permissions from "./permissions/routes";
 import testimonials from "./testimonials/routes";
+import translations from "./translations/routes";
 import { logEvent } from "./utils/logger";
 
 export type { Env };
@@ -67,10 +67,10 @@ app.route("/authors", authors);
 app.route("/illustrators", illustrators);
 app.route("/ratings", ratings);
 app.route("/reviews", reviews);
-app.route("/collections", collections);
 app.route("/downloads", downloads);
 app.route("/permissions", permissions);
 app.route("/testimonials", testimonials);
+app.route("/translations", translations);
 
 app.notFound((c) => c.json({ error: "Not Found" }, 404));
 

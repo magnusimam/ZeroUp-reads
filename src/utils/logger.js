@@ -30,6 +30,7 @@ const TRACKED_EVENTS = [
   'translation.completed',
   'translation.requested',
   'translation.request.approved',
+  'translation.request.accepted',
   'translation.request.rejected',
   'book.completed',
   'book.bookmarked',
@@ -50,6 +51,8 @@ const TRACKED_EVENTS = [
   'note.added',
   'note.deleted',
   'notifications.read_all',
+  'site.language.changed',
+  'book.translation.target.changed',
 ];
 
 TRACKED_EVENTS.forEach((eventName) => {

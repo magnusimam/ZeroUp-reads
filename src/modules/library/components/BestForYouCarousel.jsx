@@ -42,7 +42,7 @@ export default function BestForYouCarousel({ books }) {
   }
 
   return (
-    <section className="relative max-w-content mx-auto w-full px-4 sm:px-6 py-4">
+    <section id="featured" className="relative max-w-content mx-auto w-full px-4 sm:px-6 py-4 scroll-mt-24">
       <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
         <div>
           <h2 className="flex items-center gap-2 font-nunito font-extrabold text-2xl" style={{ color: 'var(--hero-ink)' }}>
@@ -54,7 +54,7 @@ export default function BestForYouCarousel({ books }) {
         </div>
         <div className="flex items-center gap-3">
           <Link
-            to="/library?type=story"
+            to="/library?type=all"
             className="font-nunito font-bold text-sm hover:underline"
             style={{ color: 'var(--hero-ink)' }}
           >

@@ -4,7 +4,7 @@ import { READING_LEVELS } from './discoverConfig';
 
 export default function ReadingLevelPicker() {
   return (
-    <div>
+    <div id="reading-levels" style={{ scrollMarginTop: 96 }}>
       <h2 style={{ fontFamily: 'Nunito', fontWeight: 800, fontSize: 20, color: 'var(--navy)', margin: '0 0 14px' }}>
         Pick your reading level
       </h2>

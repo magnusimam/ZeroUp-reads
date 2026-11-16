@@ -17,6 +17,14 @@ const FLAGS = {
   publishingPipeline: true,
   translationPortal: true,
   offlineReading: true,
+  // Navbar website-language selector (modules/languages/SiteLanguageSelector)
+  // — whole-site UI translation via Google's website translator, which loads
+  // a third-party script; flip off to remove both the selector and the script.
+  siteTranslation: true,
+  // Navbar "Translate a Story" link + /translate page + reader Translate menu (modules/translation/
+  // machineTranslationService) — interim machine translation of book text
+  // until the AI translation feature ships. Flip off to hide it everywhere.
+  bookMachineTranslation: true,
   // Stage 4 of the backend build (see ENGINEERING_PRINCIPLES_TRACKER.md
   // Principle 1): routes authService's register/login/session calls to the
   // real Cloudflare Workers API (backend/) instead of localStorage, when a
@@ -100,11 +108,6 @@ const FLAGS = {
   // Ratings & Reviews API. Same default-false, instantly-reversible
   // posture as the other realXApi flags.
   realRatingsApi: true,
-  // Stage 14 frontend integration: routes collectionsService (the new
-  // My Collections pages, and BookDetailPage's "Add to Collection" action)
-  // to the real backend/ Collections API. Same default-false,
-  // instantly-reversible posture as the other realXApi flags.
-  realCollectionsApi: true,
   // Stage 14 frontend integration: routes a new downloadsService subscriber
   // (src/index.js) that POSTs to the real backend/ Downloads API whenever
   // the existing offline-download flow (offlineService.js's book.downloaded
@@ -132,6 +135,11 @@ const FLAGS = {
   // ResetPasswordPage) to the real backend/ Password Reset API. Same
   // default-false, instantly-reversible posture as the other realXApi flags.
   realPasswordResetApi: true,
+  // Stage 18: routes translationRequestService (reader requests + the admin
+  // accept/decline queue) and translationService (Translation Workspace
+  // drafts → review → approve) to the real backend/ Translations API.
+  // Same instantly-reversible posture as the other realXApi flags.
+  realTranslationApi: true,
 };
 
 export function isFeatureEnabled(flagName) {

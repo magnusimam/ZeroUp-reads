@@ -1,53 +1,70 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
+import useHelpCenter from './useHelpCenter';
+import HelpHero from './components/HelpHero';
+import HelpTopicsGrid from './components/HelpTopicsGrid';
 import FAQAccordion from './components/FAQAccordion';
+import StillNeedHelpCard from './components/StillNeedHelpCard';
+import SupportHoursCard from './components/SupportHoursCard';
+import HelpCTABanner from './components/HelpCTABanner';
 
-const QUICK_LINKS = [
-  { to: '/help/contact', icon: '💬', label: 'Contact Support', text: 'Get help from our team' },
-  { to: '/help/report-a-problem', icon: '🐞', label: 'Report a Problem', text: 'Something not working right?' },
-  { to: '/help/suggest-a-book', icon: '📚', label: 'Suggest a Book', text: "Know a story we're missing?" },
-  { to: '/help/feedback', icon: '⭐', label: 'Share Feedback', text: 'Tell us how we\'re doing' },
-];
+function scrollToFaq() {
+  document.getElementById('help-faq')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
 export default function HelpCenterPage() {
+  const {
+    query, setQuery, search,
+    activeTopic, activeTopicTitle, selectTopic, clearFilters,
+    visibleFaqs, hiddenCount,
+    showAll, setShowAll,
+  } = useHelpCenter();
+
+  const filterLabel = activeTopic ? activeTopicTitle : query.trim() ? `"${query.trim()}"` : '';
+
   return (
-    <div className="min-h-screen flex flex-col bg-cream font-nunito-sans">
+    <div className="min-h-screen flex flex-col" style={{ background: '#FEFEFE' }}>
       <Navbar />
 
-      <div className="max-w-content mx-auto w-full px-4 sm:px-6 py-12 flex-1">
-        <div className="text-center mb-10">
-          <span className="text-5xl inline-block mb-3" aria-hidden="true">❓</span>
-          <h1 className="font-playfair font-extrabold text-3xl sm:text-4xl text-cocoa">
-            How can we help?
-          </h1>
-          <p className="text-charcoal/60 mt-3 max-w-xl mx-auto">
-            Browse frequently asked questions, or reach out directly below.
-          </p>
+      <HelpHero
+        query={query}
+        onQueryChange={setQuery}
+        onSearch={text => { search(text); scrollToFaq(); }}
+      />
+
+      <main className="max-w-content mx-auto w-full px-4 sm:px-6 py-10 flex flex-col gap-8">
+        <HelpTopicsGrid
+          activeTopic={activeTopic}
+          onSelectTopic={id => { selectTopic(id); scrollToFaq(); }}
+          onViewAll={() => { clearFilters(); setShowAll(true); scrollToFaq(); }}
+        />
+
+        <div className="grid lg:grid-cols-[1.25fr_1fr] gap-6 items-start">
+          <FAQAccordion
+            items={visibleFaqs}
+            hiddenCount={hiddenCount}
+            showAll={showAll}
+            onToggleShowAll={() => setShowAll(s => !s)}
+            filterLabel={filterLabel}
+            onClearFilter={clearFilters}
+          />
+
+          <div className="flex flex-col gap-5">
+            <StillNeedHelpCard />
+            <SupportHoursCard />
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-          {QUICK_LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="bg-white rounded-2xl shadow-card p-5 text-center hover:-translate-y-1 hover:shadow-card-hover transition-all"
-            >
-              <span className="text-3xl inline-block mb-2" aria-hidden="true">{link.icon}</span>
-              <p className="font-nunito font-bold text-sm text-charcoal">{link.label}</p>
-              <p className="font-nunito-sans text-xs text-charcoal/50 mt-1">{link.text}</p>
-            </Link>
-          ))}
-        </div>
+        <HelpCTABanner />
+      </main>
 
-        <h2 className="font-playfair font-bold text-xl text-cocoa mb-5 text-center">
-          Frequently Asked Questions
-        </h2>
-        <div className="max-w-2xl mx-auto">
-          <FAQAccordion />
-        </div>
-      </div>
+      {/* Village scene + "More stories. More languages. A brighter Africa." from the design mockup. */}
+      <img
+        src="/images/help/help-village-strip.jpg"
+        alt="More stories. More languages. A brighter Africa."
+        className="w-full h-[110px] sm:h-[140px] object-cover"
+      />
 
       <Footer />
     </div>

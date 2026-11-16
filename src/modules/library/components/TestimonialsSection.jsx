@@ -52,7 +52,7 @@ export default function TestimonialsSection({ testimonials, books }) {
                   style={{ borderColor: 'var(--hero-border)' }}
                 >
                   <div className="relative w-10 h-10 rounded-md overflow-hidden shrink-0">
-                    <BookCoverArt category={book.category} style={{ position: 'absolute', inset: 0 }} />
+                    <BookCoverArt category={book.category} coverUrl={book.coverUrl} style={{ position: 'absolute', inset: 0 }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-nunito font-semibold text-xs truncate" style={{ color: 'var(--hero-ink)' }}>{book.title}</p>

@@ -59,6 +59,15 @@ h2 { font-size: 36px; font-weight: 800; }
 h3 { font-size: 28px; font-weight: 700; }
 h4 { font-size: 22px; font-weight: 600; }
 
+/* Phones: scale the base sizes down. Only affects headings that don't set
+   their own size (a Tailwind text-* class or inline size still wins). */
+@media (max-width: 640px) {
+  h1 { font-size: 32px; }
+  h2 { font-size: 26px; }
+  h3 { font-size: 21px; }
+  h4 { font-size: 18px; }
+}
+
 /* ── ANIMATIONS ─────────────────────────────────────────── */
 @keyframes slideDown {
   from { transform: translateY(-100%); opacity: 0; }
@@ -73,6 +82,12 @@ h4 { font-size: 22px; font-weight: 600; }
 @keyframes fadeIn {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+/* Dropdown panels: a small fade + drop, no scale (scale overshoot read as a jump). */
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes float {
@@ -479,4 +494,31 @@ h4 { font-size: 22px; font-weight: 600; }
 }
 .animate-blob-float {
   animation: blobFloat 9s ease-in-out infinite;
+}
+
+/* Google website translator (navbar Translate button) — keep its widget,
+   top banner and hover tooltips out of sight; our own SiteLanguageSelector is
+   the only UI for it. */
+#google_translate_element,
+.goog-te-banner-frame,
+iframe.skiptranslate,
+.goog-te-balloon-frame,
+#goog-gt-tt,
+.VIpgJd-ZVi9od-ORHb-OEVmcd,
+.VIpgJd-ZVi9od-aZ2wEe-wOHMyf { display: none !important; }
+body { top: 0 !important; position: static !important; }
+.goog-text-highlight { background: none !important; box-shadow: none !important; }
+
+/* Phones: a row of tabs/chips stays one swipeable line instead of wrapping
+   into a tall stack (Downloads tabs, Profile tabs, Teachers filters…). */
+@media (max-width: 640px) {
+  .mobile-scroll-row {
+    flex-wrap: nowrap !important;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+  .mobile-scroll-row::-webkit-scrollbar { display: none; }
+  .mobile-scroll-row > * { flex-shrink: 0; white-space: nowrap; }
 }

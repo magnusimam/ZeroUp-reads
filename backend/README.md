@@ -54,10 +54,11 @@ npm run deploy      # deploy to Cloudflare
 - `GET /authors`, `GET /authors/:id` → public; `PATCH /authors/:id` → **Administrator only** (`bio`/`photoUrl` only) — see **Authors & Illustrators** below. `GET /illustrators`, `GET /illustrators/:id`, `PATCH /illustrators/:id` mirror these exactly.
 - `GET /ratings/:bookId` → public → `200 { average, count }`; `GET /ratings/:bookId/mine` → requires auth → `200 { rating: number | null }`; `PUT /ratings/:bookId` → `{ rating: 1-5 }` → `200 { average, count }`; `DELETE /ratings/:bookId` → `200 { average, count }` — see **Ratings & Reviews** below.
 - `GET /reviews/:bookId` → public → `200 { reviews: [...] }`; `PUT /reviews/:bookId` → `{ reviewText }` → `200 { review }` (upsert); `DELETE /reviews/:bookId` → `200 { success: true }`.
-- `GET /collections`, `GET /collections/:id` → public/optional auth; `POST /collections`, `PATCH /collections/:id`, `DELETE /collections/:id`, `POST /collections/:id/books`, `DELETE /collections/:id/books/:bookId` → requires auth, owner or Administrator — see **Collections** below.
 - `GET /downloads` → requires auth → `200 { downloads: [...] }`; `POST /downloads/:bookId` → `201 { success: true }` (`404` unknown book) — see **Downloads** below.
 - `GET /permissions`, `GET /permissions/roles` → **Administrator only** — see **Permissions** below.
 - `GET /testimonials` → public → `200 { testimonials: [{ id, name, role, quote, bookId }] }` — see **Testimonials** below.
+- `POST /translations/requests` → requires auth (any role) → `{ bookId, language }` → `201 { request }` (`409` if an open request already exists, `400` same/unknown language, `404` unknown book); `GET /translations/requests?status=pending|accepted|rejected|fulfilled` (comma-separated, default `pending`) → `translations.access`; `POST /translations/requests/:id/accept`, `/reject` → `translation_requests.manage` — see **Translation workflow** below.
+- `GET /translations/drafts` (reviewers: all; translators: own), `POST /translations/drafts` `{ bookId, targetLanguage }` (`201` new / `200` resumed), `GET /translations/drafts/:id`, `PUT /translations/drafts/:id/paragraphs` `{ paragraphs: string[] }`, `POST /translations/drafts/:id/submit` → `translations.access`; `POST /translations/drafts/:id/reject` `{ comment }`, `POST /translations/drafts/:id/approve` `{ comment? }` → `200 { draft, book }` → `translations.review`.
 
 ## Auth
 
@@ -131,7 +132,7 @@ Rule-based, not ML — no model, no training data. For the signed-in caller, `sr
 
 ## Notifications
 
-A real, persisted feed (`notifications` table, `migrations/0005_notifications.sql`) — not yet wired to `DashboardTopBar.jsx`'s bell, which today just fakes a notification count from the reader's in-progress book count. Currently raised from three points in the Publishing workflow: a submission's author gets one when it's sent back for changes, approved, or published. `PATCH /notifications/:id/read` on a notification that isn't the caller's own returns `404`, not `403` — same "don't confirm another user's row exists" posture as the rest of the API.
+A real, persisted feed (`notifications` table, `migrations/0005_notifications.sql`), shown in the Reader Dashboard's bell (`DashboardTopBar.jsx`, via `useDashboardData`/`notificationsService.js`). Currently raised from three points in the Publishing workflow: a submission's author gets one when it's sent back for changes, approved, or published. `PATCH /notifications/:id/read` on a notification that isn't the caller's own returns `404`, not `403` — same "don't confirm another user's row exists" posture as the rest of the API.
 
 ## Audit log
 
@@ -149,9 +150,9 @@ Real entities (`authors`/`illustrators` tables, `migrations/0009_authors_illustr
 
 Two separate tables (`ratings`, `reviews`, `migrations/0011_ratings_reviews.sql`) — a reader can rate a book (a bare 1-5 number) without writing anything, and the two are queried independently. Both are upserts, one row per user per book. `books.rating` (the pre-existing seeded/static number) is untouched by either — nothing recomputes it from `ratings` yet.
 
-## Collections
+## Collections (retired)
 
-Curated reading lists (`collections`/`collection_books`, `migrations/0010_collections.sql`), distinct from a reader's own bookmarks: a collection holds several books in order, can be personal or public, and (unlike a bookmark list) is itself a browsable, ownable entity. A private collection a stranger can't see 404s rather than 403ing, same "don't confirm another user's row exists" posture as Notifications.
+The Stage 14 Collections API (`/collections`) was removed after the feature was deliberately dropped from the frontend. Its tables (`collections`/`collection_books`, `migrations/0010_collections.sql`) are intentionally left in D1 — no migration drops them, so any rows already written are preserved — but nothing reads or writes them any more.
 
 ## Downloads
 
@@ -164,6 +165,15 @@ Curated reading lists (`collections`/`collection_books`, `migrations/0010_collec
 ## Testimonials
 
 `testimonials` (`migrations/0014_testimonials.sql`) is a straight seed of the frontend's old `MOCK_TESTIMONIALS` array — read-only, like Languages: no create/update/delete route exists, since nothing writes a testimonial today. `book_id` is nullable with `ON DELETE SET NULL` rather than `CASCADE`, so a testimonial outlives the book it references (it just loses its "View Details" link) instead of disappearing if that book is ever deleted.
+
+## Translation workflow
+
+Stage 18 — the real backend for the Translation Workspace (blueprint §10), `migrations/0017_translations.sql`. Two halves:
+
+- **Reader requests** (`translation_requests`): any signed-in reader asks for a book in another language (`pending`). An administrator accepts it (`accepted` — it now shows in the workspace's "Open Requests" for translators) or rejects it. Accepting publishes nothing. When a translator's draft for the same book+language is approved, every open request for it becomes `fulfilled` with `translated_book_id` set, and each requester gets a notification.
+- **Translator drafts** (`translation_drafts` + `translation_draft_paragraphs` + `translation_draft_history`): `in_progress → submitted → (rejected → submitted …) → approved`. The original text is snapshotted per paragraph when the draft starts. Only the translator edits/submits their own draft, and only while `in_progress`/`rejected`; submitting requires every paragraph translated, since approval publishes page-for-page. A reviewer (`translations.review`: Editor/Administrator) can't approve or reject their own draft, and must give a comment to reject. Approving is the only step that creates a live book: `createBookRecord()` with `attributes.translatedFrom`, plus the original book's `attributes.availableLanguages` (snapshotted into `book_versions` first, same as `PATCH /books/:id`).
+
+Drafts aren't public: another translator gets `404` for a draft that isn't theirs (same "don't confirm the row exists" posture as Notifications). Permissions `translations.access` (Translator/Editor/Administrator, matching the frontend's `TRANSLATION_ROLES`), `translations.review` (Editor/Administrator) and `translation_requests.manage` (Administrator) are seeded into `role_permissions` like the rest of migrations/0013.
 
 ## Database (D1)
 
@@ -195,8 +205,8 @@ After that, every additional admin is a normal `PATCH /users/:id/role` call from
 
 ## Stage status
 
-Through Stage 17 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, Search/Recommendations/Analytics/Notifications/Languages + security hardening (13, backend and frontend both), BookVersions/Authors/Illustrators/Ratings/Reviews/Collections/Downloads/Permissions (14, backend and frontend both), Testimonials (15, backend and frontend both), JWT token-version revocation + the OAuth frontend catch-page + wiring `requireRole` to `role_permissions` (16), and Password Reset (17, backend and frontend both) are all done. Every domain's frontend service calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set. There is no longer any frontend service still `localStorage`-only.
+Through Stage 18 of the backend build: Auth (4), Books (5-7), Reading progress & bookmarks (9), User & Role Management with Owner protection (10-11), Publishing (8) + admin Book CRUD (12) frontend wiring, Search/Recommendations/Analytics/Notifications/Languages + security hardening (13, backend and frontend both), BookVersions/Authors/Illustrators/Ratings/Reviews/Downloads/Permissions (14, backend and frontend both; Stage 14's Collections API has since been retired — see **Collections (retired)** above), Testimonials (15, backend and frontend both), JWT token-version revocation + the OAuth frontend catch-page + wiring `requireRole` to `role_permissions` (16), Password Reset (17, backend and frontend both), and the Translation workflow — reader requests + translator drafts/review/approval (18, backend and frontend both) — are all done. Every domain's frontend service calls this API by default (`src/config/featureFlags.js`'s `realXApi` flags are all `true`), falling back to the `localStorage` mock only if `REACT_APP_API_BASE_URL` isn't set. Still `localStorage`-only, with no backend yet: reader settings (`settingsService.js`), onboarding preferences (`onboardingService.js`), reading notes (`notesService.js`), and Help Center tickets (`helpService.js`). Book-text machine translation (`machineTranslationService.js`) calls Google's unofficial endpoint straight from the browser rather than going through this API. `offlineService.js`/`syncService.js` are device-local by design and aren't gaps.
 
 OAuth (Google) now has a real registered client (see **OAuth (Google)** above) and works end-to-end on the live deploy — `GOOGLE_OAUTH_CLIENT_ID`/`OAUTH_REDIRECT_BASE_URL`/`OAUTH_FRONTEND_REDIRECT_URL` are real values in `wrangler.jsonc`, `GOOGLE_OAUTH_CLIENT_SECRET` is set via `wrangler secret put`. The one remaining gap noted there: no "Sign in with Google" button on `RegisterPage.jsx`, only `LoginPage.jsx`.
 
-`POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — that's an explicit "real Cloudflare API goes here later" stub on the frontend, i.e. Translation Workflow territory (blueprint §10), deliberately out of scope. Also deliberately out of scope: Audio/TTS and a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS). JWT revocation/token-versioning, once a real gap, closed in Stage 16 — see **Token revocation** above.
+`POST/PATCH/DELETE /books` (Stage 7) intentionally do **not** replicate `booksService.js`'s `translateBook()` — the Admin CMS's instant-copy stub. Real translations go through the Stage 18 **Translation workflow** instead (a human-reviewed draft, approved via `POST /translations/drafts/:id/approve`). Also deliberately out of scope: Audio/TTS and a separate CMS domain (the existing Publishing workflow already **is** what the product docs mean by CMS). JWT revocation/token-versioning, once a real gap, closed in Stage 16 — see **Token revocation** above.

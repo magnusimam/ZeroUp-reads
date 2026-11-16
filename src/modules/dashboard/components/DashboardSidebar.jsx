@@ -1,10 +1,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
-// Route (+ optional hash) each sidebar item resolves to. "Downloads" points
-// at OfflinePage — the closest existing stub route — rather than a dead
-// link, since a dedicated offline-downloads feature doesn't exist yet.
-// Exported so ReaderSidebar (src/modules/reading) reuses the same nav list
+// Route (+ optional hash) each sidebar item resolves to. Exported so ReaderSidebar (src/modules/reading) reuses the same nav list
 // instead of maintaining a second, driftable copy (Modular Architecture).
 export const NAV_ITEMS = [
   { label: 'Dashboard', icon: '🏠', to: '/dashboard' },
@@ -13,7 +10,7 @@ export const NAV_ITEMS = [
   { label: 'Favourites', icon: '❤️', to: '/profile#bookmarks' },
   { label: 'Achievements', icon: '🏆', to: '/dashboard#progress' },
   { label: 'My Progress', icon: '📈', to: '/dashboard#progress' },
-  { label: 'Downloads', icon: '⬇️', to: '/offline' },
+  { label: 'Downloads', icon: '⬇️', to: '/downloads' },
   { label: 'Profile', icon: '👤', to: '/profile' },
   { label: 'Settings', icon: '⚙️', to: '/settings' },
 ];
@@ -25,6 +22,45 @@ export function BookLogoIcon() {
       <path d="M18 9 C22 6 28 6 32 8 V27 C28 25 22 25 18 28 Z" fill="var(--hero-orange)" stroke="#3A1A10" strokeWidth="1.2" strokeLinejoin="round" />
       <path d="M18 9 V28" stroke="#3A1A10" strokeWidth="1.2" />
     </svg>
+  );
+}
+
+// Phone/tablet replacement for the sidebar (≤900px, where the 240px column
+// would otherwise stack above the whole page): the same NAV_ITEMS as one
+// horizontally scrollable row of pills. Hidden on wider screens via CSS.
+export function DashboardMobileNav() {
+  const location = useLocation();
+  const currentPath = location.pathname + location.hash;
+
+  return (
+    <nav className="dashboard-mobile-nav" aria-label="Dashboard" style={{
+      display: 'none', gap: 8, overflowX: 'auto', padding: '2px 2px 6px',
+      scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch',
+    }}>
+      {NAV_ITEMS.map((item) => {
+        const isActive = item.label === 'Dashboard'
+          ? (location.pathname === '/dashboard' && !location.hash)
+          : currentPath === item.to;
+        return (
+          <Link
+            key={item.label}
+            to={item.to}
+            aria-current={isActive ? 'page' : undefined}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, flexShrink: 0,
+              padding: '8px 14px', borderRadius: 999, whiteSpace: 'nowrap',
+              fontFamily: 'Nunito', fontWeight: 700, fontSize: 14, textDecoration: 'none',
+              background: isActive ? 'var(--hero-orange)' : 'white',
+              color: isActive ? 'white' : 'var(--hero-ink)',
+              border: `1px solid ${isActive ? 'var(--hero-orange)' : 'var(--hero-border)'}`,
+            }}
+          >
+            <span aria-hidden="true">{item.icon}</span>
+            {item.label}
+          </Link>
+        );
+      })}
+    </nav>
   );
 }
 

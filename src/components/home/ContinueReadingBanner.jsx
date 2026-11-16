@@ -11,6 +11,8 @@ export default function ContinueReadingBanner({ user, books }) {
     <section style={{
       background: 'linear-gradient(135deg, #E8A020 0%, #F5A623 100%)',
       padding: '32px 0',
+      // breathing room below the hero's floating stat bar, which it now follows
+      marginTop: 28,
       animation: 'slideDown 400ms ease',
     }}>
       <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 24, flexWrap: 'wrap' }}>

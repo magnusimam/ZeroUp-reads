@@ -6,6 +6,7 @@ const DEFAULT_SETTINGS = {
   preferredLanguage: '',
   readerFontSize: 18,
   readerNightMode: false,
+  notificationsEnabled: true,
 };
 
 export function getSettings() {

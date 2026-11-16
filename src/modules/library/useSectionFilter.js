@@ -1,10 +1,8 @@
 import { useState } from 'react';
 
-// Shared dropdown-filter-by-one-field pattern used by StoryBooksSection and
-// EducationalBooksSection — same open/select/filter behavior, just a
-// different field and option list per section. Slicing/composition of the
-// filtered list (e.g. featured + small-list split) stays in each component,
-// since that part genuinely differs between sections.
+// Dropdown-filter-by-one-field pattern (AllBooksSection's topic picker):
+// open/select state plus the filtered list. Slicing/sorting the result stays
+// in the component.
 export default function useSectionFilter(books, getFieldValue) {
   const [selected, setSelected] = useState(null);
   const [open, setOpen] = useState(false);
