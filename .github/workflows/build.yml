@@ -21,21 +21,38 @@ jobs:
           # Baked into the JS bundle at build time (CRA env vars aren't a
           # runtime lookup) — this project's Pages deployment has no Git
           # integration (wrangler pages deploy uploads a pre-built build/
-          # folder, see the step below), so Cloudflare's own dashboard
+          # folder, see the steps below), so Cloudflare's own dashboard
           # "environment variables" never apply here; this is the actual
           # place a build-time var has to live. Not a secret — it's just
-          # the public backend URL — so it's fine committed here rather
-          # than in repo Settings > Secrets/Variables.
-          REACT_APP_API_BASE_URL: https://zeroup-reads-api.bridegai.workers.dev
+          # a backend URL — so it's fine committed here rather than in
+          # repo Settings > Secrets/Variables. PRs build against the real
+          # staging Worker (Stage 18/20) so a preview never touches
+          # production data; pushes to main build against production.
+          REACT_APP_API_BASE_URL: ${{ github.event_name == 'pull_request' && 'https://zeroup-reads-api-staging.bridegai.workers.dev' || 'https://zeroup-reads-api.bridegai.workers.dev' }}
 
       # Deploys to Cloudflare Pages on push to main. Skipped (not attempted)
       # until CLOUDFLARE_API_TOKEN/CLOUDFLARE_ACCOUNT_ID secrets are actually
       # set in this repo's Settings > Secrets, once the Pages project exists —
       # otherwise wrangler would fail trying to authenticate with nothing.
-      - name: Deploy to Cloudflare Pages
+      - name: Deploy to Cloudflare Pages (production)
         if: github.event_name == 'push' && secrets.CLOUDFLARE_API_TOKEN != ''
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy build --project-name=zeroup-reads
+
+      # This project's Pages deployment has no Git integration (see above),
+      # so PRs don't get Cloudflare's automatic per-branch preview unless we
+      # ask for one explicitly — `--branch` does exactly that even without
+      # Git integration, giving each PR its own
+      # <sanitized-branch-name>.zeroup-reads.pages.dev, built against the
+      # staging Worker/database above, safe to click around without any risk
+      # to production.
+      - name: Deploy Cloudflare Pages preview (PR)
+        if: github.event_name == 'pull_request' && secrets.CLOUDFLARE_API_TOKEN != ''
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy build --project-name=zeroup-reads --branch=${{ github.head_ref }}
